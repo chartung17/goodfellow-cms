@@ -2,7 +2,7 @@
   "name": "@goodfellow/react",
   "version": "0.0.0",
   "description": "Renders Goodfellow pages with React.",
-  "license": "UNLICENSED",
+  "license": "MIT",
   "type": "module",
   "sideEffects": [
     "*.css"

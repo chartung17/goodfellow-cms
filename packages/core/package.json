@@ -2,7 +2,7 @@
   "name": "@goodfellow/core",
   "version": "0.0.0",
   "description": "Goodfellow's content model, config and file format. Runs in Node and the browser.",
-  "license": "UNLICENSED",
+  "license": "MIT",
   "type": "module",
   "sideEffects": false,
   "exports": {
