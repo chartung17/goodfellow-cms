@@ -19,10 +19,19 @@ export default defineConfig({
       ? { executablePath: process.env.PLAYWRIGHT_CHROMIUM_EXECUTABLE }
       : {},
   },
-  webServer: {
-    command: `node scripts/start-site.mjs ${PORT}`,
-    url: `http://localhost:${PORT}/admin`,
-    reuseExistingServer: false,
-    timeout: 60_000,
-  },
+  webServer: [
+    {
+      command: `node scripts/start-site.mjs ${PORT}`,
+      url: `http://localhost:${PORT}/admin`,
+      reuseExistingServer: false,
+      timeout: 60_000,
+    },
+    // Production builds of the starter with each git backend, served like a static host.
+    ...(["github", "gitlab"] as const).map((name, index) => ({
+      command: `node scripts/start-built-site.mjs ${name}`,
+      url: `http://localhost:${4401 + index}/admin/`,
+      reuseExistingServer: false,
+      timeout: 120_000,
+    })),
+  ],
 });

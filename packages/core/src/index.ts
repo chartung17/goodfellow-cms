@@ -46,7 +46,22 @@ export {
   type FileChange,
   isEditablePath,
   type WriteOptions,
+  writeChanges,
 } from "./content/store.js";
+export {
+  credentialStorage,
+  type DeployState,
+  type DeployStatus,
+  encodeBase64,
+  GitApiError,
+  type GitBackend,
+  type GitHost,
+  type GitUser,
+  SignInError,
+  type SignInProblem,
+  type StorageLike,
+  type TokenLink,
+} from "./git.js";
 export { absoluteUrl, getPageHead, type PageHead } from "./head.js";
 export {
   type ContentKind,

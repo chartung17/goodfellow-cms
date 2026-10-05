@@ -1,0 +1,144 @@
+import type { ContentStore } from "./content/store.js";
+
+/** The person signed in to the admin panel. */
+export interface GitUser {
+  login: string;
+  name?: string;
+  avatarUrl?: string;
+}
+
+/**
+ * Whether a published revision has reached the live site.
+ * `unknown` means the host doesn't report it (for example, no deploy is set up).
+ */
+export type DeployState = "building" | "live" | "failed" | "unknown";
+
+export interface DeployStatus {
+  state: DeployState;
+  /** Where to see what happened, such as the build log. */
+  detailsUrl?: string;
+}
+
+/** A signed-in connection to the git host that stores the site. */
+export interface GitBackend extends ContentStore {
+  readonly user: GitUser;
+  changedPaths(from: string, to: string): Promise<string[]>;
+  deployStatus(revision: string): Promise<DeployStatus>;
+  /** Forgets the saved sign-in. */
+  signOut(): void;
+}
+
+/**
+ * A link for creating an access token. `label` and `hint` are keys in the
+ * admin panel's string table, so backends never supply UI text themselves.
+ */
+export interface TokenLink {
+  url: string;
+  label: "signIn.token.create" | "signIn.token.createBroad";
+  hint?: "signIn.token.createBroadHint";
+}
+
+/** How people sign in to a git host. */
+export interface GitHost {
+  /** The host's name, shown in the admin panel, such as "GitHub". */
+  readonly name: string;
+  /** Present when people can sign in by pasting an access token. */
+  readonly tokenLinks?: TokenLink[];
+  /** Whether people can sign in by being sent to the host and back. */
+  readonly canRedirect: boolean;
+  /**
+   * Resumes a saved sign-in, or finishes a redirect sign-in when the page has
+   * just come back from the host. Returns `null` when nobody is signed in.
+   */
+  restore(): Promise<GitBackend | null>;
+  /** Signs in with an access token. `remember` keeps it after the browser closes. */
+  signInWithToken(token: string, remember: boolean): Promise<GitBackend>;
+  /** Sends the browser to the host to sign in. Only when `canRedirect`. */
+  startRedirect(remember: boolean): Promise<void>;
+}
+
+export type SignInProblem =
+  /** The token or sign-in was rejected, or has expired. */
+  | "invalid"
+  /** The account can't see the site's repository. */
+  | "no-access"
+  /** The account can see the site but can't publish to it. */
+  | "cant-publish"
+  /** Coming back from the host failed, for example because sign-in was cancelled. */
+  | "redirect-failed";
+
+/** Thrown when signing in fails, or when a saved sign-in stops working. */
+export class SignInError extends Error {
+  override name = "SignInError";
+  readonly problem: SignInProblem;
+
+  constructor(problem: SignInProblem, message: string) {
+    super(message);
+    this.problem = problem;
+  }
+}
+
+/** Thrown when a git host answers with an unexpected error. */
+export class GitApiError extends Error {
+  override name = "GitApiError";
+  readonly status: number;
+
+  constructor(status: number, message: string) {
+    super(message);
+    this.status = status;
+  }
+}
+
+/** The subset of the Web Storage API that sign-in uses, so it can be replaced in tests. */
+export interface StorageLike {
+  getItem(key: string): string | null;
+  setItem(key: string, value: string): void;
+  removeItem(key: string): void;
+}
+
+/**
+ * Saves sign-in details where the person chose: in local storage if they asked
+ * to stay signed in, otherwise in session storage, which the browser clears when it closes.
+ */
+export function credentialStorage(
+  key: string,
+  storages: { local?: StorageLike; session?: StorageLike } = defaultStorages(),
+) {
+  return {
+    load(): string | null {
+      return storages.session?.getItem(key) ?? storages.local?.getItem(key) ?? null;
+    },
+    save(value: string, remember: boolean): void {
+      (remember ? storages.session : storages.local)?.removeItem(key);
+      (remember ? storages.local : storages.session)?.setItem(key, value);
+    },
+    clear(): void {
+      storages.local?.removeItem(key);
+      storages.session?.removeItem(key);
+    },
+    /** Whether the saved value is in local storage (the person chose to stay signed in). */
+    remembered(): boolean {
+      return storages.local?.getItem(key) != null;
+    },
+  };
+}
+
+function defaultStorages(): { local?: StorageLike; session?: StorageLike } {
+  const scope = globalThis as { localStorage?: StorageLike; sessionStorage?: StorageLike };
+  try {
+    return { local: scope.localStorage, session: scope.sessionStorage };
+  } catch {
+    // Storage can be blocked entirely, for example in some private windows.
+    return {};
+  }
+}
+
+/** Encodes text as base64, handling any Unicode. */
+export function encodeBase64(text: string): string {
+  const bytes = new TextEncoder().encode(text);
+  let binary = "";
+  for (let i = 0; i < bytes.length; i += 0x8000) {
+    binary += String.fromCharCode(...bytes.subarray(i, i + 0x8000));
+  }
+  return btoa(binary);
+}

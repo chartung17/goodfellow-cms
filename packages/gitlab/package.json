@@ -1,7 +1,7 @@
 {
-  "name": "@goodfellow/core",
+  "name": "@goodfellow/gitlab",
   "version": "0.0.0",
-  "description": "Goodfellow's content model, config and file format. Runs in Node and the browser.",
+  "description": "Edit a Goodfellow site stored on GitLab, straight from the browser.",
   "license": "MIT",
   "type": "module",
   "sideEffects": false,
@@ -25,13 +25,9 @@
     "test": "vitest run"
   },
   "dependencies": {
-    "zod": "4.6.5"
-  },
-  "peerDependencies": {
-    "@puckeditor/core": "0.23.0"
+    "@goodfellow/core": "workspace:*"
   },
   "devDependencies": {
-    "@puckeditor/core": "0.23.0",
-    "react": "19.3.0"
+    "@puckeditor/core": "0.23.0"
   }
 }

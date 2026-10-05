@@ -2,6 +2,7 @@ import { mkdir, readFile, rm, writeFile } from "node:fs/promises";
 import { dirname, join, relative, resolve } from "node:path";
 import { absoluteUrl, loadSiteContent, pageOutputFile } from "@goodfellow/core";
 import { createServer, build as viteBuild } from "vite";
+import { ADMIN_ENTRY, adminEntryPlugin, adminHtml } from "./admin-entry.js";
 import { applyBasePath, normalizeBase } from "./base-path.js";
 import { fileSystemSource } from "./fs-source.js";
 import { baseViteConfig, findConfigFile, loadServerEntry, writeStylesEntries } from "./site.js";
@@ -19,6 +20,28 @@ export interface BuildResult {
   outDir: string;
   /** Repo-relative paths of the HTML files written. */
   pages: string[];
+}
+
+interface ManifestChunk {
+  file: string;
+  name?: string;
+  src?: string;
+  isEntry?: boolean;
+  css?: string[];
+}
+
+type Manifest = Record<string, ManifestChunk>;
+
+/** Finds a build input in Vite's manifest by the name it was given in `input`. */
+function findEntry(manifest: Manifest, name: string): ManifestChunk | undefined {
+  return Object.values(manifest).find((chunk) => chunk.isEntry && chunk.name === name);
+}
+
+/** The CSS files a build input produced: the file itself for CSS inputs, or the CSS its JavaScript imports. */
+function cssFiles(manifest: Manifest, name: string): string[] {
+  const entry = findEntry(manifest, name);
+  if (!entry) return [];
+  return entry.file.endsWith(".css") ? [entry.file] : (entry.css ?? []);
 }
 
 function escapeXml(text: string): string {
@@ -42,30 +65,50 @@ export async function build(options: BuildOptions = {}): Promise<BuildResult> {
     const { config, renderPage } = await loadServerEntry(server);
     const base = normalizeBase(options.base ?? config.base);
     const content = await loadSiteContent(fileSystemSource(root));
-    const stylesEntry = (await writeStylesEntries(root, config)).site;
+    const styles = await writeStylesEntries(root, config);
+    const withAdmin = Boolean(config.backend);
 
-    // Build the CSS (Tailwind scans content/ for class names) and copy public/ into the output.
+    // Build the CSS (Tailwind scans content/ for class names), the admin panel if the
+    // site has a backend, and copy public/ into the output.
+    const input: Record<string, string> = { styles: styles.site };
+    if (withAdmin) Object.assign(input, { preview: styles.preview, admin: ADMIN_ENTRY });
     await viteBuild({
       ...baseViteConfig(root, configFile),
+      plugins: [...(baseViteConfig(root, configFile).plugins ?? []), adminEntryPlugin(configFile, { mode: "build" })],
       base,
       build: {
         outDir,
         emptyOutDir: true,
         manifest: "manifest.json",
-        rolldownOptions: { input: { styles: stylesEntry } },
+        // The admin panel bundles Puck and its editor, which is large but only loads at /admin.
+        chunkSizeWarningLimit: 4096,
+        rolldownOptions: {
+          input,
+          onLog(level, log, handler) {
+            // React libraries mark modules "use client", which only matters to server-component bundlers.
+            if (log.code === "MODULE_LEVEL_DIRECTIVE") return;
+            handler(level, log);
+          },
+        },
       },
     });
 
     const manifestPath = join(outDir, "manifest.json");
-    const manifest = JSON.parse(await readFile(manifestPath, "utf8")) as Record<
-      string,
-      { file: string; css?: string[] }
-    >;
+    const manifest = JSON.parse(await readFile(manifestPath, "utf8")) as Manifest;
     await rm(manifestPath);
-    const entry = Object.values(manifest).find((chunk) => chunk.file.endsWith(".css") || chunk.css?.length);
-    const stylesheets = entry
-      ? (entry.file.endsWith(".css") ? [entry.file] : (entry.css ?? [])).map((file) => `/${file}`)
-      : [];
+    const stylesheets = cssFiles(manifest, "styles").map((file) => `/${file}`);
+
+    if (withAdmin) {
+      const admin = findEntry(manifest, "admin");
+      if (!admin) throw new Error("The admin panel's bundle is missing from the build.");
+      const html = adminHtml({
+        scripts: [`${base}${admin.file}`],
+        stylesheets: cssFiles(manifest, "admin").map((file) => `${base}${file}`),
+        settings: { previewStylesheets: cssFiles(manifest, "preview").map((file) => `${base}${file}`), siteUrl: base },
+      });
+      await mkdir(join(outDir, "admin"), { recursive: true });
+      await writeFile(join(outDir, "admin/index.html"), html);
+    }
 
     const written: string[] = [];
     for (const page of content.pages) {
