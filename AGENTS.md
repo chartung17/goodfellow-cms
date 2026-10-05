@@ -67,9 +67,16 @@ Content files are the product's data format; treat changes to them like API chan
 - **Saving:** build file changes with the helpers in `packages/admin/src/changes.ts`, so files are always written in canonical form, and publish them through `useAdmin().publish()`, which passes the revision the editor loaded.
 - **Local backend:** `@goodfellow/admin/dev` (`localStore()`) is imported only by the dev server's admin entry. Never import it from anything a build includes.
 - **Navigation:** link between screens with `AppLink`, which asks before leaving unpublished changes. Screens with unpublished changes call `useUnsavedChanges()`.
-- **Previews:** previews render in iframes styled by `usePreviewStyles()`: the site's CSS plus the theme and custom CSS being edited, with `@tailwindcss/browser` generating classes the compiled CSS doesn't have yet.
+- **Previews:** previews render in iframes styled by `usePreviewStyles()`: the site's CSS plus the theme and custom CSS being edited, with `@tailwindcss/browser` generating classes the compiled CSS doesn't have yet. It also keeps media showing (see Media).
 - **Testing Puck:** Puck renders hidden copies of its fields, so tests select visible ones (`:visible`) and click blocks through their `[data-puck-component]` handle.
-- **Dev server watching:** `content/` is excluded from Vite's watcher and watched separately, because Tailwind's Vite plugin reloads every open page when a file it scans changes. That would reload the admin panel on every publish.
+- **Dev server watching:** `content/` and `public/media/` are excluded from Vite's watcher, because Tailwind's Vite plugin reloads every open page when a file it scans changes. That would reload the admin panel on every publish. `content/` is watched separately, and `goodfellow dev` serves `/media/` from disk itself.
+
+## Media
+
+- **Files** live in `public/media/` and content refers to them as `/media/name.jpg`. Uploads are binary `FileChange`s (`{ path, bytes }`), and every `ContentStore` implements `readBytes()`.
+- **Media fields:** a prop that holds a media address uses `mediaField()` from `@goodfellow/react`, which marks it with `metadata: { media: "image" | "file" }`. The admin panel adds the media library's chooser to those fields in Puck; its own forms use `MediaField`.
+- **Uploads** go through `prepareUpload()`, which refuses file types that could run code, shrinks large photos, re-saves JPEGs to drop hidden details such as location, and removes scripts from SVGs. Keep the allowed types in `media.ts` to ones that can't run code on the site's address.
+- **Previews** never use `/media/` addresses as they are: `showMediaInPreview()` adds the site's base path, shows new uploads from memory, and reads files the live site doesn't have yet from the repository.
 
 ## Backends
 

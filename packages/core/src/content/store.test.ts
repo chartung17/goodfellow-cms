@@ -33,12 +33,13 @@ function historyStore(initial: Record<string, string>) {
     read: async (path) => revisions.at(-1)?.[path],
     list: async (dir) => Object.keys(revisions.at(-1) ?? {}).filter((path) => path.startsWith(`${dir}/`)),
     revision: async () => head(),
+    readBytes: async () => undefined,
     write: async (changes, { expectedRevision }) => {
       if (expectedRevision !== head()) throw new ConflictError();
       const next = { ...revisions.at(-1) };
       for (const change of changes) {
         if ("delete" in change) delete next[change.path];
-        else next[change.path] = change.content;
+        else if ("content" in change) next[change.path] = change.content;
       }
       revisions.push(next);
       return { revision: head() };

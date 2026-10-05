@@ -1,10 +1,20 @@
 import { type Collection, type FileChange, serializeContent } from "@goodfellow/core";
-import { cx, type SiteContextValue, SiteProvider, siteMetadata } from "@goodfellow/react";
-import { type Config, type Data, migrate, type Plugin, Puck, Render, type UiState } from "@puckeditor/core";
+import { cx, mediaFieldKind, type SiteContextValue, SiteProvider, siteMetadata } from "@goodfellow/react";
+import {
+  type Config,
+  type Data,
+  type FieldProps,
+  migrate,
+  type Plugin,
+  Puck,
+  Render,
+  type UiState,
+} from "@puckeditor/core";
 import { type ReactNode, useMemo, useRef, useState } from "react";
 import { useAdmin, useSiteContent } from "./admin-context.js";
 import { aiPlugin } from "./ai-panel.js";
 import { storedData } from "./changes.js";
+import { MediaChooser } from "./media-library.js";
 import { usePreviewStyles } from "./preview.js";
 import { useUnsavedChanges } from "./router.js";
 import { useStrings } from "./strings.js";
@@ -85,6 +95,24 @@ function editorConfig(
           );
 
   return { ...config, root: { ...config.root, render } } as Config;
+}
+
+/** Puck's text field, with the media library's chooser below it for fields that hold a media address. */
+function TextFieldWithMedia({
+  field,
+  value,
+  onChange,
+  readOnly,
+  children,
+}: FieldProps<{ type: string; metadata?: unknown }> & { children: ReactNode }) {
+  const kind = mediaFieldKind(field);
+  if (!kind || readOnly) return <>{children}</>;
+  return (
+    <div className="gfa-media-puck-field">
+      {children}
+      <MediaChooser value={typeof value === "string" ? value : ""} kind={kind} onChange={(url) => onChange(url)} />
+    </div>
+  );
 }
 
 export interface PuckEditorProps {
@@ -196,6 +224,7 @@ export function PuckEditor({
           {children}
         </>
       ),
+      fieldTypes: { text: TextFieldWithMedia },
     }),
     [site, actions],
   );

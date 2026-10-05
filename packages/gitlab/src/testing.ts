@@ -2,8 +2,8 @@
  * A fake of the parts of GitLab's API that `@goodfellow/gitlab` uses, backed by
  * an in-memory repository, including OAuth with PKCE. For tests only.
  */
-import type { FileChange } from "@goodfellow/core";
-import { FakeRepo } from "@goodfellow/core/testing";
+import { decodeBase64, type FileChange } from "@goodfellow/core";
+import { FakeRepo, fakeFileBytes } from "@goodfellow/core/testing";
 
 export interface FakeGitLabUser {
   username: string;
@@ -158,7 +158,9 @@ export function fakeGitLab(options: FakeGitLabOptions) {
     const blob = rest.match(/^\/repository\/blobs\/([0-9a-f]{40})\/raw$/);
     if (blob) {
       const content = repo.blobs.get(blob[1] ?? "");
-      return content === undefined ? json({ message: "404 Blob Not Found" }, 404) : new Response(content);
+      return content === undefined
+        ? json({ message: "404 Blob Not Found" }, 404)
+        : new Response(fakeFileBytes(content));
     }
 
     const file = rest.match(/^\/repository\/files\/([^/]+)$/);
@@ -176,7 +178,13 @@ export function fakeGitLab(options: FakeGitLabOptions) {
       const body = (await request.json()) as {
         branch: string;
         commit_message: string;
-        actions: Array<{ action: string; file_path: string; content?: string; last_commit_id?: string }>;
+        actions: Array<{
+          action: string;
+          file_path: string;
+          content?: string;
+          encoding?: string;
+          last_commit_id?: string;
+        }>;
       };
       const files = repo.files(body.branch);
       for (const action of body.actions) {
@@ -197,7 +205,9 @@ export function fakeGitLab(options: FakeGitLabOptions) {
         body.actions.map((action) =>
           action.action === "delete"
             ? { path: action.file_path, delete: true as const }
-            : { path: action.file_path, content: action.content ?? "" },
+            : action.encoding === "base64"
+              ? { path: action.file_path, bytes: decodeBase64(action.content ?? "") }
+              : { path: action.file_path, content: action.content ?? "" },
         ),
         body.commit_message,
       );

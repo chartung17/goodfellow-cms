@@ -1,4 +1,4 @@
-import { ConflictError, type ContentStore } from "@goodfellow/core";
+import { ConflictError, type ContentStore, decodeBase64, encodeBase64Bytes } from "@goodfellow/core";
 
 /**
  * A content store that reads and writes the site's files through
@@ -24,6 +24,11 @@ export function localStore(apiBase = "/__goodfellow/api"): ContentStore {
       if (response.status === 404) return undefined;
       return ((await response.json()) as { content: string }).content;
     },
+    async readBytes(path) {
+      const response = await request(`file?path=${encodeURIComponent(path)}&as=bytes`);
+      if (response.status === 404) return undefined;
+      return decodeBase64(((await response.json()) as { base64: string }).base64);
+    },
     async list(dir) {
       const response = await request(`files?dir=${encodeURIComponent(dir)}`);
       return ((await response.json()) as { files: string[] }).files;
@@ -35,7 +40,14 @@ export function localStore(apiBase = "/__goodfellow/api"): ContentStore {
       const response = await request("write", {
         method: "POST",
         headers: { "content-type": "application/json" },
-        body: JSON.stringify({ changes, message, expectedRevision }),
+        // JSON can't carry bytes, so uploads go as base64.
+        body: JSON.stringify({
+          changes: changes.map((change) =>
+            "bytes" in change ? { path: change.path, base64: encodeBase64Bytes(change.bytes) } : change,
+          ),
+          message,
+          expectedRevision,
+        }),
       });
       return (await response.json()) as { revision: string };
     },

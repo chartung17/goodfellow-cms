@@ -7,6 +7,7 @@ import {
   type GitUser,
   type GoodfellowConfig,
   loadSiteContent,
+  MEDIA_DIR,
   SignInError,
   type SiteContent,
   writeChanges,
@@ -14,6 +15,7 @@ import {
 import { createPuckConfig } from "@goodfellow/react";
 import type { Config } from "@puckeditor/core";
 import { createContext, type ReactNode, useCallback, useContext, useEffect, useMemo, useState } from "react";
+import { createMediaPreviews, type MediaPreviews } from "./media-previews.js";
 
 /** How previews load the site's styles. Provided by the dev server or build that serves the admin panel. */
 export interface PreviewOptions {
@@ -28,7 +30,7 @@ export interface PreviewOptions {
 export type LoadState =
   | { status: "loading" }
   | { status: "error"; error: unknown }
-  | { status: "ready"; content: SiteContent; revision: string };
+  | { status: "ready"; content: SiteContent; revision: string; media: string[] };
 
 export type PublishResult = { ok: true } | { ok: false; reason: "conflict" | "error"; error: unknown };
 
@@ -52,6 +54,8 @@ interface AdminContextValue {
   state: LoadState;
   account?: Account;
   deploy?: DeployProgress;
+  /** Where to show media from in the admin panel, including files the live site doesn't have yet. */
+  mediaPreviews: MediaPreviews;
   reload(): Promise<void>;
   /** Saves changes as one commit, then reloads the site's content. */
   publish(changes: FileChange[], message: string): Promise<PublishResult>;
@@ -66,8 +70,8 @@ async function load(store: ContentStore): Promise<LoadState> {
   try {
     // Read the revision first: reads then see that revision, even if someone publishes while loading.
     const revision = await store.revision();
-    const content = await loadSiteContent(store);
-    return { status: "ready", content, revision };
+    const [content, media] = await Promise.all([loadSiteContent(store), store.list(MEDIA_DIR)]);
+    return { status: "ready", content, revision, media };
   } catch (error) {
     return { status: "error", error };
   }
@@ -100,6 +104,7 @@ export function AdminProvider({
   const pageConfig = useMemo(() => createPuckConfig(config, "page"), [config]);
   const layoutConfig = useMemo(() => createPuckConfig(config, "layout"), [config]);
   const templateConfig = useMemo(() => createPuckConfig(config, "template"), [config]);
+  const mediaPreviews = useMemo(() => createMediaPreviews(store, siteUrl), [store, siteUrl]);
 
   const loadAndHandle = useCallback(async () => {
     const next = await load(store);
@@ -165,10 +170,24 @@ export function AdminProvider({
       state,
       account,
       deploy,
+      mediaPreviews,
       reload,
       publish,
     }),
-    [config, pageConfig, layoutConfig, templateConfig, preview, siteUrl, state, account, deploy, reload, publish],
+    [
+      config,
+      pageConfig,
+      layoutConfig,
+      templateConfig,
+      preview,
+      siteUrl,
+      state,
+      account,
+      deploy,
+      mediaPreviews,
+      reload,
+      publish,
+    ],
   );
 
   return <AdminContext.Provider value={value}>{children}</AdminContext.Provider>;
@@ -181,7 +200,7 @@ export function useAdmin(): AdminContextValue {
 }
 
 /** The loaded site. Only call from screens rendered once loading has finished. */
-export function useSiteContent(): { content: SiteContent; revision: string } {
+export function useSiteContent(): { content: SiteContent; revision: string; media: string[] } {
   const { state } = useAdmin();
   if (state.status !== "ready") throw new Error("The site isn't loaded yet.");
   return state;

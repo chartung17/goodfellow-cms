@@ -80,6 +80,10 @@ Delete the setup files for the hosts you don't use.
 
 Every editor needs permission to change the repository: on GitHub, write access; on GitLab, the Developer role or higher.
 
+## Images and files
+
+Upload images and files on the admin panel's **Media** screen, or with the **Choose image** button wherever an image goes. They're saved in `public/media/`, and large photos are made web-sized automatically.
+
 ## Writing with AI
 
 The admin panel's **AI** tab can draft pages, rewrite blocks and fill in news stories. Each editor picks an AI service there. Claude and some others need the editor's own API key and charge for use; there are free options, including copying the request into a chat app such as Claude.ai. To offer only some services, or to turn the assistant off, see `ai` in [Goodfellow's README](https://github.com/chartung17/goodfellow-cms#ai-services).

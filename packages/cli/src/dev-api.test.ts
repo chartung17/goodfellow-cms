@@ -1,4 +1,4 @@
-import { mkdtemp, rm } from "node:fs/promises";
+import { mkdtemp, readFile, rm } from "node:fs/promises";
 import { createServer, type Server } from "node:http";
 import type { AddressInfo } from "node:net";
 import { tmpdir } from "node:os";
@@ -32,6 +32,24 @@ describe("handleDevApi", () => {
 
   it("ignores other URLs", async () => {
     expect((await fetch(base.replace(DEV_API_PREFIX, "/about"))).status).toBe(418);
+  });
+
+  it("uploads files as base64 and reads their bytes back", async () => {
+    const { revision } = await (await fetch(`${base}/revision`, { headers })).json();
+    const bytes = Buffer.from([0x89, 0x50, 0x4e, 0x47, 0xff, 0x00]);
+    const write = await fetch(`${base}/write`, {
+      method: "POST",
+      headers: json,
+      body: JSON.stringify({
+        changes: [{ path: "public/media/dot.png", base64: bytes.toString("base64") }],
+        message: "Upload",
+        expectedRevision: revision,
+      }),
+    });
+    expect(write.status).toBe(200);
+    expect(await readFile(join(root, "public/media/dot.png"))).toEqual(bytes);
+    const read = await (await fetch(`${base}/file?path=public/media/dot.png&as=bytes`, { headers })).json();
+    expect(Buffer.from(read.base64, "base64")).toEqual(bytes);
   });
 
   it("reads, writes and lists files", async () => {

@@ -26,7 +26,9 @@ test("signs in with GitLab without a token, and publishes", async ({ page }) => 
   await page.getByLabel("Site name").fill("Holy Name Parish");
   await page.getByRole("button", { name: "Publish" }).click();
   await expect(page.getByText("Published.", { exact: true })).toBeVisible();
-  expect(JSON.parse(fake.repo.files().get("content/site.json") ?? "{}")).toMatchObject({ title: "Holy Name Parish" });
+  expect(JSON.parse(String(fake.repo.files().get("content/site.json") ?? "{}"))).toMatchObject({
+    title: "Holy Name Parish",
+  });
 });
 
 test("offers a token instead of GitLab sign-in", async ({ page }) => {

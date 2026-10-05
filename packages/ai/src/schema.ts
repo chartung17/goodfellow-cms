@@ -48,8 +48,16 @@ function withDescription(schema: JsonSchema, description: string | undefined): J
 /** The schema for one field's value, or `undefined` for fields the AI doesn't fill in (slots, external data). */
 export function fieldSchema(field: AnyField): JsonSchema | undefined {
   switch (field.type) {
-    case "text":
-      return withDescription({ type: "string" }, describe(field));
+    case "text": {
+      const media = (field.metadata as { media?: unknown } | undefined)?.media;
+      const hint =
+        media === "image"
+          ? "The address of one of the site's images, or empty"
+          : media === "file"
+            ? "The address of one of the site's files, or empty"
+            : undefined;
+      return withDescription({ type: "string" }, describe(field, hint));
+    }
     case "textarea":
       return withDescription({ type: "string" }, describe(field, "Plain text; line breaks allowed"));
     case "richtext":

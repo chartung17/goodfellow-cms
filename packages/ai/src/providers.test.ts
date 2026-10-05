@@ -9,6 +9,7 @@ const site: SiteSummary = {
   language: "en",
   pages: [{ path: "/", title: "Home" }],
   collections: [],
+  images: ["/media/church.jpg"],
 };
 
 const config = {
@@ -28,6 +29,7 @@ describe("buildRequest", () => {
     expect(request.prompt).toContain('The site is "Holy Name": A parish in Kansas City.');
     expect(request.prompt).toContain('/ ("Home")');
     expect(request.prompt).toContain("A welcome heading");
+    expect(request.prompt).toContain("Images in its media library, which image fields can use: /media/church.jpg.");
     expect(request.system).toContain("Never invent facts");
   });
 

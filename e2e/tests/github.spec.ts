@@ -68,7 +68,7 @@ test("publishes over someone else's change to a different page, but not to the s
   await page.locator('.gfa-editor input[name="text"]:visible').fill("Mine");
 
   // Someone else edits the home page, then publishing still works.
-  const home = fake.repo.files().get("content/pages/index.json") ?? "";
+  const home = String(fake.repo.files().get("content/pages/index.json") ?? "");
   fake.commit([{ path: "content/pages/index.json", content: home.replace("Welcome to my site", "Theirs") }], "Theirs");
   await page.locator(".gfa-editor").getByText("Publish", { exact: true }).click();
   await expect(page.getByText("Published.", { exact: true })).toBeVisible();
@@ -76,7 +76,7 @@ test("publishes over someone else's change to a different page, but not to the s
   expect(fake.repo.files().get("content/pages/about.json")).toContain('"text": "Mine"');
 
   // Someone else edits this page: publishing stops instead of overwriting them.
-  const about = fake.repo.files().get("content/pages/about.json") ?? "";
+  const about = String(fake.repo.files().get("content/pages/about.json") ?? "");
   fake.commit(
     [{ path: "content/pages/about.json", content: about.replace('"text": "Mine"', '"text": "Theirs too"') }],
     "Theirs",
@@ -127,4 +127,31 @@ test("asks to sign in again when the token stops working", async ({ page }) => {
   await page.getByRole("button", { name: "Publish" }).click();
   await expect(page.getByRole("heading", { name: "Sign in to edit this site" })).toBeVisible();
   await expect(page.getByRole("alert")).toContainText("your sign-in expired");
+});
+
+test("uploads an image and shows it before the live site has it", async ({ page }) => {
+  const fake = await setup(page);
+  await signIn(page);
+  await page.goto(`${GITHUB_SITE}/admin/#/media`);
+  const dataUrl = await page.evaluate(() => {
+    const canvas = document.createElement("canvas");
+    canvas.width = 2;
+    canvas.height = 2;
+    return canvas.toDataURL("image/png");
+  });
+  const png = Buffer.from(dataUrl.split(",")[1] ?? "", "base64");
+  await page
+    .locator('input[type="file"][aria-label="Upload files"]')
+    .setInputFiles({ name: "Dot.png", mimeType: "image/png", buffer: png });
+  await expect(page.getByText("Uploaded.", { exact: false })).toBeVisible();
+  expect(fake.repo.files().get("public/media/dot.png")).toBeInstanceOf(Uint8Array);
+
+  const thumb = page.locator(".gfa-media-card", { hasText: "dot.png" }).locator("img");
+  await expect.poll(() => thumb.evaluate((image: HTMLImageElement) => image.naturalWidth)).toBe(2);
+
+  // After a reload the copy in memory is gone, and the live site still doesn't have the file: it's read from GitHub.
+  await page.reload();
+  const reloaded = page.locator(".gfa-media-card", { hasText: "dot.png" }).locator("img");
+  await expect(reloaded).toHaveAttribute("src", /^blob:/);
+  await expect.poll(() => reloaded.evaluate((image: HTMLImageElement) => image.naturalWidth)).toBe(2);
 });

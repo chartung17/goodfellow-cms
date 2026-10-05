@@ -133,12 +133,21 @@ function defaultStorages(): { local?: StorageLike; session?: StorageLike } {
   }
 }
 
-/** Encodes text as base64, handling any Unicode. */
-export function encodeBase64(text: string): string {
-  const bytes = new TextEncoder().encode(text);
+/** Encodes bytes as base64. */
+export function encodeBase64Bytes(bytes: Uint8Array): string {
   let binary = "";
   for (let i = 0; i < bytes.length; i += 0x8000) {
     binary += String.fromCharCode(...bytes.subarray(i, i + 0x8000));
   }
   return btoa(binary);
+}
+
+/** Encodes text as base64, handling any Unicode. */
+export function encodeBase64(text: string): string {
+  return encodeBase64Bytes(new TextEncoder().encode(text));
+}
+
+/** Decodes base64 into bytes. */
+export function decodeBase64(base64: string): Uint8Array {
+  return Uint8Array.from(atob(base64), (char) => char.charCodeAt(0));
 }

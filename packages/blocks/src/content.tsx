@@ -1,4 +1,4 @@
-import { classNameField, cx } from "@goodfellow/react";
+import { classNameField, cx, mediaField } from "@goodfellow/react";
 import type { ComponentConfig, RichText } from "@puckeditor/core";
 import { options, yesNo } from "./options.js";
 
@@ -143,7 +143,7 @@ const aspectClasses: Record<Aspect, string> = {
 export const Image: ComponentConfig<ImageProps> = {
   label: "Image",
   fields: {
-    src: { type: "text", label: "Image (URL)" },
+    src: mediaField("Image"),
     alt: { type: "text", label: "Description for screen readers" },
     caption: { type: "text", label: "Caption" },
     aspect: {

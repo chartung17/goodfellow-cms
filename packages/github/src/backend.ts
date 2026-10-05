@@ -2,6 +2,7 @@ import {
   ConflictError,
   type DeployStatus,
   encodeBase64,
+  encodeBase64Bytes,
   type FileChange,
   GitApiError,
   type GitBackend,
@@ -99,6 +100,15 @@ export class GitHubBackend implements GitBackend {
     return blob;
   }
 
+  async readBytes(path: string): Promise<Uint8Array | undefined> {
+    const sha = (await this.currentTree()).get(path);
+    if (!sha) return undefined;
+    const response = await githubRequest(this.api, `/repos/${this.repo}/git/blobs/${sha}`, {
+      accept: "application/vnd.github.raw+json",
+    });
+    return new Uint8Array(await response.arrayBuffer());
+  }
+
   async list(dir: string): Promise<string[]> {
     const prefix = `${dir}/`;
     return [...(await this.currentTree()).keys()].filter((path) => path.startsWith(prefix)).sort();
@@ -107,7 +117,14 @@ export class GitHubBackend implements GitBackend {
   async write(changes: FileChange[], { message, expectedRevision }: WriteOptions): Promise<{ revision: string }> {
     const existing = await this.tree(expectedRevision);
     const additions = changes.flatMap((change) =>
-      "delete" in change ? [] : [{ path: change.path, contents: encodeBase64(change.content) }],
+      "delete" in change
+        ? []
+        : [
+            {
+              path: change.path,
+              contents: "bytes" in change ? encodeBase64Bytes(change.bytes) : encodeBase64(change.content),
+            },
+          ],
     );
     // GitHub refuses to delete files that don't exist, and there's nothing to do for them anyway.
     const deletions = changes.flatMap((change) =>

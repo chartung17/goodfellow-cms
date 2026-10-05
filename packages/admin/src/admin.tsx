@@ -7,6 +7,7 @@ import { CollectionSettingsScreen } from "./collection-settings.js";
 import { CollectionsScreen } from "./collections-screen.js";
 import { LayoutEditorScreen, PageEditorScreen } from "./editor-screens.js";
 import { EntryEditorScreen } from "./entry-editor.js";
+import { MediaScreen } from "./media-library.js";
 import { PagesScreen } from "./pages-screen.js";
 import { useRoute } from "./router.js";
 import { SETTINGS_TABS, SettingsScreen, type SettingsTab } from "./settings-screen.js";
@@ -71,6 +72,7 @@ function Screen() {
   const { segments, params } = useRoute();
   const [section, sub, tab] = segments;
 
+  if (section === "media") return <MediaScreen />;
   if (section === "collections") {
     return sub ? <CollectionRoute id={sub} sub={tab} slug={params.get("slug") ?? ""} /> : <CollectionsScreen />;
   }
@@ -123,7 +125,10 @@ function Shell() {
   const t = useStrings();
   const { state, siteUrl } = useAdmin();
   const [section] = useRoute().segments;
-  const current = section === "layout" || section === "settings" || section === "collections" ? section : "pages";
+  const current =
+    section === "layout" || section === "settings" || section === "collections" || section === "media"
+      ? section
+      : "pages";
 
   return (
     <div className="gfa-app">
@@ -135,6 +140,9 @@ function Shell() {
           </AppLink>
           <AppLink href="#/collections" aria-current={current === "collections" ? "page" : undefined}>
             {t("nav.collections")}
+          </AppLink>
+          <AppLink href="#/media" aria-current={current === "media" ? "page" : undefined}>
+            {t("nav.media")}
           </AppLink>
           <AppLink href="#/layout/header" aria-current={current === "layout" ? "page" : undefined}>
             {t("nav.layout")}

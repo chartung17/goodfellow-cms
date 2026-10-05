@@ -1,11 +1,13 @@
 import { type FSWatcher, watch } from "node:fs";
+import { readFile } from "node:fs/promises";
 import type { IncomingMessage, ServerResponse } from "node:http";
-import { join, resolve } from "node:path";
+import { join, resolve, sep } from "node:path";
 import {
   allPages,
   CONTENT_DIR,
   ContentError,
   loadSiteContent,
+  MEDIA_DIR,
   normalizePagePath,
   type Page,
   type SiteContent,
@@ -112,6 +114,52 @@ function watchContent(server: ViteDevServer, root: string, styles: () => StylesE
   });
 }
 
+const MEDIA_TYPES: Record<string, string> = {
+  jpg: "image/jpeg",
+  jpeg: "image/jpeg",
+  png: "image/png",
+  gif: "image/gif",
+  webp: "image/webp",
+  avif: "image/avif",
+  svg: "image/svg+xml",
+  ico: "image/x-icon",
+  pdf: "application/pdf",
+  mp3: "audio/mpeg",
+  m4a: "audio/mp4",
+  mp4: "video/mp4",
+  webm: "video/webm",
+};
+
+/**
+ * Serves `public/media/` straight from disk. Vite serves `public/` from a list
+ * it keeps as files change, which misses files when the folder itself is
+ * replaced (such as by switching branches), and uploads must show up at once.
+ */
+function serveMedia(root: string) {
+  const dir = resolve(root, MEDIA_DIR);
+  return async (req: IncomingMessage, res: ServerResponse, next: () => void) => {
+    if (req.method !== "GET" && req.method !== "HEAD") return next();
+    const pathname = new URL(req.url ?? "/", "http://localhost").pathname;
+    if (!pathname.startsWith("/media/")) return next();
+    let file: string;
+    try {
+      file = resolve(dir, decodeURIComponent(pathname.slice("/media/".length)));
+    } catch {
+      return next();
+    }
+    if (!file.startsWith(`${dir}${sep}`)) return next();
+    try {
+      const data = await readFile(file);
+      const extension = file.slice(file.lastIndexOf(".") + 1).toLowerCase();
+      res.setHeader("Content-Type", MEDIA_TYPES[extension] ?? "application/octet-stream");
+      res.setHeader("Cache-Control", "no-cache");
+      res.end(req.method === "HEAD" ? undefined : data);
+    } catch {
+      next();
+    }
+  };
+}
+
 /** Serves the local backend's API, the admin panel at /admin, and pages rendered on request from the files on disk. */
 function devPlugin(root: string, styles: () => StylesEntries): Plugin {
   const store = localFileStore(root);
@@ -119,6 +167,7 @@ function devPlugin(root: string, styles: () => StylesEntries): Plugin {
     name: "goodfellow:dev",
     configureServer(server: ViteDevServer) {
       watchContent(server, root, styles);
+      server.middlewares.use(serveMedia(root));
 
       // Runs after Vite's own middleware, so modules, assets and public/ files are served first.
       return () => {
@@ -189,8 +238,10 @@ export async function dev(options: DevOptions = {}): Promise<ViteDevServer> {
     server: {
       port: options.port ?? 4321,
       strictPort: options.port !== undefined,
-      // Watched separately by watchContent().
-      watch: { ignored: [`${join(root, CONTENT_DIR)}/**`] },
+      // content/ is watched separately by watchContent(), and media is served by serveMedia(). Vite
+      // mustn't watch either: Tailwind's plugin reloads every open page when a file it scans changes,
+      // which would reload the admin panel in the middle of publishing.
+      watch: { ignored: [`${join(root, CONTENT_DIR)}/**`, `${join(root, MEDIA_DIR)}/**`] },
     },
     plugins: [
       react(),
