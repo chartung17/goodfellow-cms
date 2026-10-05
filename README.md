@@ -4,7 +4,7 @@ A git-based website builder built on the [Puck](https://puckeditor.com) visual e
 
 Goodfellow gives non-technical site owners a drag-and-drop editor at `/admin` with no server, database or monthly hosting bill. Pages are stored as files in the site's own GitHub or GitLab repository. Every save is a commit, and a free static host (GitHub Pages, GitLab Pages or Vercel) rebuilds the site.
 
-> **Status: early development.** Static rendering, the admin panel, collections, the AI assistant, the media library, publishing to GitHub or GitLab and `create-goodfellow` work, with deploy setups for GitHub Pages, GitLab Pages and Vercel. Nothing is published to npm yet. This README describes what Goodfellow is meant to become; the [roadmap](#roadmap) shows what exists.
+> **Status: early development.** Static rendering, the admin panel, collections, the AI assistant, the media library, publishing to GitHub or GitLab, `create-goodfellow` and the Next.js adapter work, with deploy setups for GitHub Pages, GitLab Pages and Vercel. Nothing is published to npm yet. This README describes what Goodfellow is meant to become; the [roadmap](#roadmap) shows what exists.
 
 ## How it works
 
@@ -36,7 +36,7 @@ Planned for the first release:
   - **GitHub:** a "Sign in" button opens GitHub's token page with the right permissions already filled in.
   - **GitLab:** one-click OAuth sign-in (PKCE), after the site owner registers an OAuth application once.
 - **Deploy setups** for GitHub Pages, GitLab Pages and Vercel, including a nightly rebuild for time-based content.
-- **Works with or without a framework.** A standalone command-line tool builds the site with no framework at all, and a Next.js adapter is planned.
+- **Works with or without a framework.** A standalone command-line tool builds the site with no framework at all, or the site can be part of a Next.js app.
 
 Planned for later: OAuth sign-in for GitHub via a small Cloudflare Worker, a Claude connector for editing the site from a chat, more component libraries (shadcn first), review workflows (pull/merge requests from the admin panel), per-user permissions, import/export, plugins and themes, and Bitbucket support.
 
@@ -69,10 +69,11 @@ Create a new site with Node 22 or later:
 npm create goodfellow@latest my-site
 ```
 
-It asks which site to start from, where the site will be stored (GitHub or GitLab) and where it will be hosted, with each host's rules for business sites, and sets the site up to match. Two sites are available:
+It asks which site to start from, where the site will be stored (GitHub or GitLab) and where it will be hosted, with each host's rules for business sites, and sets the site up to match. Three sites are available:
 
 - **Starter** (`templates/starter`): a home page, an about page and a news section.
 - **Parish example** (`examples/parish`): a made-up parish with Mass times, events, news, bulletins and staff, and blocks of its own. It shows what a complete site looks like and how a developer adds blocks.
+- **Starter for Next.js** (`templates/next`): the starter as a Next.js app, for developers who want their own Next.js pages beside the site's. See [Next.js](#nextjs).
 
 To skip the questions, give the answers as options: `npm create goodfellow@latest my-site -- --template parish --github your-name/your-site --host github-pages`. Run it with `--help` for the full list.
 
@@ -81,13 +82,24 @@ Until Goodfellow is published to npm, try the sites in this repository instead (
 ```sh
 pnpm install
 pnpm build
-cd templates/starter   # or examples/parish
+cd templates/starter   # or examples/parish; templates/next has its own commands
 pnpm dev        # site at http://localhost:4321, admin panel at http://localhost:4321/admin
 pnpm build      # writes the static site to dist/
 pnpm preview    # serves dist/ the way a static host would
 ```
 
 To put a site online, follow [the starter's README](templates/starter/README.md): it covers storing the site on GitHub or GitLab, choosing a host, and setting up sign-in.
+
+### Next.js
+
+`@goodfellow/next` puts a Goodfellow site in a Next.js app (App Router, Next.js 16). The site's pages render as Server Components with the same HTML as `goodfellow build` and no JavaScript for the blocks, and `next build` exports everything as static files, so the same free hosts serve it. [The Next.js starter](templates/next/README.md) has it all set up:
+
+- `withGoodfellow()` in `next.config.ts` exports static files with a folder per page, and in `next dev` runs the admin panel's local backend, which saves to the files on disk. The local backend is never part of a build.
+- `goodfellowPages(config)` gives the routes their parts: `Page`, `generateStaticParams` and `generateMetadata` for `app/[[...path]]/page.tsx`, `NotFound` for `app/not-found.tsx`, and `sitemap` and `robots`.
+- `<GoodfellowAdmin config={config} />` from `@goodfellow/next/admin` is the admin panel, in a Client Component at `app/admin/page.tsx`.
+- `@goodfellow/react` has a Server Components version that Next.js picks automatically, so the same blocks work in both. Blocks can't use React hooks such as `useState`, and read site data with `useSite()`.
+
+Limits for now: the site must be served from the root of its address (`basePath` isn't supported), and blocks can't use Next.js features, since they're shared with sites built without it.
 
 ### Commands
 
@@ -164,7 +176,7 @@ This is a pnpm workspace managed with Turborepo.
 
 | Path | Package | Purpose | Status |
 |---|---|---|---|
-| `packages/core` | `@goodfellow/core` | Config, content model, collections, migrations, the `GitBackend` interface and, later, Puck data diff and merge. No React or DOM. | Started |
+| `packages/core` | `@goodfellow/core` | Config, content model, collections, migrations, the `GitBackend` interface and, later, Puck data diff and merge. No React or DOM. `@goodfellow/core/node` reads sites from disk and runs the local backend. | Started |
 | `packages/github` | `@goodfellow/github` | GitHub backend and token sign-in | Started |
 | `packages/gitlab` | `@goodfellow/gitlab` | GitLab backend, with OAuth (PKCE) and token sign-in | Started |
 | `packages/react` | `@goodfellow/react` | Page renderer: layout, class names, theme and collection templates | Started |
@@ -172,11 +184,12 @@ This is a pnpm workspace managed with Turborepo.
 | `packages/ai` | `@goodfellow/ai` | The AI assistant's requests, answer checking and AI service clients. No React. | Started |
 | `packages/blocks` | `@goodfellow/blocks` | Built-in, library-agnostic blocks | Started |
 | `packages/cli` | `goodfellow` | `goodfellow dev`, `build` and `preview` | Started |
-| `packages/next` | `@goodfellow/next` | Next.js adapter | Planned |
+| `packages/next` | `@goodfellow/next` | Next.js adapter: pages as Server Components, static export, the admin panel | Started |
 | `packages/create-goodfellow` | `create-goodfellow` | Creates a new site from the starter or an example | Started |
 | `templates/starter` | | The starter site copied by `create-goodfellow` | Started |
+| `templates/next` | | The starter as a Next.js app | Started |
 | `examples/parish` | | Example site for a made-up parish, with collections and custom blocks | Started |
-| `e2e/` | | End-to-end tests of the admin panel, run against a copy of the starter site | Started |
+| `e2e/` | | End-to-end tests of the admin panel, run against copies of the starter and the Next.js starter | Started |
 
 ### A Goodfellow site
 
@@ -210,7 +223,7 @@ my-site/
 5. **AI assistant** (done). Draft and rewrite pages with Claude, OpenAI or a free AI service, called straight from the editor's browser with the editor's own key. Editors without a key can copy a prompt into Claude.ai or another chat app and paste the answer back.
 6. **Media library** (done). Upload, browse and replace images and files from the admin panel, and choose them for blocks and settings.
 7. **Starters** (done). `create-goodfellow`, which creates a site and sets up its storage and host, and an example parish site with collections and custom blocks.
-8. **Next.js adapter.**
+8. **Next.js adapter** (done). Goodfellow pages and the admin panel in a Next.js app, exported as static files, with a Next.js starter. Serving a Next.js site from a subfolder (`basePath`) comes later.
 9. **Documentation site.** Guides for site owners and editors, plus reference docs for developers. Includes each host's rules for commercial sites on its free plan, kept up to date.
 10. **Site setup without a developer.** A web page where anyone can create a site from a starter, store it on GitHub or GitLab, and put it online with GitHub Pages, GitLab Pages or Vercel. It asks what the site is for and recommends a host whose free plan allows it, such as GitLab Pages for a business. Builds work out which repository they're in, so nobody has to edit the config.
 11. **Custom domains.** Connect a domain from the admin panel. Goodfellow sets the domain on the host where it can, lists the records to add at the domain's registrar, with guides for popular registrars, and shows when the domain is working.

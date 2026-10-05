@@ -21,7 +21,7 @@ const HELP = `Creates a new Goodfellow site.
 Usage: npm create goodfellow@latest [folder] -- [options]
 
 Options:
-  --template <name>   starter (the default) or parish
+  --template <name>   starter (the default), parish, or next for a Next.js site
   --github <repo>     The GitHub repository the site will be stored in, such as your-name/your-site
   --gitlab <project>  The GitLab project the site will be stored in, such as your-group/your-site
   --host <host>       github-pages, gitlab-pages or vercel. Keeps only that host's setup file.

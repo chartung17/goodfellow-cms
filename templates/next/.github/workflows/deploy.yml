@@ -1,0 +1,53 @@
+# Builds the site and publishes it with GitHub Pages whenever the main branch
+# changes (including every Publish in the admin panel), and once a night so
+# date-based content stays current. In the repository's Settings → Pages, set
+# "Source" to "GitHub Actions". See README.md.
+name: Deploy to GitHub Pages
+
+on:
+  push:
+    branches: [main]
+  schedule:
+    - cron: "17 4 * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 22
+          cache: npm
+      - id: pages
+        uses: actions/configure-pages@v5
+      # This site must be served from the root of its address: a user or organization site, or a custom domain.
+      - if: steps.pages.outputs.base_path != ''
+        run: |
+          echo "::error::GitHub Pages serves this site from ${{ steps.pages.outputs.base_path }}/, but a Next.js Goodfellow site must be served from the root of its address. Use a custom domain, a your-name.github.io repository, or another host. See README.md."
+          exit 1
+      - run: npm ci
+      - run: npx next build
+      - uses: actions/upload-pages-artifact@v4
+        with:
+          path: out
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v4

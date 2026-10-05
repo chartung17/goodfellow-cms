@@ -2,6 +2,13 @@ export { cx } from "./cx.js";
 export { applyEntry, placeholderValues } from "./entry.js";
 export { PageBody, type PageBodyProps, siteMetadata } from "./page-body.js";
 export {
+  applyPageEntry,
+  createPuckConfigs,
+  type PreparedPage,
+  type PuckConfigs,
+  preparePage,
+} from "./prepare.js";
+export {
   classNameField,
   createPuckConfig,
   isTemplateOnly,

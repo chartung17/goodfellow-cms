@@ -1,5 +1,5 @@
 import { cp, mkdir, readdir, readFile, rename, rm, rmdir, writeFile } from "node:fs/promises";
-import { basename, join, resolve } from "node:path";
+import { basename, join, relative, resolve, sep } from "node:path";
 
 /** The sites a new site can start from. The keys are what `--template` takes. */
 export const TEMPLATES = {
@@ -7,6 +7,10 @@ export const TEMPLATES = {
   parish: {
     label: "Parish example",
     description: "A made-up parish with Mass times, events, news, bulletins and staff, and blocks of its own",
+  },
+  next: {
+    label: "Starter for Next.js",
+    description: "The starter as a Next.js site, for developers who want their own Next.js pages beside it",
   },
 } as const;
 
@@ -52,8 +56,11 @@ export class ScaffoldError extends Error {
   override name = "ScaffoldError";
 }
 
-/** Folders that are never copied: installed packages and build output. */
-const SKIPPED = new Set(["node_modules", "dist", ".turbo"]);
+/** Never copied, wherever they are: installed packages and build caches. */
+const SKIPPED = new Set(["node_modules", ".turbo"]);
+
+/** Never copied from the template's own folder: build output, and files only the Goodfellow repository uses. */
+const SKIPPED_AT_ROOT = new Set(["dist", "out", ".next", "next-env.d.ts", "turbo.json"]);
 
 /**
  * npm leaves `.gitignore` files out of published packages, so templates are
@@ -68,7 +75,10 @@ export const BUNDLED_GITIGNORE = "_gitignore";
 export async function copyTemplate(from: string, to: string, { bundling = false } = {}): Promise<void> {
   await cp(from, to, {
     recursive: true,
-    filter: (source) => !SKIPPED.has(basename(source)),
+    filter: (source) => {
+      const path = relative(from, source).split(sep);
+      return !path.some((part) => SKIPPED.has(part)) && !SKIPPED_AT_ROOT.has(path[0] ?? "");
+    },
   });
   const [find, replace] = bundling ? [".gitignore", BUNDLED_GITIGNORE] : [BUNDLED_GITIGNORE, ".gitignore"];
   for (const file of await readdir(to, { recursive: true })) {

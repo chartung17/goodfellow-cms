@@ -1,19 +1,7 @@
-import type { Collection, Entry, Menus, SiteSettings } from "@goodfellow/core";
 import { createContext, type ReactNode, useContext } from "react";
+import type { SiteContextValue } from "./site-types.js";
 
-/** What every block can know about the site and the page being rendered. */
-export interface SiteContextValue {
-  settings: SiteSettings;
-  menus: Menus;
-  /** The URL path of the page being rendered, such as `/about`. */
-  path: string;
-  /** Every collection, with its entries. */
-  collections: Collection[];
-  /** The collection whose template is being rendered or edited. */
-  collection?: Collection;
-  /** The entry being rendered, on an entry's page. */
-  entry?: Entry;
-}
+export type { SiteContextValue } from "./site-types.js";
 
 const SiteContext = createContext<SiteContextValue | null>(null);
 

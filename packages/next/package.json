@@ -1,0 +1,57 @@
+{
+  "name": "@goodfellow/next",
+  "version": "0.0.0",
+  "description": "Goodfellow pages and the admin panel in a Next.js site.",
+  "license": "MIT",
+  "type": "module",
+  "sideEffects": [
+    "./dist/admin.js"
+  ],
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js",
+      "default": "./dist/index.js"
+    },
+    "./config": {
+      "types": "./dist/config.d.ts",
+      "import": "./dist/config.js",
+      "default": "./dist/config.js"
+    },
+    "./admin": {
+      "types": "./dist/admin.d.ts",
+      "import": "./dist/admin.js",
+      "default": "./dist/admin.js"
+    },
+    "./package.json": "./package.json"
+  },
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "node scripts/embed.mjs && tsdown",
+    "typecheck": "node scripts/embed.mjs && tsc -p tsconfig.json",
+    "test": "node scripts/embed.mjs && vitest run"
+  },
+  "dependencies": {
+    "@goodfellow/core": "workspace:*",
+    "@goodfellow/react": "workspace:*"
+  },
+  "peerDependencies": {
+    "@goodfellow/admin": "workspace:*",
+    "@puckeditor/core": "0.23.0",
+    "next": "^16.0.0",
+    "react": "^19.0.0",
+    "react-dom": "^19.0.0"
+  },
+  "devDependencies": {
+    "@goodfellow/admin": "workspace:*",
+    "@puckeditor/core": "0.23.0",
+    "@tailwindcss/browser": "4.3.3",
+    "@types/react": "^19.2.0",
+    "@types/react-dom": "^19.2.0",
+    "next": "16.3.8",
+    "react": "19.3.0",
+    "react-dom": "19.3.0"
+  }
+}

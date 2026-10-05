@@ -1,0 +1,10 @@
+{
+  "$schema": "https://turbo.build/schema.json",
+  "extends": ["//"],
+  "tasks": {
+    "test": {
+      // The tests check the Next.js template's static export against the starter's `goodfellow build`.
+      "dependsOn": ["^build", "@goodfellow/template-next#build", "@goodfellow/template-starter#build"]
+    }
+  }
+}

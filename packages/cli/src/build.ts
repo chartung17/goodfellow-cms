@@ -1,10 +1,10 @@
 import { mkdir, readFile, rm, writeFile } from "node:fs/promises";
 import { dirname, join, relative, resolve } from "node:path";
 import { absoluteUrl, allPages, loadSiteContent, pageOutputFile } from "@goodfellow/core";
+import { fileSystemSource } from "@goodfellow/core/node";
 import { createServer, build as viteBuild } from "vite";
 import { ADMIN_ENTRY, adminEntryPlugin, adminHtml } from "./admin-entry.js";
 import { applyBasePath, normalizeBase } from "./base-path.js";
-import { fileSystemSource } from "./fs-source.js";
 import { baseViteConfig, findConfigFile, loadServerEntry, writeStylesEntries } from "./site.js";
 
 export interface BuildOptions {

@@ -4,8 +4,8 @@ import type { AddressInfo } from "node:net";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
-import { DEV_API_PREFIX, handleDevApi } from "./dev-api.js";
-import { localFileStore } from "./local-files.js";
+import { DEV_API_PREFIX, handleDevApi, isLocalOrigin } from "./node-dev-api.js";
+import { localFileStore } from "./node-local-files.js";
 
 describe("handleDevApi", () => {
   let root: string;
@@ -107,5 +107,18 @@ describe("handleDevApi", () => {
     expect(bad.status).toBe(400);
     const notJson = await fetch(`${base}/write`, { method: "POST", headers: json, body: "{ nope" });
     expect(notJson.status).toBe(400);
+  });
+});
+
+describe("isLocalOrigin", () => {
+  it("trusts pages on this computer, whatever their port", () => {
+    expect(isLocalOrigin("http://localhost:3000", "localhost:4399")).toBe(true);
+    expect(isLocalOrigin("http://127.0.0.1:3000", "127.0.0.1:4399")).toBe(true);
+  });
+
+  it("doesn't trust other websites, even ones whose name points at this computer", () => {
+    expect(isLocalOrigin("https://evil.example", "localhost:4399")).toBe(false);
+    expect(isLocalOrigin("http://localhost:3000", "evil.example:3000")).toBe(false);
+    expect(isLocalOrigin("not a url", "localhost")).toBe(false);
   });
 });

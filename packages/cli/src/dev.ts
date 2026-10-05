@@ -12,12 +12,10 @@ import {
   type Page,
   type SiteContent,
 } from "@goodfellow/core";
+import { fileSystemSource, handleDevApi, localFileStore } from "@goodfellow/core/node";
 import react from "@vitejs/plugin-react";
 import { createServer, type Plugin, type ViteDevServer } from "vite";
 import { ADMIN_ENTRY, adminEntryPlugin, adminHtml } from "./admin-entry.js";
-import { handleDevApi } from "./dev-api.js";
-import { fileSystemSource } from "./fs-source.js";
-import { localFileStore } from "./local-files.js";
 import {
   baseViteConfig,
   devUrl,

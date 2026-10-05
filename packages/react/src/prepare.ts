@@ -1,0 +1,94 @@
+import { findEntry, type GoodfellowConfig, type Page, type SiteContent } from "@goodfellow/core";
+import type { Config, Data, Metadata } from "@puckeditor/core";
+// The server entry works everywhere and has no browser-only code, so Server Components can prepare pages too.
+import { migrate, resolveAllData } from "@puckeditor/core/rsc";
+import { applyEntry } from "./entry.js";
+import { createPuckConfig } from "./puck-config.js";
+import { type SiteContextValue, siteMetadata } from "./site-types.js";
+
+/** The Puck configs a site's pages are rendered with. */
+export interface PuckConfigs {
+  page: Config;
+  layout: Config;
+  template: Config;
+}
+
+export function createPuckConfigs(config: GoodfellowConfig): PuckConfigs {
+  return {
+    page: createPuckConfig(config, "page"),
+    layout: createPuckConfig(config, "layout"),
+    template: createPuckConfig(config, "template"),
+  };
+}
+
+/** Everything `<PageBody>` needs to render a page. */
+export interface PreparedPage {
+  site: SiteContextValue;
+  /** The page, with an entry's values filled into its collection's template. */
+  page: Page;
+  pageConfig: Config;
+  layoutConfig: Config;
+  data: Data;
+  header: Data;
+  footer: Data;
+}
+
+/**
+ * Brings stored Puck data up to date with the installed Puck version, then runs
+ * every block's `resolveData`, so blocks can fetch or compute content at build time.
+ */
+async function prepareData(data: unknown, config: Config, metadata: Metadata): Promise<Data> {
+  const stored = data as Data;
+  // Puck's DropZone-to-slot migration needs the config and logs on every call, so only run it on data that has zones.
+  const migrated = migrate(stored, stored.zones && Object.keys(stored.zones).length > 0 ? config : undefined);
+  return resolveAllData(migrated, config, metadata);
+}
+
+/** The entry a page shows, if it's an entry's page. */
+function pageEntry(content: SiteContent, page: Page) {
+  if (!page.entry) return undefined;
+  const found = findEntry(content, page.entry.collection, page.entry.slug);
+  if (!found) throw new Error(`${page.file} isn't an entry in the "${page.entry.collection}" collection.`);
+  return found;
+}
+
+/**
+ * The page with an entry's values filled into its collection's template, such
+ * as its title for the browser tab. Other pages are returned as they are.
+ */
+export function applyPageEntry(configs: PuckConfigs, content: SiteContent, page: Page): Page {
+  const found = pageEntry(content, page);
+  if (!found) return page;
+  const data = applyEntry(
+    migrate(page.content.data as Data),
+    configs.template,
+    found.collection,
+    found.entry,
+    content.settings.language,
+  );
+  return { ...page, content: { ...page.content, data: data as Page["content"]["data"] } };
+}
+
+/** Gets a page ready to render: fills in an entry's values, and resolves the page, header and footer. */
+export async function preparePage(configs: PuckConfigs, content: SiteContent, page: Page): Promise<PreparedPage> {
+  const { settings } = content;
+  const found = pageEntry(content, page);
+  const site: SiteContextValue = {
+    settings,
+    menus: content.menus,
+    path: page.path,
+    collections: content.collections,
+    ...(found && { collection: found.collection, entry: found.entry }),
+  };
+  // An entry's page is its collection's template, with the entry's values filled in.
+  const pageConfig = found ? configs.template : configs.page;
+  const applied = applyPageEntry(configs, content, page);
+
+  const metadata = siteMetadata(site);
+  const [data, header, footer] = await Promise.all([
+    prepareData(applied.content.data, pageConfig, metadata),
+    prepareData(content.header.data, configs.layout, metadata),
+    prepareData(content.footer.data, configs.layout, metadata),
+  ]);
+  return { site, page: applied, pageConfig, layoutConfig: configs.layout, data, header, footer };
+}

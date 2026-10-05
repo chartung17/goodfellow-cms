@@ -17,6 +17,7 @@ import {
 const repo = resolve(import.meta.dirname, "../../..");
 const starter = join(repo, "templates/starter");
 const parish = join(repo, "examples/parish");
+const next = join(repo, "templates/next");
 
 const versions = {
   "@goodfellow/admin": "1.2.3",
@@ -64,6 +65,19 @@ describe("scaffold", () => {
     expect(existsSync(join(target, "blocks/mass-times.tsx"))).toBe(true);
     expect(existsSync(join(target, "content/collections/events/_collection.json"))).toBe(true);
     expect(await readFile(join(target, "goodfellow.config.tsx"), "utf8")).toContain("MassTimes");
+  });
+
+  it("copies the Next.js starter without its build output", async () => {
+    const target = join(dir, "next-site");
+    await scaffold({ template: next, target, versions: { ...versions, "@goodfellow/next": "1.2.3" }, host: "vercel" });
+    const pkg = JSON.parse(await readFile(join(target, "package.json"), "utf8"));
+    expect(pkg.dependencies["@goodfellow/next"]).toBe("^1.2.3");
+    expect(existsSync(join(target, "app/[[...path]]/page.tsx"))).toBe(true);
+    expect(existsSync(join(target, "next.config.ts"))).toBe(true);
+    for (const skipped of ["out", ".next", "next-env.d.ts", "turbo.json"]) {
+      expect(existsSync(join(target, skipped)), skipped).toBe(false);
+    }
+    expect(existsSync(join(target, ".gitlab-ci.yml"))).toBe(false);
   });
 
   it("sets up the chosen backend and keeps only the chosen host's setup", async () => {

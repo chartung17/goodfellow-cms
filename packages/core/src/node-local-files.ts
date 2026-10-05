@@ -1,15 +1,8 @@
 import { createHash } from "node:crypto";
 import { mkdir, readFile, rm, writeFile } from "node:fs/promises";
 import { dirname, join } from "node:path";
-import {
-  CONTENT_DIR,
-  ConflictError,
-  type ContentStore,
-  type FileChange,
-  isEditablePath,
-  MEDIA_DIR,
-} from "@goodfellow/core";
-import { fileSystemSource } from "./fs-source.js";
+import { CONTENT_DIR, ConflictError, type ContentStore, type FileChange, isEditablePath, MEDIA_DIR } from "./index.js";
+import { fileSystemSource } from "./node-fs-source.js";
 
 export class InvalidPathError extends Error {
   override name = "InvalidPathError";

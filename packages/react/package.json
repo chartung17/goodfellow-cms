@@ -10,6 +10,7 @@
   "exports": {
     ".": {
       "types": "./dist/index.d.ts",
+      "react-server": "./dist/index.server.js",
       "import": "./dist/index.js"
     },
     "./server": {

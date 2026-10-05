@@ -8,9 +8,9 @@ The repo is in early development. When you add a tool or script, update this fil
 
 These hold across the whole codebase. A change that breaks one needs an explicit decision from the maintainer, not a workaround.
 
-1. **No server at runtime.** A deployed site is static files only. The admin panel calls the GitHub or GitLab API directly from the browser. Server-side code is out of scope for now, including the OAuth worker and a Claude connector (MCP server). The AI assistant (`@goodfellow/ai`) calls AI services straight from the editor's browser, with each editor's own key. The one exception is the development-only local backend in `goodfellow dev`, which must never ship in a build.
+1. **No server at runtime.** A deployed site is static files only. The admin panel calls the GitHub or GitLab API directly from the browser. Server-side code is out of scope for now, including the OAuth worker and a Claude connector (MCP server). The AI assistant (`@goodfellow/ai`) calls AI services straight from the editor's browser, with each editor's own key. Next.js sites are exported as static files too. The one exception is the development-only local backend in `goodfellow dev` and `next dev`, which must never ship in a build.
 2. **GitHub and GitLab are equal.** Every backend feature goes through the `GitBackend` interface in `@goodfellow/core` and must be implemented for both `@goodfellow/github` and `@goodfellow/gitlab` in the same change. If one host cannot support a feature, the interface must expose that as a capability flag and the admin panel must handle its absence. Nothing outside the backend packages may call a git host API or branch on the host name.
-3. **`@goodfellow/core` has no React and no DOM.** It must run in Node and the browser. Type-only imports from `@puckeditor/core` are fine.
+3. **`@goodfellow/core` has no React and no DOM.** It must run in Node and the browser. Type-only imports from `@puckeditor/core` are fine. The one exception is `@goodfellow/core/node` (`src/node*.ts`, checked with `tsconfig.node.json`): reading sites from disk, the local file store and the development API, for Node only.
 4. **The admin panel is built with the site's config.** `@goodfellow/admin` exports a component, not a prebuilt app, so the editor always includes the site's own blocks. The site and its `/admin` page import the same `goodfellow.config.tsx`.
 5. **Blocks are configured in code; content is edited in the admin panel.** Block definitions live in code. Everything an admin can change lives under `content/` or `public/media/`, including collection schemas and templates, and must be editable without a developer or a rebuild of the editor.
 6. **Site data is separate from layout.** Menus, logo, contact details and similar site-wide data live in `content/site.json` and `content/menus.json`. Header and footer blocks read that data rather than storing their own copies, so a design change never loses links.
@@ -65,11 +65,20 @@ Content files are the product's data format; treat changes to them like API chan
 
 - **Text:** every string goes through `useStrings()` and the table in `packages/admin/src/strings.tsx`. A test fails if any string uses git terms.
 - **Saving:** build file changes with the helpers in `packages/admin/src/changes.ts`, so files are always written in canonical form, and publish them through `useAdmin().publish()`, which passes the revision the editor loaded.
-- **Local backend:** `@goodfellow/admin/dev` (`localStore()`) is imported only by the dev server's admin entry. Never import it from anything a build includes.
+- **Local backend:** `@goodfellow/admin/dev` (`localStore()`) is imported only by the dev server's admin entry, and by `GoodfellowAdmin` behind a `process.env.NODE_ENV === "development"` check that `next build` removes. Never import it from anything a build includes; a test checks the Next.js export doesn't contain it.
 - **Navigation:** link between screens with `AppLink`, which asks before leaving unpublished changes. Screens with unpublished changes call `useUnsavedChanges()`.
 - **Previews:** previews render in iframes styled by `usePreviewStyles()`: the site's CSS plus the theme and custom CSS being edited, with `@tailwindcss/browser` generating classes the compiled CSS doesn't have yet. It also keeps media showing (see Media).
 - **Testing Puck:** Puck renders hidden copies of its fields, so tests select visible ones (`:visible`) and click blocks through their `[data-puck-component]` handle.
 - **Dev server watching:** `content/` and `public/media/` are excluded from Vite's watcher, because Tailwind's Vite plugin reloads every open page when a file it scans changes. That would reload the admin panel on every publish. `content/` is watched separately, and `goodfellow dev` serves `/media/` from disk itself.
+
+## Next.js
+
+- **Server Components:** Next.js renders Goodfellow pages as Server Components, which have no React context. `@goodfellow/react` has a second entry for them (`index.server.ts`, the `react-server` export condition) whose `SiteProvider` and `useSite()` keep the site in React's per-request `cache()` instead, and whose `PageBody` uses Puck's server `Render`. Export the same names from both entries; a test checks they match.
+- **Blocks** therefore can't use React hooks such as `useState` or `useContext` in `render`; `useSite()` is fine. Keep context and other browser-only code out of modules the server entry imports, or Next.js refuses to build.
+- **Same HTML:** pages must render the same HTML in Next.js as with `goodfellow build`. A test in `packages/next` compares the Next.js starter's export with the starter's build, so `templates/next` keeps the starter's `content/` and `public/` exactly. Shared preparation (entries, `resolveData`) lives in `preparePage()`.
+- **Puck's server `Render`** puts `puck.metadata` in a block's props before looking for slots in them, so metadata keys that match a slot's name (an entry's `content`, a Section's `content`) break it. `hiddenFromSlots()` works around this; remove it once Puck fixes it.
+- **Development:** `withGoodfellow()` runs the local backend on a random port on 127.0.0.1 in `next dev`, and Next.js rewrites `/__goodfellow/api/*` to it. The API trusts any page on this computer (`isLocalOrigin`) since requests arrive through Next.js's address.
+- **Limits:** no `basePath` yet (`withGoodfellow` refuses it), since links in content don't follow it.
 
 ## Media
 
@@ -132,16 +141,17 @@ pnpm test:e2e
 ```
 
 - **Order:** tests and typechecks use other workspace packages' built `dist/` folders, so Turborepo builds dependencies first. If you run Vitest directly inside one package, run `pnpm build` first.
-- **TypeScript 7:** tsdown warns that TypeScript 7's API is experimental. That warning is expected.
+- **TypeScript 7:** tsdown warns that TypeScript 7's API is experimental. That warning is expected. The Next.js starter uses TypeScript 5.9, because `next build` type-checks through TypeScript's JavaScript API.
+- **Next.js:** `pnpm build` runs `next build` for `templates/next`, which writes `out/`. `next dev` and `next build` may rewrite its `tsconfig.json`; commit what they write. `@goodfellow/next` embeds the theme's CSS and Tailwind for the browser as text (`scripts/embed.mjs`, into the ignored `src/generated/`), since Next.js can't import them as text.
 - **Trying a change in a real site:** run `pnpm build`, then `pnpm dev` in `templates/starter` (or `examples/parish`) and open http://localhost:4321 (or http://localhost:4321/admin). Pages re-render on every request, so content edits show up on reload. The dev server runs the built `dist/` of each package, so rebuild a package after changing it.
-- **End-to-end tests:** `pnpm test:e2e` runs Playwright against `goodfellow dev` serving a copy of the starter site in `e2e/.site` (reset before every test), and against production builds of the starter with each git backend (`e2e/.site-github` and `e2e/.site-gitlab`), whose API calls go to the fakes. Install a browser once with `pnpm --filter @goodfellow/e2e exec playwright install chromium`, or point `PLAYWRIGHT_CHROMIUM_EXECUTABLE` at a Chromium that's already installed.
+- **End-to-end tests:** `pnpm test:e2e` runs Playwright against `goodfellow dev` serving a copy of the starter site in `e2e/.site` (reset before every test), against production builds of the starter with each git backend (`e2e/.site-github` and `e2e/.site-gitlab`), whose API calls go to the fakes, and against `next dev` serving a copy of the Next.js starter in `e2e/.site-next`, which uses the template's installed packages. Install a browser once with `pnpm --filter @goodfellow/e2e exec playwright install chromium`, or point `PLAYWRIGHT_CHROMIUM_EXECUTABLE` at a Chromium that's already installed.
 
 ## Starters and examples
 
-- **Sites:** `templates/starter` is the default site and `examples/parish` a complete example. `create-goodfellow` copies either one. Both are workspace packages, so they run against the workspace's packages, and their `package.json` files use `workspace:*`, which `create-goodfellow` replaces with published versions.
-- **Bundling:** `create-goodfellow`'s build copies both sites into its `templates/` folder (`scripts/bundle-templates.mjs`), with every package's version in `templates/versions.json`. It depends on both sites so Turborepo rebuilds it when they change. A new example needs adding there and to `TEMPLATES` in `scaffold.ts`.
+- **Sites:** `templates/starter` is the default site, `templates/next` the same site as a Next.js app, and `examples/parish` a complete example. `create-goodfellow` copies any of them, leaving out build output and `turbo.json`. Both are workspace packages, so they run against the workspace's packages, and their `package.json` files use `workspace:*`, which `create-goodfellow` replaces with published versions.
+- **Bundling:** `create-goodfellow`'s build copies the sites into its `templates/` folder (`scripts/bundle-templates.mjs`), with every package's version in `templates/versions.json`. It depends on them so Turborepo rebuilds it when they change. A new example needs adding there and to `TEMPLATES` in `scaffold.ts`.
 - **Setup lines:** `create-goodfellow` turns on the commented-out `backend` lines in `goodfellow.config.tsx` and removes other hosts' setup files, so keep those lines and file names as they are in every site.
-- **Shared files:** the examples' deploy setups, `.gitignore` and `src/styles.css` must match the starter's; a test checks this.
+- **Shared files:** the examples' deploy setups, `.gitignore` and `src/styles.css` must match the starter's; a test checks this. The Next.js starter has its own, which build with `next build` and publish `out/`.
 - **Made-up content only:** examples use invented names, addresses (`example.org` email addresses and 555-01xx phone numbers), events and text, and pictures drawn for the purpose. Never use a real organization's details, photos or copyrighted text such as modern Bible translations. Scripture comes from the Douay-Rheims Bible (Challoner revision), a Catholic translation in the public domain.
 
 ## Conventions

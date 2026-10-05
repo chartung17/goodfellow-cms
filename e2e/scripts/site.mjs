@@ -1,4 +1,4 @@
-import { cpSync, mkdirSync, readdirSync, readFileSync, rmSync, statSync, writeFileSync } from "node:fs";
+import { cpSync, mkdirSync, readdirSync, readFileSync, rmSync, statSync, symlinkSync, writeFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 
@@ -73,4 +73,28 @@ export function starterFiles() {
     }
   }
   return files;
+}
+
+/** The Next.js template, and a copy of it that tests run `next dev` on. */
+export const nextTemplate = join(here, "../../templates/next");
+export const nextSite = join(here, "../.site-next");
+
+/** Resets the Next.js test site's editable files to the template's. */
+export function resetNextContent() {
+  for (const dir of ["content", "public"]) {
+    rmSync(join(nextSite, dir), { recursive: true, force: true });
+    cpSync(join(nextTemplate, dir), join(nextSite, dir), { recursive: true });
+  }
+}
+
+/** Creates the Next.js test site, using the template's installed packages. */
+export function createNextSite() {
+  rmSync(nextSite, { recursive: true, force: true });
+  mkdirSync(nextSite, { recursive: true });
+  for (const entry of readdirSync(nextTemplate)) {
+    if (["node_modules", ".next", "out", "content", "public", ".turbo"].includes(entry)) continue;
+    cpSync(join(nextTemplate, entry), join(nextSite, entry), { recursive: true });
+  }
+  symlinkSync(join(nextTemplate, "node_modules"), join(nextSite, "node_modules"), "dir");
+  resetNextContent();
 }
