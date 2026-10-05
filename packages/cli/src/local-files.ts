@@ -53,7 +53,7 @@ export function localFileStore(root: string): ContentStore {
         await rm(file, { force: true });
       } else {
         await mkdir(dirname(file), { recursive: true });
-        await writeFile(file, change.content);
+        await writeFile(file, "bytes" in change ? change.bytes : change.content);
       }
     }
     return { revision: await revision() };
@@ -63,6 +63,14 @@ export function localFileStore(root: string): ContentStore {
     read: async (path) => {
       assertEditable(path);
       return source.read(path);
+    },
+    readBytes: async (path) => {
+      assertEditable(path);
+      try {
+        return new Uint8Array(await readFile(join(root, path)));
+      } catch {
+        return undefined;
+      }
     },
     list: async (dir) => {
       if (!isEditablePath(`${dir}/x`)) throw new InvalidPathError(`${dir} can't be listed from the admin panel.`);

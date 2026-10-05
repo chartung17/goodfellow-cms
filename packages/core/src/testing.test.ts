@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { FakeConflictError, FakeRepo } from "./testing.js";
+import { FakeConflictError, FakeRepo, fakeFileBytes, fakeFileFromBytes } from "./testing.js";
 
 describe("FakeRepo", () => {
   it("records commits, history and changed paths", () => {
@@ -14,5 +14,30 @@ describe("FakeRepo", () => {
     expect(repo.lastCommitFor("content/b.json")).toBe(second);
     expect(repo.lastCommitFor("content/a.json", second)).toBe(first);
     expect(() => repo.commit([], "stale", { expectedHead: first })).toThrow(FakeConflictError);
+  });
+});
+
+describe("binary files", () => {
+  it("keeps bytes that aren't text as bytes, and text as text", () => {
+    const repo = new FakeRepo({ "content/site.json": "{}" });
+    const image = new Uint8Array([0x89, 0x50, 0x4e, 0x47, 0xff, 0x00]);
+    const sha = repo.commit(
+      [
+        { path: "public/media/a.png", bytes: image },
+        { path: "public/media/b.txt", bytes: new TextEncoder().encode("héllo") },
+      ],
+      "Upload",
+    );
+    expect(repo.files(sha).get("public/media/a.png")).toEqual(image);
+    expect(repo.files(sha).get("public/media/b.txt")).toBe("héllo");
+    expect(fakeFileBytes(repo.files(sha).get("public/media/b.txt") ?? "")).toEqual(new TextEncoder().encode("héllo"));
+    expect(repo.changedPaths(repo.commitAt(sha)?.parent ?? "", sha)).toEqual([
+      "public/media/a.png",
+      "public/media/b.txt",
+    ]);
+    // The same bytes again aren't a change.
+    const again = repo.commit([{ path: "public/media/a.png", bytes: new Uint8Array(image) }], "Same");
+    expect(repo.changedPaths(sha, again)).toEqual([]);
+    expect(fakeFileFromBytes(image)).toBe(image);
   });
 });

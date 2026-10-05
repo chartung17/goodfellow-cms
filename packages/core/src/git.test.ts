@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { credentialStorage, encodeBase64, type StorageLike } from "./git.js";
+import { credentialStorage, decodeBase64, encodeBase64, encodeBase64Bytes, type StorageLike } from "./git.js";
 
 function memoryStorage(): StorageLike & { items: Map<string, string> } {
   const items = new Map<string, string>();
@@ -40,5 +40,13 @@ describe("credentialStorage", () => {
 describe("encodeBase64", () => {
   it("encodes Unicode text", () => {
     expect(encodeBase64("Café ✝")).toBe("Q2Fmw6kg4pyd");
+  });
+});
+
+describe("base64", () => {
+  it("round-trips bytes and Unicode text", () => {
+    const bytes = new Uint8Array([0, 1, 254, 255, 128]);
+    expect(decodeBase64(encodeBase64Bytes(bytes))).toEqual(bytes);
+    expect(new TextDecoder().decode(decodeBase64(encodeBase64("Café ✝")))).toBe("Café ✝");
   });
 });

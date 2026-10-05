@@ -14,6 +14,7 @@ import type { Data } from "@puckeditor/core";
 import { useMemo, useState } from "react";
 import { useAdmin, useSiteContent } from "./admin-context.js";
 import { customCssFileChange, menusFileChange, siteSettingsFileChange, storedCss } from "./changes.js";
+import { MediaField } from "./media-library.js";
 import { MenusEditor } from "./menus-editor.js";
 import { PreviewFrame } from "./preview.js";
 import { useUnsavedChanges } from "./router.js";
@@ -83,7 +84,7 @@ function GeneralTab({
       />
       <TextField label={t("general.titleTemplate")} hint={t("general.titleTemplateHint")} {...text("titleTemplate")} />
       <TextField label={t("general.language")} hint={t("general.languageHint")} {...text("language")} />
-      <TextField
+      <MediaField
         label={t("general.logo")}
         value={draft.logo?.src ?? ""}
         error={errors["logo.src"]}
@@ -94,8 +95,8 @@ function GeneralTab({
         value={draft.logo?.alt ?? ""}
         onChange={(alt) => onChange({ ...draft, logo: { src: draft.logo?.src ?? "", alt } })}
       />
-      <TextField label={t("general.favicon")} {...text("favicon")} />
-      <TextField label={t("general.socialImage")} {...text("socialImage")} />
+      <MediaField label={t("general.favicon")} {...text("favicon")} />
+      <MediaField label={t("general.socialImage")} {...text("socialImage")} />
     </div>
   );
 }

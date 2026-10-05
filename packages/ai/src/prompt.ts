@@ -9,6 +9,8 @@ export interface SiteSummary {
   language: string;
   pages: Array<{ path: string; title: string }>;
   collections: Array<{ id: string; name: string; fields: Array<{ name: string; label: string }> }>;
+  /** Addresses of the site's uploaded images, such as `/media/photo.jpg`. */
+  images?: string[];
 }
 
 export type AiTask =
@@ -55,7 +57,7 @@ Rules:
 - Write in the language the request says the site uses, unless asked otherwise.
 - Never invent facts the request doesn't give, such as times, dates, prices, names, addresses, phone numbers or email addresses. Where one is needed, write a clear placeholder in square brackets, such as [Mass times], so the person can fill it in.
 - Link only to the site's own pages listed in the request, or to addresses the request gives. Otherwise use "#".
-- Use only image addresses the request gives. Otherwise leave image fields empty.
+- Use only image addresses the request gives, or the site's own images listed in the request where they fit. Otherwise leave image fields empty.
 - Leave "CSS classes" fields empty unless asked for particular styling.
 - Rich text fields take simple HTML only: <p>, <h2>, <h3>, <strong>, <em>, <a href>, <ul>, <ol>, <li> and <blockquote>. Never include scripts, styles or images in it.
 - Answer with JSON only, matching the format you were given.`;
@@ -72,6 +74,9 @@ function siteContext(site: SiteSummary): string {
         .map((collection) => `"${collection.id}" (${collection.name})`)
         .join(", ")}.`,
     );
+  }
+  if (site.images?.length) {
+    lines.push(`Images in its media library, which image fields can use: ${site.images.slice(0, 200).join(", ")}.`);
   }
   return lines.join("\n");
 }

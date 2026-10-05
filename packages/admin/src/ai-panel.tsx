@@ -21,6 +21,7 @@ import { useAdmin, useSiteContent } from "./admin-context.js";
 import { allowedProviders, useAiSettings } from "./ai-settings.js";
 import { pageTitle } from "./changes.js";
 import { inSentence } from "./collection-screen.js";
+import { siteImages } from "./media.js";
 import { type StringKey, useStrings } from "./strings.js";
 import { Button, ErrorMessage, Field, TextField } from "./ui.js";
 
@@ -42,7 +43,7 @@ const claudeModelLabels: Record<string, StringKey> = {
   "claude-haiku-4-5": "ai.model.claude-haiku-4-5",
 };
 
-function siteSummary(content: SiteContent): SiteSummary {
+function siteSummary(content: SiteContent, media: string[]): SiteSummary {
   return {
     title: content.settings.title,
     description: content.settings.description,
@@ -59,6 +60,7 @@ function siteSummary(content: SiteContent): SiteSummary {
       name: collection.settings.name,
       fields: collection.settings.fields.map(({ name, label }) => ({ name, label })),
     })),
+    images: siteImages(media),
   };
 }
 
@@ -229,7 +231,7 @@ function serviceName(id: ProviderId, t: ReturnType<typeof useStrings>): string {
 function AiPanel({ context }: { context: AiContext }) {
   const t = useStrings();
   const { config } = useAdmin();
-  const { content } = useSiteContent();
+  const { content, media } = useSiteContent();
   const getPuck = useGetPuck();
   const selected = usePuck((state) => state.selectedItem);
   const providers = useMemo(() => allowedProviders(config.ai ? config.ai.providers : undefined), [config.ai]);
@@ -312,7 +314,7 @@ function AiPanel({ context }: { context: AiContext }) {
     const text = instruction.trim();
     if (!text) return;
     const task = taskFor(text);
-    const request: AiRequest = buildRequest(task, getPuck().config, siteSummary(content));
+    const request: AiRequest = buildRequest(task, getPuck().config, siteSummary(content, media));
     if (settings.provider === "manual") {
       setReply("");
       setCopied(false);

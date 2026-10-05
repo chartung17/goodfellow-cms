@@ -4,7 +4,7 @@ A git-based website builder built on the [Puck](https://puckeditor.com) visual e
 
 Goodfellow gives non-technical site owners a drag-and-drop editor at `/admin` with no server, database or monthly hosting bill. Pages are stored as files in the site's own GitHub or GitLab repository. Every save is a commit, and a free static host (GitHub Pages, GitLab Pages or Vercel) rebuilds the site.
 
-> **Status: early development.** Static rendering, the admin panel, collections, the AI assistant and publishing to GitHub or GitLab work, with deploy setups for GitHub Pages, GitLab Pages and Vercel. Nothing is published to npm yet. This README describes what Goodfellow is meant to become; the [roadmap](#roadmap) shows what exists.
+> **Status: early development.** Static rendering, the admin panel, collections, the AI assistant, the media library and publishing to GitHub or GitLab work, with deploy setups for GitHub Pages, GitLab Pages and Vercel. Nothing is published to npm yet. This README describes what Goodfellow is meant to become; the [roadmap](#roadmap) shows what exists.
 
 ## How it works
 
@@ -101,6 +101,10 @@ The admin panel is at `/admin` on the live site, and while `goodfellow dev` is r
 - **Publishing:** each Publish saves every changed file in one commit to the site's main branch. If someone else published changes to other files in the meantime, publishing still goes ahead; if they changed the same files, it stops instead of overwriting their work.
 - **Live status:** after publishing, the top bar shows when the live site has been rebuilt, or that the rebuild failed, with a link to the details. This works with GitHub Pages, GitLab Pages and Vercel.
 - **Unpublished changes:** leaving a screen with unpublished changes asks first.
+- **Media:** upload images and files, by choosing them or dropping them onto the **Media** screen, and replace or delete them there. Deleting a file first lists everything that uses it. Wherever an image goes (an Image block, a section's background, the logo, a collection's image field) there's a **Choose image** button, which picks from the library or uploads a new one.
+  - Large photos are made no bigger than 2400 pixels on their longest side, and JPEGs are re-saved, which removes details hidden in them such as where a photo was taken. SVG images have anything that could run code removed.
+  - Images, PDFs, office documents, MP3 audio and MP4 video can be uploaded, up to 25 MB each. Web pages, scripts and other files that could run code can't.
+  - New uploads show in the editor straight away, even before the live site has been rebuilt with them.
 - **AI assistant:** the **AI** tab beside the editor writes with AI. Describe what you want: with nothing selected it adds new blocks to the end of the page, with a block selected it changes that block, and for a collection's item it fills in the fields. The result goes straight into the editor, so you can check it, change it or undo it before publishing. It's told never to make up facts such as times or names, and to leave `[placeholders]` instead.
 
 ### AI services
@@ -176,7 +180,7 @@ my-site/
 │   │   ├── _collection.json # fields, address pattern, template
 │   │   └── easter-vigil.json # one item: its field values
 │   └── styles/custom.css
-├── public/media/            # uploaded files
+├── public/media/            # uploaded images and files, served at /media/
 ├── src/styles.css           # imports Tailwind and the theme; scans content/ for classes
 ├── .github/workflows/deploy.yml
 ├── .gitlab-ci.yml
@@ -190,7 +194,7 @@ my-site/
 3. **Git backends** (done). GitHub and GitLab sign-in, publishing, conflict detection and deploy status, plus GitHub Pages, GitLab Pages and Vercel setups.
 4. **Collections and templates** (done). Collections with their own fields, a shared page design for their items, and a block that lists them on other pages.
 5. **AI assistant** (done). Draft and rewrite pages with Claude, OpenAI or a free AI service, called straight from the editor's browser with the editor's own key. Editors without a key can copy a prompt into Claude.ai or another chat app and paste the answer back.
-6. **Media library.** Upload, browse and replace images and files from the admin panel.
+6. **Media library** (done). Upload, browse and replace images and files from the admin panel, and choose them for blocks and settings.
 7. **Starters.** `create-goodfellow` and the parish example.
 8. **Next.js adapter.**
 9. **Documentation site.** Guides for site owners and editors, plus reference docs for developers. Includes each host's rules for commercial sites on its free plan, kept up to date.

@@ -2,6 +2,7 @@ import {
   CONTENT_DIR,
   ConflictError,
   type DeployStatus,
+  encodeBase64Bytes,
   type FileChange,
   GitApiError,
   type GitBackend,
@@ -106,6 +107,13 @@ export class GitLabBackend implements GitBackend {
     return blob;
   }
 
+  async readBytes(path: string): Promise<Uint8Array | undefined> {
+    const sha = (await this.currentTree()).get(path);
+    if (!sha) return undefined;
+    const response = await gitlabRequest(this.api, this.repo(`/blobs/${sha}/raw`));
+    return new Uint8Array(await response.arrayBuffer());
+  }
+
   async list(dir: string): Promise<string[]> {
     const prefix = `${dir}/`;
     return [...(await this.currentTree()).keys()].filter((path) => path.startsWith(prefix)).sort();
@@ -137,14 +145,19 @@ export class GitLabBackend implements GitBackend {
               }
             : undefined;
         }
+        // Uploads such as images are sent as base64; text as it is, so commits stay readable.
+        const content =
+          "bytes" in change
+            ? { content: encodeBase64Bytes(change.bytes), encoding: "base64" }
+            : { content: change.content };
         return exists
           ? {
               action: "update",
               file_path: change.path,
-              content: change.content,
+              ...content,
               last_commit_id: await this.lastCommitFor(change.path, expectedRevision),
             }
-          : { action: "create", file_path: change.path, content: change.content };
+          : { action: "create", file_path: change.path, ...content };
       }),
     );
     const toApply = actions.filter((action) => action !== undefined);

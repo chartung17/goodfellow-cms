@@ -8,7 +8,8 @@ export const DEV_API_PREFIX = "/__goodfellow/api";
 /** Every request must send this header. Browsers won't send custom headers cross-site without a CORS preflight, which this API never approves. */
 export const DEV_API_HEADER = "x-goodfellow-request";
 
-const MAX_BODY_BYTES = 20 * 1024 * 1024;
+/** Room for a save with uploads, which are sent as base64 (a third larger than the files). */
+const MAX_BODY_BYTES = 80 * 1024 * 1024;
 
 function send(res: ServerResponse, status: number, body: unknown): void {
   res.statusCode = status;
@@ -28,11 +29,16 @@ async function readJson(req: IncomingMessage): Promise<unknown> {
   return JSON.parse(Buffer.concat(chunks).toString("utf8"));
 }
 
-function isFileChange(value: unknown): value is FileChange {
-  if (typeof value !== "object" || value === null) return false;
+/** A change as sent over JSON, where an upload's bytes are base64. */
+function toFileChange(value: unknown): FileChange | undefined {
+  if (typeof value !== "object" || value === null) return undefined;
   const change = value as Record<string, unknown>;
-  if (typeof change.path !== "string") return false;
-  return change.delete === true || typeof change.content === "string";
+  if (typeof change.path !== "string") return undefined;
+  if (change.delete === true) return { path: change.path, delete: true };
+  if (typeof change.content === "string") return { path: change.path, content: change.content };
+  if (typeof change.base64 === "string")
+    return { path: change.path, bytes: new Uint8Array(Buffer.from(change.base64, "base64")) };
+  return undefined;
 }
 
 /** Rejects requests that could come from another website: they must carry our header and, if they say where they're from, come from this server. */
@@ -62,19 +68,28 @@ export async function handleDevApi(store: ContentStore, req: IncomingMessage, re
     } else if (req.method === "GET" && endpoint === "files") {
       send(res, 200, { files: await store.list(url.searchParams.get("dir") ?? "") });
     } else if (req.method === "GET" && endpoint === "file") {
-      const content = await store.read(url.searchParams.get("path") ?? "");
-      if (content === undefined) send(res, 404, { error: "not-found" });
-      else send(res, 200, { content });
+      const path = url.searchParams.get("path") ?? "";
+      if (url.searchParams.get("as") === "bytes") {
+        const bytes = await store.readBytes(path);
+        if (bytes === undefined) send(res, 404, { error: "not-found" });
+        else send(res, 200, { base64: Buffer.from(bytes).toString("base64") });
+      } else {
+        const content = await store.read(path);
+        if (content === undefined) send(res, 404, { error: "not-found" });
+        else send(res, 200, { content });
+      }
     } else if (req.method === "POST" && endpoint === "write") {
       if (!req.headers["content-type"]?.startsWith("application/json")) {
         send(res, 415, { error: "unsupported-media-type" });
         return true;
       }
       const body = (await readJson(req)) as Record<string, unknown>;
-      const { changes, message, expectedRevision } = body;
+      const { message, expectedRevision } = body;
+      const changes: Array<FileChange | undefined> | undefined = Array.isArray(body.changes)
+        ? body.changes.map(toFileChange)
+        : undefined;
       if (
-        !Array.isArray(changes) ||
-        !changes.every(isFileChange) ||
+        !changes?.every((change): change is FileChange => change !== undefined) ||
         typeof message !== "string" ||
         typeof expectedRevision !== "string"
       ) {

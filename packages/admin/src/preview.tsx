@@ -2,6 +2,7 @@ import { escapeStyleText, googleFontsUrl, type Theme, themeToCss } from "@goodfe
 import { type ReactNode, useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { type PreviewOptions, useAdmin } from "./admin-context.js";
+import { showMediaInPreview } from "./media-previews.js";
 
 export interface PreviewStyles {
   theme: Theme;
@@ -78,14 +79,15 @@ function preventNavigation(doc: Document): void {
   });
 }
 
-/** Applies preview styles to a document whenever the theme or custom CSS change. */
+/** Applies preview styles to a document whenever the theme or custom CSS change, and keeps its media showing. */
 export function usePreviewStyles(doc: Document | null | undefined, styles: PreviewStyles): void {
-  const { preview } = useAdmin();
+  const { preview, mediaPreviews } = useAdmin();
   useEffect(() => {
     if (!doc) return;
     preventNavigation(doc);
     installPreviewStyles(doc, preview, styles);
   }, [doc, preview, styles]);
+  useEffect(() => (doc ? showMediaInPreview(doc, mediaPreviews) : undefined), [doc, mediaPreviews]);
 }
 
 const FRAME_WIDTH = 1280;

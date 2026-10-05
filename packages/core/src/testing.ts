@@ -5,11 +5,39 @@
  */
 import type { FileChange } from "./content/store.js";
 
+/** A file in a fake repository: text, or bytes for files that aren't text, such as images. */
+export type FakeFile = string | Uint8Array;
+
 export interface FakeCommit {
   sha: string;
   parent?: string;
   message: string;
-  files: ReadonlyMap<string, string>;
+  files: ReadonlyMap<string, FakeFile>;
+}
+
+/** A file's content as a string to hash or compare: bytes become one character per byte. */
+function fileKey(file: FakeFile | undefined): string | undefined {
+  if (file === undefined || typeof file === "string") return file;
+  let key = "\0bytes:";
+  for (const byte of file) key += String.fromCharCode(byte);
+  return key;
+}
+
+/**
+ * Stores uploaded bytes as text when they are valid UTF-8, so text files read
+ * back as strings whichever way they were written.
+ */
+export function fakeFileFromBytes(bytes: Uint8Array): FakeFile {
+  try {
+    return new TextDecoder("utf-8", { fatal: true }).decode(bytes);
+  } catch {
+    return bytes;
+  }
+}
+
+/** A fake file's bytes. */
+export function fakeFileBytes(file: FakeFile): Uint8Array<ArrayBuffer> {
+  return new Uint8Array(typeof file === "string" ? new TextEncoder().encode(file) : file);
 }
 
 export class FakeConflictError extends Error {
@@ -28,11 +56,11 @@ function fakeHash(text: string, seed: number): string {
 export class FakeRepo {
   readonly commits = new Map<string, FakeCommit>();
   readonly branches = new Map<string, string>();
-  readonly blobs = new Map<string, string>();
+  readonly blobs = new Map<string, FakeFile>();
   private count = 0;
 
   constructor(
-    files: Record<string, string> = {},
+    files: Record<string, FakeFile> = {},
     readonly defaultBranch = "main",
   ) {
     const sha = this.addCommit(undefined, "Initial commit", new Map(Object.entries(files)));
@@ -40,8 +68,9 @@ export class FakeRepo {
   }
 
   /** A 40-character content hash, like git's blob ids. */
-  blobSha(content: string): string {
-    const sha = [1, 2, 3, 4, 5].map((seed) => fakeHash(content, seed)).join("");
+  blobSha(content: FakeFile): string {
+    const key = fileKey(content) ?? "";
+    const sha = [1, 2, 3, 4, 5].map((seed) => fakeHash(key, seed)).join("");
     this.blobs.set(sha, content);
     return sha;
   }
@@ -56,7 +85,7 @@ export class FakeRepo {
     return this.commits.get(sha);
   }
 
-  files(ref: string = this.defaultBranch): ReadonlyMap<string, string> {
+  files(ref: string = this.defaultBranch): ReadonlyMap<string, FakeFile> {
     const commit = this.commits.get(this.branches.get(ref) ?? ref);
     if (!commit) throw new Error(`No commit ${ref}`);
     return commit.files;
@@ -70,7 +99,7 @@ export class FakeRepo {
     const files = new Map(this.files(parent));
     for (const change of changes) {
       if ("delete" in change) files.delete(change.path);
-      else files.set(change.path, change.content);
+      else files.set(change.path, "bytes" in change ? fakeFileFromBytes(change.bytes) : change.content);
     }
     const sha = this.addCommit(parent, message, files);
     this.branches.set(branch, sha);
@@ -85,7 +114,9 @@ export class FakeRepo {
   changedPaths(from: string, to: string): string[] {
     const a = this.files(from);
     const b = this.files(to);
-    return [...new Set([...a.keys(), ...b.keys()])].filter((path) => a.get(path) !== b.get(path)).sort();
+    return [...new Set([...a.keys(), ...b.keys()])]
+      .filter((path) => fileKey(a.get(path)) !== fileKey(b.get(path)))
+      .sort();
   }
 
   /** The most recent commit at or before `ref` that changed `path`. */
@@ -93,14 +124,14 @@ export class FakeRepo {
     let commit = this.commits.get(this.branches.get(ref) ?? ref);
     while (commit) {
       const parent = commit.parent ? this.commits.get(commit.parent) : undefined;
-      if (commit.files.get(path) !== parent?.files.get(path))
+      if (fileKey(commit.files.get(path)) !== fileKey(parent?.files.get(path)))
         return commit.files.has(path) || parent ? commit.sha : undefined;
       commit = parent;
     }
     return undefined;
   }
 
-  private addCommit(parent: string | undefined, message: string, files: Map<string, string>): string {
+  private addCommit(parent: string | undefined, message: string, files: Map<string, FakeFile>): string {
     this.count += 1;
     const sha = this.count.toString(16).padStart(40, "0");
     for (const content of files.values()) this.blobSha(content);

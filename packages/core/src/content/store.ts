@@ -1,8 +1,11 @@
 import type { ContentSource } from "./load.js";
 import { CONTENT_DIR, MEDIA_DIR } from "./paths.js";
 
-/** One change in a save: a file's new text, or its removal. */
-export type FileChange = { path: string; content: string } | { path: string; delete: true };
+/** One change in a save: a file's new text, its new bytes (for uploads such as images), or its removal. */
+export type FileChange =
+  | { path: string; content: string }
+  | { path: string; bytes: Uint8Array }
+  | { path: string; delete: true };
 
 export interface WriteOptions {
   /** Describes the change, such as `Update page "About us"`. Becomes the commit message. */
@@ -27,6 +30,8 @@ export interface ContentStore extends ContentSource {
    * site is no longer at `options.expectedRevision`. Returns the new revision.
    */
   write(changes: FileChange[], options: WriteOptions): Promise<{ revision: string }>;
+  /** Returns a file's bytes, such as an uploaded image's, or `undefined` if it doesn't exist. */
+  readBytes(path: string): Promise<Uint8Array | undefined>;
   /**
    * The paths of files that differ between two revisions. Stores with history
    * implement this, which lets `writeChanges` save over changes to unrelated files.

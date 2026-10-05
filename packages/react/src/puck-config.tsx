@@ -8,11 +8,28 @@ export const classNameField: TextField = {
   label: "CSS classes",
 };
 
+/** What kind of media a field holds, for the admin panel to offer its media library. */
+export type MediaFieldKind = "image" | "file";
+
+/**
+ * A text field for the address of an uploaded file, such as an image. The
+ * admin panel shows a button to choose one from the site's media library.
+ */
+export function mediaField(label: string, kind: MediaFieldKind = "image"): TextField {
+  return { type: "text", label, metadata: { media: kind } };
+}
+
+/** The kind of media a field holds, if it's a media field. */
+export function mediaFieldKind(field: { metadata?: unknown } | undefined): MediaFieldKind | undefined {
+  const media = (field?.metadata as { media?: unknown } | undefined)?.media;
+  return media === "image" || media === "file" ? media : undefined;
+}
+
 /** Settings on the page itself (the root of the page's Puck data). */
 const pageRootFields: Fields = {
   title: { type: "text", label: "Page title" },
   description: { type: "textarea", label: "Description for search engines" },
-  image: { type: "text", label: "Image when shared (URL)" },
+  image: mediaField("Image when shared"),
   className: classNameField,
 };
 

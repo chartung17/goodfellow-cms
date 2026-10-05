@@ -26,6 +26,7 @@ import { useEffect, useMemo, useState } from "react";
 import { useAdmin, useSiteContent } from "./admin-context.js";
 import { entryFileChange, storedEntryFields } from "./changes.js";
 import { CollectionLayout, inSentence } from "./collection-screen.js";
+import { MediaChooser } from "./media-library.js";
 import { PuckEditor, SiteFrame } from "./puck-editor.js";
 import { useStrings } from "./strings.js";
 import { AppLink } from "./use-link.js";
@@ -133,6 +134,9 @@ function fieldControl(field: CollectionField): Field {
               value={typeof value === "string" ? value : ""}
               onChange={onChange}
             />
+            {field.type === "image" && (
+              <MediaChooser value={typeof value === "string" ? value : ""} kind="image" onChange={onChange} />
+            )}
             <Hint text={field.hint} />
           </FieldLabel>
         ),

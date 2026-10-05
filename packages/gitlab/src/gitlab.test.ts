@@ -153,6 +153,19 @@ describe("publishing", () => {
     ]);
   });
 
+  it("uploads files that aren't text, such as images, and reads them back", async () => {
+    const { fake, backend } = await signedIn();
+    const image = new Uint8Array([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a, 0xff, 0x00, 0x80]);
+    await backend.write([{ path: "public/media/photo.png", bytes: image }], {
+      message: "Add photo.png",
+      expectedRevision: await backend.revision(),
+    });
+    expect(fake.repo.files().get("public/media/photo.png")).toEqual(image);
+    expect(await backend.list("public/media")).toContain("public/media/photo.png");
+    expect(await backend.readBytes("public/media/photo.png")).toEqual(image);
+    expect(await backend.readBytes("public/media/missing.png")).toBeUndefined();
+  });
+
   it("refuses to save over someone else's commit", async () => {
     const { fake, backend } = await signedIn();
     const start = await backend.revision();

@@ -1,4 +1,4 @@
-import { classNameField, cx } from "@goodfellow/react";
+import { classNameField, cx, mediaField } from "@goodfellow/react";
 import type { ComponentConfig, Slot } from "@puckeditor/core";
 import { type Gap, gapClasses, gapLabels, options, yesNo } from "./options.js";
 
@@ -52,7 +52,7 @@ export const Section: ComponentConfig<SectionProps> = {
       label: "Background color",
       options: options({ none: "None", muted: "Subtle", primary: "Primary", secondary: "Secondary" }),
     },
-    backgroundImage: { type: "text", label: "Background image (URL)" },
+    backgroundImage: mediaField("Background image"),
     className: classNameField,
   },
   defaultProps: {

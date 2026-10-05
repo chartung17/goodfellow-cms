@@ -3,8 +3,8 @@
  * an in-memory repository. For tests only: pass `fake.fetch` as the backend's
  * `fetch`, or route browser requests to `fake.handle` in end-to-end tests.
  */
-import { encodeBase64, type FileChange } from "@goodfellow/core";
-import { FakeConflictError, FakeRepo } from "@goodfellow/core/testing";
+import { decodeBase64, encodeBase64Bytes, type FileChange } from "@goodfellow/core";
+import { FakeConflictError, FakeRepo, fakeFileBytes } from "@goodfellow/core/testing";
 
 export interface FakeGitHubUser {
   login: string;
@@ -40,10 +40,6 @@ interface Deployment {
 
 function json(body: unknown, status = 200): Response {
   return new Response(JSON.stringify(body), { status, headers: { "content-type": "application/json" } });
-}
-
-function decodeBase64(text: string): string {
-  return new TextDecoder().decode(Uint8Array.from(atob(text), (char) => char.charCodeAt(0)));
 }
 
 export function fakeGitHub(options: FakeGitHubOptions) {
@@ -99,7 +95,7 @@ export function fakeGitHub(options: FakeGitHubOptions) {
           [
             ...(input.fileChanges.additions ?? []).map((addition) => ({
               path: addition.path,
-              content: decodeBase64(addition.contents),
+              bytes: decodeBase64(addition.contents),
             })),
             ...(input.fileChanges.deletions ?? []).map((deletion) => ({ path: deletion.path, delete: true as const })),
           ],
@@ -153,8 +149,8 @@ export function fakeGitHub(options: FakeGitHubOptions) {
       const content = repo.blobs.get(blob[1] ?? "");
       if (content === undefined) return json({ message: "Not Found" }, 404);
       return request.headers.get("accept")?.includes("raw")
-        ? new Response(content)
-        : json({ content: encodeBase64(content), encoding: "base64" });
+        ? new Response(fakeFileBytes(content))
+        : json({ content: encodeBase64Bytes(fakeFileBytes(content)), encoding: "base64" });
     }
 
     const compare = rest.match(/^\/compare\/([0-9a-f]{40})\.\.\.([0-9a-f]{40})$/);
