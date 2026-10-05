@@ -142,7 +142,7 @@ pnpm test:e2e
 - **Bundling:** `create-goodfellow`'s build copies both sites into its `templates/` folder (`scripts/bundle-templates.mjs`), with every package's version in `templates/versions.json`. It depends on both sites so Turborepo rebuilds it when they change. A new example needs adding there and to `TEMPLATES` in `scaffold.ts`.
 - **Setup lines:** `create-goodfellow` turns on the commented-out `backend` lines in `goodfellow.config.tsx` and removes other hosts' setup files, so keep those lines and file names as they are in every site.
 - **Shared files:** the examples' deploy setups, `.gitignore` and `src/styles.css` must match the starter's; a test checks this.
-- **Made-up content only:** examples use invented names, addresses (`example.org` email addresses and 555-01xx phone numbers), events and text, and pictures drawn for the purpose. Never use a real organization's details, photos or copyrighted text such as modern Bible translations.
+- **Made-up content only:** examples use invented names, addresses (`example.org` email addresses and 555-01xx phone numbers), events and text, and pictures drawn for the purpose. Never use a real organization's details, photos or copyrighted text such as modern Bible translations. Scripture comes from the Douay-Rheims Bible (Challoner revision), a Catholic translation in the public domain.
 
 ## Conventions
 

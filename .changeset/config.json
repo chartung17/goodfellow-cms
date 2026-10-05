@@ -5,7 +5,7 @@
   "fixed": [],
   "linked": [],
   "access": "public",
-  "baseBranch": "main",
+  "baseBranch": "master",
   "updateInternalDependencies": "patch",
   "ignore": ["@goodfellow/template-starter", "@goodfellow/example-parish", "@goodfellow/e2e"]
 }

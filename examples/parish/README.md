@@ -26,7 +26,7 @@ On your own computer, the admin panel saves straight to the files in `content/`.
 - **Contact details** (address, phone and email) are set once in **Site settings → General**, and shown in the footer and on the contact page by the **Contact details** block.
 - **The parish's own blocks**, in `blocks/`, show how a developer adds blocks to a site. They're listed under **Parish** in the editor:
   - **Mass times:** a list of days and times, each with an optional note.
-  - **Scripture quote:** a short passage with its reference. The example uses the King James Version, which is in the public domain; most modern translations need permission to quote.
+  - **Scripture quote:** a short passage with its reference. The example uses the Douay-Rheims Bible (Challoner revision), a Catholic translation in the public domain; most modern translations need permission to quote.
   - **Notice:** an announcement that stands out from the text around it.
 
   Each block is a React component plus the fields the editor shows for it. They're added to the editor in `goodfellow.config.tsx`. Never rename a block's key or its fields once pages use them, since content files refer to them by name.
