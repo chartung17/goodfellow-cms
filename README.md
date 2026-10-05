@@ -161,6 +161,9 @@ my-site/
 4. **Collections and templates.**
 5. **Starters.** `create-goodfellow` and the parish example.
 6. **Next.js adapter.**
+7. **Documentation site.** Guides for site owners and editors, plus reference docs for developers.
+8. **Site setup without a developer.** A web page where anyone can create a site from a starter, store it on GitHub or GitLab, and put it online with GitHub Pages, GitLab Pages or Vercel. Builds work out which repository they're in, so nobody has to edit the config.
+9. **Custom domains.** Connect a domain from the admin panel. Goodfellow sets the domain on the host where it can, lists the records to add at the domain's registrar, with guides for popular registrars, and shows when the domain is working.
 
 ## Contributing
 
