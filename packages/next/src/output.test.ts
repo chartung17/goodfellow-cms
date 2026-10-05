@@ -8,11 +8,31 @@ const next = resolve(import.meta.dirname, "../../../templates/next");
 const starter = resolve(import.meta.dirname, "../../../templates/starter");
 const read = (file: string) => readFile(join(next, "out", file), "utf8");
 
-/** The part of a page Goodfellow renders: the header, the page and the footer. */
+/** Attributes `next/image` adds to `<img>`, or sets where `<img>` leaves the default. */
+const IMAGE_ONLY = new Set(["decoding", "data-nimg", "width", "height", "loading"]);
+
+/**
+ * The part of a page Goodfellow renders (header, page and footer), comparable
+ * between renderers: attributes in order, without `next/image`'s extras, and
+ * without the trailing slash `next/link` adds to page links (`trailingSlash`).
+ */
 function body(html: string): string {
   const match = /<header class="gf-header">[\s\S]*?<\/footer>/.exec(html);
   if (!match) throw new Error("No Goodfellow page in this HTML.");
-  return match[0];
+  return match[0].replace(
+    /<([a-z]+)((?:\s[^\s=>]+(?:="[^"]*")?)*)\s*(\/?)>/g,
+    (_tag, name: string, attributes: string) => {
+      const list = [...attributes.matchAll(/\s([^\s=>]+)(?:="([^"]*)")?/g)]
+        .map(([, key = "", value = ""]) => [key, value] as const)
+        .filter(
+          ([key, value]) =>
+            !(name === "img" && (IMAGE_ONLY.has(key) || (key === "style" && value === "color:transparent"))),
+        )
+        .map(([key, value]) => [key, key === "href" && value.length > 1 ? value.replace(/\/$/, "") : value] as const)
+        .sort(([a], [b]) => a.localeCompare(b));
+      return `<${name}${list.map(([key, value]) => ` ${key}="${value}"`).join("")}>`;
+    },
+  );
 }
 
 async function files(dir: string): Promise<string[]> {
@@ -35,7 +55,7 @@ describe("the Next.js template's static export", () => {
     }
   });
 
-  it("renders every page with the same HTML as goodfellow build", async () => {
+  it("renders every page with the same HTML as goodfellow build, but for Next.js's links and images", async () => {
     const pages = ["index.html", "about/index.html", "news/index.html", "news/welcome/index.html", "404.html"];
     for (const file of pages) {
       const built = await readFile(join(starter, "dist", file), "utf8");

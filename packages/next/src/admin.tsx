@@ -8,7 +8,7 @@ import themeCss from "./generated/theme-css.js";
 export interface GoodfellowAdminProps {
   /** The site's `goodfellow.config.tsx`. */
   config: GoodfellowConfig;
-  /** The live site's address, for "View" links. Defaults to `/`. */
+  /** The live site's address, for "View" links. Defaults to the site's base path, such as `/` or `/my-site/`. */
   siteUrl?: string;
   /** Replaces any of the admin panel's text, for rewording or translation. */
   strings?: Partial<Strings>;
@@ -38,6 +38,9 @@ async function siteStylesheets(siteUrl: string): Promise<string[]> {
   }
 }
 
+/** Set by `withGoodfellow()` from Next.js's `basePath`, such as `/my-site`, or empty. */
+const BASE_PATH = process.env.GOODFELLOW_BASE_PATH ?? "";
+
 async function setUp(siteUrl: string): Promise<Setup> {
   const [stylesheets, tailwindBrowser, store] = await Promise.all([
     siteStylesheets(siteUrl),
@@ -45,7 +48,7 @@ async function setUp(siteUrl: string): Promise<Setup> {
     import("./generated/tailwind-browser.js").then((module) => module.default),
     // `next build` drops this branch, so the local backend never ships.
     process.env.NODE_ENV === "development"
-      ? import("@goodfellow/admin/dev").then((module) => module.localStore())
+      ? import("@goodfellow/admin/dev").then((module) => module.localStore(`${BASE_PATH}/__goodfellow/api`))
       : undefined,
   ]);
   const tailwindBrowserUrl = URL.createObjectURL(new Blob([tailwindBrowser], { type: "text/javascript" }));
@@ -58,7 +61,7 @@ async function setUp(siteUrl: string): Promise<Setup> {
  * In `next dev` it saves to the files on disk; on the live site, editors sign
  * in to the config's git backend.
  */
-export function GoodfellowAdmin({ config, siteUrl = "/", strings }: GoodfellowAdminProps) {
+export function GoodfellowAdmin({ config, siteUrl = `${BASE_PATH}/`, strings }: GoodfellowAdminProps) {
   const [setup, setSetup] = useState<Setup | null>(null);
 
   useEffect(() => {

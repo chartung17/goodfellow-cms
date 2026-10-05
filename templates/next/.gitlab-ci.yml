@@ -8,13 +8,9 @@ pages:
       files: [package-lock.json]
     paths: [.npm/, .next/cache/]
   script:
-    # This site must be served from the root of its address. Turn on "Use unique domain" under Deploy → Pages.
-    - |
-      if [ "$(node -e 'console.log(new URL(process.env.CI_PAGES_URL).pathname)')" != "/" ]; then
-        echo "GitLab Pages serves this site from a subfolder ($CI_PAGES_URL), but a Next.js Goodfellow site must be served from the root of its address. Turn on \"Use unique domain\" under Deploy → Pages, or use a custom domain. See README.md."
-        exit 1
-      fi
     - npm ci --cache .npm --prefer-offline
+    # Pages may serve the site from a subfolder, such as https://group.gitlab.io/site/.
+    - export GOODFELLOW_BASE="$(node -e 'console.log(new URL(process.env.CI_PAGES_URL).pathname)')"
     - npx next build
   pages:
     publish: out

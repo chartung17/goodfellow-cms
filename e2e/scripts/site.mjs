@@ -87,14 +87,37 @@ export function resetNextContent() {
   }
 }
 
-/** Creates the Next.js test site, using the template's installed packages. */
-export function createNextSite() {
-  rmSync(nextSite, { recursive: true, force: true });
-  mkdirSync(nextSite, { recursive: true });
+/** The Next.js test site's config: the template's blocks, plus one with a Client Component. */
+const NEXT_CONFIG = `import { blocks, categories } from "@goodfellow/blocks";
+import { defineConfig } from "@goodfellow/core";
+import { Counter } from "@/blocks/counter";
+
+export default defineConfig({ blocks: { ...blocks, Counter }, categories });
+`;
+
+/** Copies the Next.js template to `dir`, using the template's installed packages. */
+function copyNextTemplate(dir) {
+  rmSync(dir, { recursive: true, force: true });
+  mkdirSync(dir, { recursive: true });
   for (const entry of readdirSync(nextTemplate)) {
-    if (["node_modules", ".next", "out", "content", "public", ".turbo"].includes(entry)) continue;
-    cpSync(join(nextTemplate, entry), join(nextSite, entry), { recursive: true });
+    if (["node_modules", ".next", "out", ".turbo"].includes(entry)) continue;
+    cpSync(join(nextTemplate, entry), join(dir, entry), { recursive: true });
   }
-  symlinkSync(join(nextTemplate, "node_modules"), join(nextSite, "node_modules"), "dir");
+  symlinkSync(join(nextTemplate, "node_modules"), join(dir, "node_modules"), "dir");
+}
+
+/** Creates the Next.js test site, with an extra block whose component runs in the browser. */
+export function createNextSite() {
+  copyNextTemplate(nextSite);
+  cpSync(join(here, "../fixtures/next-blocks"), join(nextSite, "blocks"), { recursive: true });
+  writeFileSync(join(nextSite, "goodfellow.config.tsx"), NEXT_CONFIG);
   resetNextContent();
+}
+
+/** A copy of the Next.js template that's built to be served from a subfolder. */
+export const nextBuiltSite = join(here, "../.site-next-base");
+export const NEXT_BASE = "/site/";
+
+export function createNextBuiltSite() {
+  copyNextTemplate(nextBuiltSite);
 }

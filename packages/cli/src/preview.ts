@@ -2,7 +2,7 @@ import { createReadStream } from "node:fs";
 import { stat } from "node:fs/promises";
 import { createServer, type Server } from "node:http";
 import { extname, join, normalize, resolve, sep } from "node:path";
-import { normalizeBase } from "./base-path.js";
+import { normalizeBase } from "@goodfellow/core";
 
 export interface PreviewOptions {
   root?: string;

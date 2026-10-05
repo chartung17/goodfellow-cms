@@ -1,4 +1,4 @@
-import { readFileSync } from "node:fs";
+import { readFileSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { test as base, expect as baseExpect } from "@playwright/test";
 import { nextSite, resetNextContent } from "../scripts/site.mjs";
@@ -59,4 +59,29 @@ test("edits a page in Puck with the site's styles", async ({ page }) => {
   await expect(canvas.getByRole("heading", { name: "About us" })).toBeVisible();
   const heading = canvas.getByRole("heading", { name: "About us" });
   await expect.poll(() => heading.evaluate((el) => getComputedStyle(el).fontWeight)).toBe("700");
+});
+
+test("runs a block's Client Component in the browser, with the site's data and next/link", async ({ page }) => {
+  const counterPage = {
+    version: 1,
+    data: {
+      content: [{ type: "Counter", props: { id: "Counter-1", className: "", label: "Clicked" } }],
+      root: { props: { className: "", description: "", image: "", title: "Counter" } },
+    },
+  };
+  writeFileSync(join(nextSite, "content/pages/counter.json"), `${JSON.stringify(counterPage, null, 2)}\n`);
+
+  await page.goto(`${BASE}/counter/`);
+  await expect(page.getByText("My site at /counter")).toBeVisible();
+  await page.getByRole("button", { name: "Clicked 0 times" }).click();
+  await expect(page.getByRole("button", { name: "Clicked 1 times" })).toBeVisible();
+
+  // next/link moves to the page without reloading the browser's page.
+  await page.evaluate(() => {
+    (window as { notReloaded?: boolean }).notReloaded = true;
+  });
+  await page.getByRole("link", { name: "About this site" }).click();
+  await expect(page.getByRole("heading", { name: "About us", level: 1 })).toBeVisible();
+  expect(new URL(page.url()).pathname).toBe("/about/");
+  expect(await page.evaluate(() => (window as { notReloaded?: boolean }).notReloaded)).toBe(true);
 });

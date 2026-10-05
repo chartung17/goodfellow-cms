@@ -31,13 +31,11 @@ jobs:
           cache: npm
       - id: pages
         uses: actions/configure-pages@v5
-      # This site must be served from the root of its address: a user or organization site, or a custom domain.
-      - if: steps.pages.outputs.base_path != ''
-        run: |
-          echo "::error::GitHub Pages serves this site from ${{ steps.pages.outputs.base_path }}/, but a Next.js Goodfellow site must be served from the root of its address. Use a custom domain, a your-name.github.io repository, or another host. See README.md."
-          exit 1
       - run: npm ci
+      # Project sites live in a subfolder (/repository-name/); user and organization sites don't.
       - run: npx next build
+        env:
+          GOODFELLOW_BASE: ${{ steps.pages.outputs.base_path }}/
       - uses: actions/upload-pages-artifact@v4
         with:
           path: out

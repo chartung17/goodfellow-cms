@@ -1,4 +1,6 @@
 import { cache, type ReactNode } from "react";
+// A Client Component module ("use client"): Next.js passes the site to the browser for client components in blocks.
+import { SiteProvider as ClientSiteProvider } from "./site-context.js";
 import type { SiteContextValue } from "./site-types.js";
 
 export type { SiteContextValue } from "./site-types.js";
@@ -9,9 +11,23 @@ export type { SiteContextValue } from "./site-types.js";
  */
 const current = cache((): { value: SiteContextValue | null } => ({ value: null }));
 
+/**
+ * Makes the site available to blocks rendered as Server Components, and to
+ * the Client Components inside them, which get it through React context.
+ */
 export function SiteProvider({ value, children }: { value: SiteContextValue; children: ReactNode }) {
   current().value = value;
-  return children;
+  return <ClientSiteProvider value={value}>{children}</ClientSiteProvider>;
+}
+
+/**
+ * Makes `site` the one `useSite()` returns until another is set. Next.js renders
+ * its "not found" page in the same request as every other page, so each block
+ * sets its own page's site just before rendering: a block and the components
+ * it renders run in one go, so they always see their own page.
+ */
+export function setSite(site: SiteContextValue): void {
+  current().value = site;
 }
 
 /** Site settings, menus, collections and the current page. Must be used inside a Goodfellow page. */

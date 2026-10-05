@@ -1,7 +1,7 @@
 import { defineConfig } from "tsdown";
 
 export default defineConfig({
-  entry: ["src/index.tsx", "src/config.ts", "src/admin.tsx"],
+  entry: ["src/index.tsx", "src/config.ts", "src/admin.tsx", "src/components.tsx"],
   format: "esm",
   dts: true,
   platform: "neutral",
@@ -10,4 +10,10 @@ export default defineConfig({
   deps: { neverBundle: [/^node:/, /^next(\/|$)/, /^@goodfellow\//, /^@puckeditor\//, /^react(-dom)?(\/|$)/] },
   // Keeps the admin panel's stylesheet imports, for Next.js to bundle.
   treeshake: { moduleSideEffects: (id) => id.endsWith(".css") },
+  inputOptions: {
+    // "use client" modules are their own entries, so their directive is kept; Next.js's tests depend on it.
+    onLog(level, log, handler) {
+      if (log.code !== "MODULE_LEVEL_DIRECTIVE") handler(level, log);
+    },
+  },
 });

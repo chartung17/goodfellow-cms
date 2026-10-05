@@ -19,14 +19,20 @@ The News page and its stories are an example of a collection: a group of similar
 | File | What it does |
 |---|---|
 | `goodfellow.config.tsx` | The site's blocks and where it's stored, shared by its pages and the admin panel |
-| `app/[[...path]]/page.tsx` | Every page in `content/`. Pages are Server Components with the same HTML as `goodfellow build`, and blocks send no JavaScript. |
+| `app/[[...path]]/page.tsx` | Every page in `content/`, rendered as Server Components. Links between pages use `next/link`, and images `next/image`. |
 | `app/not-found.tsx` | The site's "Page not found" page, `content/pages/404.json` |
 | `app/admin/page.tsx` | The admin panel |
 | `app/site.css` | The site's styles: Tailwind, the theme, and the custom CSS from the admin panel |
 | `app/layout.tsx`, `app/sitemap.ts`, `app/robots.ts` | The page around everything, and files for search engines |
-| `next.config.ts` | `withGoodfellow()` builds static files, and runs the admin panel's local backend in `next dev` |
+| `next.config.ts` | `withGoodfellow()` builds static files, serves the site from a subfolder when the host needs it, and runs the admin panel's local backend in `next dev` |
 
-Your own Next.js pages can go beside these, in `app/`. Blocks are shared with sites built without Next.js, so they can't use Next.js features or React hooks such as `useState`. Read the site's settings, menus and collections with `useSite()`.
+Your own Next.js pages can go beside these, in `app/`, and import from the project root as `@/`, such as `@/lib/site`.
+
+Blocks are React components in `blocks/`, added to the editor in `goodfellow.config.tsx`. For links and images, use `SiteLink` and `SiteImage` from `@goodfellow/react` rather than `<a>` and `<img>`, so they follow the site's address and use `next/link` and `next/image`. Read the site's settings, menus and collections with `useSite()`.
+
+Interactive parts of a block go in a Client Component: a file starting with `"use client"`, which can use any React hooks and runs in the browser. Pass it plain values, not functions. `useSite()` works there too.
+
+Images are served as they are. To resize them and convert them to modern formats, set a [custom image loader](https://nextjs.org/docs/app/api-reference/components/image#loader) for a service such as Cloudinary under `images` in `withGoodfellow({ ... })`.
 
 ## Putting the site online
 
@@ -52,26 +58,22 @@ export default defineConfig({
 
 Until a backend is set, the admin panel on the live site only says it isn't set up yet. If the live site is built from a branch other than the repository's default branch, add `branch: "name"`.
 
-Also set the site's address under **Site settings → General → Site address**, such as `https://your-name.github.io`. It's used for the sitemap and for link previews.
+Also set the site's address under **Site settings → General → Site address**, including any subfolder (such as `https://your-name.github.io/your-site`). It's used for the sitemap and for link previews.
 
 ### 3. Choose a host
-
-This site must be served from the root of its address (`https://example.org/`, not `https://example.org/my-site/`), because links in its pages don't yet follow Next.js's `basePath`. The deploy setups stop with an explanation if the host would serve it from a subfolder.
 
 Each host's free plan has its own rules about business use. If the site is for a business, sells anything, shows ads, or is built or looked after by someone who's paid for it, check those rules first. As of October 2026, GitHub Pages and Vercel's free plan don't allow most of these, and GitLab Pages has no rule against them that we know of. See [Commercial sites](https://github.com/chartung17/goodfellow-cms#requirements-and-limits) in Goodfellow's README.
 
 **GitHub Pages** (free for public repositories; not for online businesses or shops)
 
-1. Use a repository named `your-name.github.io`, or set up a custom domain: other repositories are served from a subfolder.
-2. In the repository on GitHub, go to **Settings → Pages** and set **Source** to **GitHub Actions**.
-3. Push. `.github/workflows/deploy.yml` builds and publishes the site on every change and once a night. If your main branch isn't called `main`, change it in that file.
+1. In the repository on GitHub, go to **Settings → Pages** and set **Source** to **GitHub Actions**.
+2. Push. `.github/workflows/deploy.yml` builds and publishes the site on every change and once a night. If your main branch isn't called `main`, change it in that file.
 
 **GitLab Pages** (free, including for private projects; no rule against business sites that we know of)
 
-1. Under **Deploy → Pages**, turn on **Use unique domain** (the default for new projects), so the site isn't served from a subfolder.
-2. Push. `.gitlab-ci.yml` builds and publishes the site on every change to the default branch.
-3. For nightly rebuilds, add a schedule under **Build → Pipeline schedules**.
-4. The site's address is under **Deploy → Pages**.
+1. Push. `.gitlab-ci.yml` builds and publishes the site on every change to the default branch.
+2. For nightly rebuilds, add a schedule under **Build → Pipeline schedules**.
+3. The site's address is under **Deploy → Pages**.
 
 **Vercel** (works with GitHub and GitLab; the free plan is for non-commercial sites only)
 

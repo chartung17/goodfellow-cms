@@ -9,16 +9,31 @@ import {
   type Page,
   type SiteContent,
   themeToCss,
+  withBase,
 } from "@goodfellow/core";
-import { fileSystemSource } from "@goodfellow/core/node";
-import { applyPageEntry, createPuckConfigs, PageBody, preparePage } from "@goodfellow/react";
+import { fileSystemSource, readMediaSizes } from "@goodfellow/core/node";
+import { applyPageEntry, createPuckConfigs, PageBody, preparePage, type SiteComponents } from "@goodfellow/react";
 import type { Metadata, MetadataRoute } from "next";
 import { notFound } from "next/navigation";
 import { cache } from "react";
+import { NextImage, NextLink } from "./components.js";
 
 export interface GoodfellowPagesOptions {
   /** The site's folder, holding `content/`. Defaults to the folder Next.js runs in. */
   root?: string;
+  /**
+   * The path the site is served from, such as `/my-site`. Defaults to the
+   * `basePath` that `withGoodfellow()` gave Next.js.
+   */
+  basePath?: string;
+}
+
+/** Next.js's own link and image components, for blocks' `<SiteLink>` and `<SiteImage>`. */
+const components: SiteComponents = { Link: NextLink, Image: NextImage };
+
+/** Set by `withGoodfellow()` from Next.js's `basePath`. */
+function configuredBasePath(): string {
+  return process.env.GOODFELLOW_BASE_PATH ?? "";
 }
 
 /** The route parameters of an optional catch-all route named `[[...path]]`. */
@@ -52,7 +67,7 @@ function toAbsolute(siteUrl: string | undefined, url: string | undefined): strin
 }
 
 /** A page's title, description and link previews, as Next.js metadata. */
-export function pageMetadata(content: SiteContent, page: Page): Metadata {
+export function pageMetadata(content: SiteContent, page: Page, basePath = configuredBasePath()): Metadata {
   const head = getPageHead(content.settings, page);
   const socialImage = toAbsolute(content.settings.url, head.socialImage);
   return {
@@ -61,7 +76,7 @@ export function pageMetadata(content: SiteContent, page: Page): Metadata {
     ...(head.description && { description: head.description }),
     ...(head.noIndex && { robots: { index: false } }),
     ...(head.canonicalUrl && { alternates: { canonical: head.canonicalUrl } }),
-    ...(head.favicon && { icons: { icon: head.favicon } }),
+    ...(head.favicon && { icons: { icon: withBase(head.favicon, basePath) } }),
     openGraph: {
       type: "website",
       title: head.title,
@@ -74,16 +89,25 @@ export function pageMetadata(content: SiteContent, page: Page): Metadata {
 }
 
 /**
- * Renders the site's pages in a Next.js App Router site, as Server Components:
- * the HTML is the same as `goodfellow build` writes, with no JavaScript for the
- * blocks. Use the results in `app/[[...path]]/page.tsx` and `app/not-found.tsx`.
+ * Renders the site's pages in a Next.js App Router site, as Server Components.
+ * Blocks' links to the site's pages use `next/link`, and their images
+ * `next/image`, through `<SiteLink>` and `<SiteImage>`; Client Components in
+ * blocks run in the browser. Use the results in `app/[[...path]]/page.tsx`
+ * and `app/not-found.tsx`.
  */
 export function goodfellowPages(config: GoodfellowConfig, options: GoodfellowPagesOptions = {}) {
   const configs = createPuckConfigs(config);
+  const root = options.root ?? process.cwd();
+  // The same arguments as the layout's `loadSite()`, so a request reads the site once.
   const site = () => loadSite(options.root);
+  const basePath = () => options.basePath ?? configuredBasePath();
 
   async function render(content: SiteContent, page: Page) {
-    const prepared = await preparePage(configs, content, page);
+    const prepared = await preparePage(configs, content, page, {
+      base: basePath(),
+      components,
+      media: await readMediaSizes(root),
+    });
     const fontsUrl = googleFontsUrl(content.settings.theme);
     return (
       <>
@@ -121,7 +145,7 @@ export function goodfellowPages(config: GoodfellowConfig, options: GoodfellowPag
     async generateMetadata({ params }: PageProps): Promise<Metadata> {
       const content = await site();
       const page = findPage(content, pathOf((await params).path));
-      return page ? pageMetadata(content, applyPageEntry(configs, content, page)) : {};
+      return page ? pageMetadata(content, applyPageEntry(configs, content, page), basePath()) : {};
     },
 
     /** The page at the route's address: its header, content and footer. */

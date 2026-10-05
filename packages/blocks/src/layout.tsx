@@ -1,5 +1,6 @@
-import { classNameField, cx, mediaField } from "@goodfellow/react";
-import type { ComponentConfig, Slot } from "@puckeditor/core";
+import { withBase } from "@goodfellow/core";
+import { classNameField, cx, mediaField, useSite } from "@goodfellow/react";
+import type { ComponentConfig, Slot, SlotComponent } from "@puckeditor/core";
 import { type Gap, gapClasses, gapLabels, options, yesNo } from "./options.js";
 
 type Width = "narrow" | "normal" | "wide" | "full";
@@ -32,6 +33,27 @@ const backgroundClasses: Record<Background, string> = {
   secondary: "bg-secondary text-secondary-foreground",
 };
 
+/** A Section's band, with its background image at the site's own address. */
+function SectionView({
+  content: Content,
+  width,
+  padding,
+  background,
+  backgroundImage,
+  className,
+}: Omit<SectionProps, "content"> & { content: SlotComponent }) {
+  const { base } = useSite();
+  const image = backgroundImage && withBase(backgroundImage, base);
+  return (
+    <section
+      className={cx(paddingClasses[padding], backgroundClasses[background], image && "bg-cover bg-center", className)}
+      style={image ? { backgroundImage: `url(${JSON.stringify(image)})` } : undefined}
+    >
+      <Content className={cx("mx-auto px-4", widthClasses[width])} />
+    </section>
+  );
+}
+
 /** A full-width band of the page that centers its content. */
 export const Section: ComponentConfig<SectionProps> = {
   label: "Section",
@@ -63,19 +85,7 @@ export const Section: ComponentConfig<SectionProps> = {
     backgroundImage: "",
     className: "",
   },
-  render: ({ content: Content, width, padding, background, backgroundImage, className }) => (
-    <section
-      className={cx(
-        paddingClasses[padding],
-        backgroundClasses[background],
-        backgroundImage && "bg-cover bg-center",
-        className,
-      )}
-      style={backgroundImage ? { backgroundImage: `url(${JSON.stringify(backgroundImage)})` } : undefined}
-    >
-      <Content className={cx("mx-auto px-4", widthClasses[width])} />
-    </section>
-  ),
+  render: (props) => <SectionView {...props} />,
 };
 
 type Columns = "1" | "2" | "3" | "4";

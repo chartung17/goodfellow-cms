@@ -1,6 +1,7 @@
 import { createServer } from "node:http";
 import type { AddressInfo } from "node:net";
 import { resolve } from "node:path";
+import { normalizeBase } from "@goodfellow/core";
 import { DEV_API_PREFIX, handleDevApi, isLocalOrigin, localFileStore } from "@goodfellow/core/node";
 import type { NextConfig } from "next";
 
@@ -45,6 +46,21 @@ function withRewrite(rewrites: Rewrites | undefined, rewrite: Rewrite): Rewrites
   return { ...rewrites, beforeFiles: [rewrite, ...(rewrites.beforeFiles ?? [])] };
 }
 
+/** Next.js's form of a base path: `/my-site`, or empty for the root. */
+function nextBasePath(base: string | undefined): string {
+  return normalizeBase(base).slice(0, -1);
+}
+
+/**
+ * Next.js only optimizes images with a server or a custom loader. Without a
+ * loader, `next/image` serves images as they are, still with their sizes set.
+ */
+function imageSettings(images: NextConfig["images"]): NextConfig["images"] {
+  if (images?.loader && images.loader !== "default") return images;
+  if (images?.loaderFile) return images;
+  return { unoptimized: true, ...images };
+}
+
 /**
  * Sets up Next.js for a Goodfellow site, in `next.config.ts`:
  * `export default withGoodfellow({ ... })`.
@@ -52,20 +68,25 @@ function withRewrite(rewrites: Rewrites | undefined, rewrite: Rewrite): Rewrites
  * - Builds the site as static files (`output: "export"`), so any static host can serve it,
  *   with each page in its own folder (`trailingSlash: true`), as `goodfellow build` does.
  *   `next dev` serves pages as usual, so an unknown address shows the "not found" page.
+ * - Serves the site from `basePath`, or else the `GOODFELLOW_BASE` environment
+ *   variable, as `goodfellow build` does (GitHub Pages serves most sites from `/repository-name/`).
+ * - Serves images as they are unless the site sets an image loader, since static files can't be optimized on request.
  * - In `next dev`, runs the admin panel's local backend, so publishing saves to
  *   the files on disk. It's never part of a build.
  */
 export function withGoodfellow(nextConfig: NextConfig = {}, options: GoodfellowNextOptions = {}) {
   const root = resolve(options.root ?? process.cwd());
-  if (nextConfig.basePath) {
-    // Links in the site's content start at the root of the address, and nothing adds the base path to them yet.
-    throw new Error(
-      "Goodfellow sites built with Next.js must be served from the root of their address, so basePath isn't supported yet.",
-    );
-  }
+  const basePath = nextBasePath(nextConfig.basePath ?? process.env.GOODFELLOW_BASE);
   return async (phase: string): Promise<NextConfig> => {
-    // Pages are folders (about/index.html), as `goodfellow build` writes them, so /admin/ works for GitLab sign-in.
-    const config: NextConfig = { trailingSlash: true, ...nextConfig };
+    const config: NextConfig = {
+      // Pages are folders (about/index.html), as `goodfellow build` writes them, so /admin/ works for GitLab sign-in.
+      trailingSlash: true,
+      ...nextConfig,
+      ...(basePath && { basePath }),
+      images: imageSettings(nextConfig.images),
+      // Tells the site's pages and the admin panel where the site is served from.
+      env: { ...nextConfig.env, GOODFELLOW_BASE_PATH: basePath },
+    };
     // In development, Next.js treats an unknown address in an exported site as an error rather than "not found".
     if (phase !== PHASE_DEVELOPMENT_SERVER) return { output: "export", ...config };
 

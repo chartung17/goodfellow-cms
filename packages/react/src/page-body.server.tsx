@@ -1,8 +1,9 @@
-import type { Metadata } from "@puckeditor/core";
+import type { Config, Metadata } from "@puckeditor/core";
 import { Render as PuckRender } from "@puckeditor/core/rsc";
 import type { ComponentProps } from "react";
 import { createPageBody } from "./page-body-shared.js";
-import { SiteProvider } from "./site-context.server.js";
+import { SiteProvider, setSite } from "./site-context.server.js";
+import type { SiteContextValue } from "./site-types.js";
 
 export type { PageBodyProps } from "./page-body-shared.js";
 export { siteMetadata } from "./site-types.js";
@@ -27,11 +28,33 @@ export function hiddenFromSlots(metadata: Metadata): Metadata {
   return result;
 }
 
+/** The config with each block setting its page's site before it renders: see `setSite()`. */
+function withSite(config: Config, site: SiteContextValue): Config {
+  const components = Object.fromEntries(
+    Object.entries(config.components).map(([name, component]) => [
+      name,
+      {
+        ...component,
+        render: (props: Parameters<typeof component.render>[0]) => {
+          setSite(site);
+          return component.render(props);
+        },
+      },
+    ]),
+  );
+  return { ...config, components } as Config;
+}
+
 /** Puck's server `Render`, matching its browser `Render`: that wraps the content in a `<div>`, so the same CSS applies either way. */
-function Render({ metadata = {}, ...props }: ComponentProps<typeof PuckRender>) {
+function Render({
+  config,
+  metadata = {},
+  site,
+  ...props
+}: ComponentProps<typeof PuckRender> & { site: SiteContextValue }) {
   return (
     <div>
-      <PuckRender {...props} metadata={hiddenFromSlots(metadata)} />
+      <PuckRender {...props} config={withSite(config, site)} metadata={hiddenFromSlots(metadata)} />
     </div>
   );
 }

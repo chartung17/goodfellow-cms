@@ -13,7 +13,8 @@ export interface PageBodyProps {
 }
 
 interface Renderers {
-  Render: ComponentType<{ config: Config; data: Data; metadata?: Metadata }>;
+  /** Puck's `Render`, which also gets the site the data belongs to. */
+  Render: ComponentType<{ config: Config; data: Data; metadata?: Metadata; site: SiteContextValue }>;
   SiteProvider: ComponentType<{ value: SiteContextValue; children: ReactNode }>;
 }
 
@@ -28,15 +29,15 @@ export function createPageBody({ Render, SiteProvider }: Renderers) {
       <SiteProvider value={site}>
         {header.content.length > 0 && (
           <header className="gf-header">
-            <Render config={layoutConfig} data={header} metadata={metadata} />
+            <Render config={layoutConfig} data={header} metadata={metadata} site={site} />
           </header>
         )}
         <main className={cx("gf-main", typeof rootClassName === "string" && rootClassName)}>
-          <Render config={pageConfig} data={page} metadata={metadata} />
+          <Render config={pageConfig} data={page} metadata={metadata} site={site} />
         </main>
         {footer.content.length > 0 && (
           <footer className="gf-footer">
-            <Render config={layoutConfig} data={footer} metadata={metadata} />
+            <Render config={layoutConfig} data={footer} metadata={metadata} site={site} />
           </footer>
         )}
       </SiteProvider>

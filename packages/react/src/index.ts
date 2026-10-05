@@ -1,5 +1,6 @@
 export { cx } from "./cx.js";
 export { applyEntry, placeholderValues } from "./entry.js";
+export { SiteImage, SiteLink } from "./links.js";
 export { PageBody, type PageBodyProps, siteMetadata } from "./page-body.js";
 export {
   applyPageEntry,
@@ -7,6 +8,7 @@ export {
   type PreparedPage,
   type PuckConfigs,
   preparePage,
+  type RenderOptions,
 } from "./prepare.js";
 export {
   classNameField,
@@ -20,3 +22,4 @@ export {
   withClassName,
 } from "./puck-config.js";
 export { type SiteContextValue, SiteProvider, useSite } from "./site-context.js";
+export type { SiteComponents, SiteImageProps, SiteLinkProps } from "./site-types.js";

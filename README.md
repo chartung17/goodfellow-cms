@@ -92,14 +92,15 @@ To put a site online, follow [the starter's README](templates/starter/README.md)
 
 ### Next.js
 
-`@goodfellow/next` puts a Goodfellow site in a Next.js app (App Router, Next.js 16). The site's pages render as Server Components with the same HTML as `goodfellow build` and no JavaScript for the blocks, and `next build` exports everything as static files, so the same free hosts serve it. [The Next.js starter](templates/next/README.md) has it all set up:
+`@goodfellow/next` puts a Goodfellow site in a Next.js app (App Router, Next.js 16), exported as static files so the same free hosts serve it. [The Next.js starter](templates/next/README.md) has it all set up:
 
-- `withGoodfellow()` in `next.config.ts` exports static files with a folder per page, and in `next dev` runs the admin panel's local backend, which saves to the files on disk. The local backend is never part of a build.
+- `withGoodfellow()` in `next.config.ts` exports static files with a folder per page, serves the site from `basePath` (or the `GOODFELLOW_BASE` environment variable, as `goodfellow build` does), and in `next dev` runs the admin panel's local backend, which saves to the files on disk. The local backend is never part of a build.
 - `goodfellowPages(config)` gives the routes their parts: `Page`, `generateStaticParams` and `generateMetadata` for `app/[[...path]]/page.tsx`, `NotFound` for `app/not-found.tsx`, and `sitemap` and `robots`.
 - `<GoodfellowAdmin config={config} />` from `@goodfellow/next/admin` is the admin panel, in a Client Component at `app/admin/page.tsx`.
-- `@goodfellow/react` has a Server Components version that Next.js picks automatically, so the same blocks work in both. Blocks can't use React hooks such as `useState`, and read site data with `useSite()`.
+- Pages render as Server Components. Blocks' links to the site's pages use `next/link`, so moving between pages doesn't reload, and the site's images use `next/image` with their sizes filled in. Images are served as they are unless the site sets a [custom image loader](https://nextjs.org/docs/app/api-reference/components/image#loader), since a static export can't resize them on request.
+- Blocks can render Client Components (`"use client"`) with any React hooks, and they run in the browser. They can read the site with `useSite()`.
 
-Limits for now: the site must be served from the root of its address (`basePath` isn't supported), and blocks can't use Next.js features, since they're shared with sites built without it.
+**Compared with `goodfellow build`:** Next.js suits developers who want interactive components, client-side navigation, their own Next.js pages beside the site's, or Next.js's ecosystem. It costs more: each page loads Next.js's JavaScript and carries its own content again as data (plus the site's data when it has Client Components), builds take longer, and there are more dependencies to keep up to date. Most of Next.js's server features don't apply, because Goodfellow sites are static. For a content site, `goodfellow build` is lighter and simpler.
 
 ### Commands
 
@@ -223,11 +224,12 @@ my-site/
 5. **AI assistant** (done). Draft and rewrite pages with Claude, OpenAI or a free AI service, called straight from the editor's browser with the editor's own key. Editors without a key can copy a prompt into Claude.ai or another chat app and paste the answer back.
 6. **Media library** (done). Upload, browse and replace images and files from the admin panel, and choose them for blocks and settings.
 7. **Starters** (done). `create-goodfellow`, which creates a site and sets up its storage and host, and an example parish site with collections and custom blocks.
-8. **Next.js adapter** (done). Goodfellow pages and the admin panel in a Next.js app, exported as static files, with a Next.js starter. Serving a Next.js site from a subfolder (`basePath`) comes later.
-9. **Documentation site.** Guides for site owners and editors, plus reference docs for developers. Includes each host's rules for commercial sites on its free plan, kept up to date.
-10. **Site setup without a developer.** A web page where anyone can create a site from a starter, store it on GitHub or GitLab, and put it online with GitHub Pages, GitLab Pages or Vercel. It asks what the site is for and recommends a host whose free plan allows it, such as GitLab Pages for a business. Builds work out which repository they're in, so nobody has to edit the config.
-11. **Custom domains.** Connect a domain from the admin panel. Goodfellow sets the domain on the host where it can, lists the records to add at the domain's registrar, with guides for popular registrars, and shows when the domain is working.
-12. **Running a site without a developer.**
+8. **Next.js adapter** (done). Goodfellow pages and the admin panel in a Next.js app, exported as static files, with a Next.js starter. Links use `next/link` and images `next/image`, sites can be served from a subfolder, and blocks can use Client Components.
+9. **Interactive blocks everywhere.** Client Components in blocks (`"use client"`) run in the browser on sites built with `goodfellow build` too, not only with Next.js, while pages without them still load no JavaScript.
+10. **Documentation site.** Guides for site owners and editors, plus reference docs for developers. Includes each host's rules for commercial sites on its free plan, kept up to date.
+11. **Site setup without a developer.** A web page where anyone can create a site from a starter, store it on GitHub or GitLab, and put it online with GitHub Pages, GitLab Pages or Vercel. It asks what the site is for and recommends a host whose free plan allows it, such as GitLab Pages for a business. Builds work out which repository they're in, so nobody has to edit the config.
+12. **Custom domains.** Connect a domain from the admin panel. Goodfellow sets the domain on the host where it can, lists the records to add at the domain's registrar, with guides for popular registrars, and shows when the domain is working.
+13. **Running a site without a developer.**
     - Invite and remove editors from the admin panel.
     - Version history, with a way to restore an earlier version of a page.
     - Automatic updates: a scheduled job updates Goodfellow and publishes the update only if the site still builds.

@@ -1,4 +1,4 @@
-import { classNameField, cx, useSite } from "@goodfellow/react";
+import { classNameField, cx, SiteImage, SiteLink, useSite } from "@goodfellow/react";
 import type { ComponentConfig } from "@puckeditor/core";
 import { options } from "./options.js";
 
@@ -29,13 +29,13 @@ function MenuView({ menu, orientation, className }: MenuProps) {
       <ul className={cx("flex", vertical ? "flex-col gap-1" : "flex-wrap items-center gap-1")}>
         {items.map((item) => (
           <li key={`${item.label}-${item.href}`} className="group relative">
-            <a
+            <SiteLink
               href={item.href}
               className={cx(linkClass, isCurrent(item.href, path) && "font-semibold")}
               aria-current={item.href === path ? "page" : undefined}
             >
               {item.label}
-            </a>
+            </SiteLink>
             {item.children && item.children.length > 0 && (
               <ul
                 className={cx(
@@ -46,9 +46,13 @@ function MenuView({ menu, orientation, className }: MenuProps) {
               >
                 {item.children.map((child) => (
                   <li key={`${child.label}-${child.href}`}>
-                    <a href={child.href} className={linkClass} aria-current={child.href === path ? "page" : undefined}>
+                    <SiteLink
+                      href={child.href}
+                      className={linkClass}
+                      aria-current={child.href === path ? "page" : undefined}
+                    >
                       {child.label}
-                    </a>
+                    </SiteLink>
                   </li>
                 ))}
               </ul>
@@ -83,10 +87,10 @@ function SiteBrandView({ show, className }: SiteBrandProps) {
   const showTitle = show !== "logo" || !logo;
 
   return (
-    <a href="/" className={cx("inline-flex items-center gap-3 font-heading text-xl font-bold", className)}>
-      {logo && <img src={logo.src} alt={showTitle ? "" : logo.alt || settings.title} className="h-10 w-auto" />}
+    <SiteLink href="/" className={cx("inline-flex items-center gap-3 font-heading text-xl font-bold", className)}>
+      {logo && <SiteImage src={logo.src} alt={showTitle ? "" : logo.alt || settings.title} className="h-10 w-auto" />}
       {showTitle && <span>{settings.title}</span>}
-    </a>
+    </SiteLink>
   );
 }
 

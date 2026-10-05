@@ -1,10 +1,20 @@
-import { findEntry, type GoodfellowConfig, type Page, type SiteContent } from "@goodfellow/core";
+import {
+  applyBasePath,
+  findEntry,
+  type GoodfellowConfig,
+  normalizeBase,
+  type Page,
+  type SiteContent,
+} from "@goodfellow/core";
 import type { Config, Data, Metadata } from "@puckeditor/core";
 // The server entry works everywhere and has no browser-only code, so Server Components can prepare pages too.
 import { migrate, resolveAllData } from "@puckeditor/core/rsc";
 import { applyEntry } from "./entry.js";
 import { createPuckConfig } from "./puck-config.js";
 import { type SiteContextValue, siteMetadata } from "./site-types.js";
+
+/** How the page will be rendered, for renderers that don't rewrite the finished HTML. */
+export type RenderOptions = Pick<SiteContextValue, "base" | "components" | "media">;
 
 /** The Puck configs a site's pages are rendered with. */
 export interface PuckConfigs {
@@ -69,8 +79,26 @@ export function applyPageEntry(configs: PuckConfigs, content: SiteContent, page:
   return { ...page, content: { ...page.content, data: data as Page["content"]["data"] } };
 }
 
-/** Gets a page ready to render: fills in an entry's values, and resolves the page, header and footer. */
-export async function preparePage(configs: PuckConfigs, content: SiteContent, page: Page): Promise<PreparedPage> {
+/** Adds the base path to addresses in rich text, which renders as HTML rather than through `<SiteLink>`. */
+function withBaseInHtml(value: unknown, base: string): unknown {
+  if (typeof value === "string") return value.includes('="/') ? applyBasePath(value, base) : value;
+  if (Array.isArray(value)) return value.map((item) => withBaseInHtml(item, base));
+  if (value && typeof value === "object") {
+    return Object.fromEntries(Object.entries(value).map(([key, item]) => [key, withBaseInHtml(item, base)]));
+  }
+  return value;
+}
+
+/**
+ * Gets a page ready to render: fills in an entry's values, and resolves the
+ * page, header and footer. With a `base`, rich text's links and images get it too.
+ */
+export async function preparePage(
+  configs: PuckConfigs,
+  content: SiteContent,
+  page: Page,
+  options: RenderOptions = {},
+): Promise<PreparedPage> {
   const { settings } = content;
   const found = pageEntry(content, page);
   const site: SiteContextValue = {
@@ -79,6 +107,7 @@ export async function preparePage(configs: PuckConfigs, content: SiteContent, pa
     path: page.path,
     collections: content.collections,
     ...(found && { collection: found.collection, entry: found.entry }),
+    ...options,
   };
   // An entry's page is its collection's template, with the entry's values filled in.
   const pageConfig = found ? configs.template : configs.page;
@@ -90,5 +119,15 @@ export async function preparePage(configs: PuckConfigs, content: SiteContent, pa
     prepareData(content.header.data, configs.layout, metadata),
     prepareData(content.footer.data, configs.layout, metadata),
   ]);
-  return { site, page: applied, pageConfig, layoutConfig: configs.layout, data, header, footer };
+  const base = normalizeBase(options.base);
+  const rebase = <T>(value: T): T => (base === "/" ? value : (withBaseInHtml(value, base) as T));
+  return {
+    site,
+    page: applied,
+    pageConfig,
+    layoutConfig: configs.layout,
+    data: rebase(data),
+    header: rebase(header),
+    footer: rebase(footer),
+  };
 }

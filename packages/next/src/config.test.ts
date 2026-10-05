@@ -16,8 +16,14 @@ describe("withGoodfellow", () => {
   afterAll(() => rm(root, { recursive: true, force: true }));
 
   it("builds static files, keeping the site's own settings", async () => {
-    const config = await withGoodfellow({ images: { unoptimized: true } }, { root })("phase-production-build");
-    expect(config).toEqual({ output: "export", trailingSlash: true, images: { unoptimized: true } });
+    const config = await withGoodfellow({ reactStrictMode: true }, { root })("phase-production-build");
+    expect(config).toEqual({
+      output: "export",
+      trailingSlash: true,
+      reactStrictMode: true,
+      images: { unoptimized: true },
+      env: { GOODFELLOW_BASE_PATH: "" },
+    });
     expect(await withGoodfellow({ trailingSlash: false }, { root })("phase-production-build")).toMatchObject({
       trailingSlash: false,
     });
@@ -56,7 +62,21 @@ describe("withGoodfellow", () => {
     expect(rewrites.afterFiles).toEqual([{ source: "/a", destination: "/b" }]);
   });
 
-  it("refuses a base path, which links in the site's content wouldn't follow", () => {
-    expect(() => withGoodfellow({ basePath: "/site" }, { root })).toThrow("basePath isn't supported");
+  it("serves the site from its base path, from the config or GOODFELLOW_BASE", async () => {
+    const config = await withGoodfellow({ basePath: "/site/" }, { root })("phase-production-build");
+    expect(config).toMatchObject({ basePath: "/site", env: { GOODFELLOW_BASE_PATH: "/site" } });
+
+    process.env.GOODFELLOW_BASE = "/from-env/";
+    try {
+      expect(await withGoodfellow({}, { root })("phase-production-build")).toMatchObject({ basePath: "/from-env" });
+    } finally {
+      delete process.env.GOODFELLOW_BASE;
+    }
+  });
+
+  it("keeps the site's image loader, which can optimize images", async () => {
+    const images = { loader: "custom" as const, loaderFile: "./loader.ts" };
+    const config = await withGoodfellow({ images }, { root })("phase-production-build");
+    expect(config.images).toEqual(images);
   });
 });

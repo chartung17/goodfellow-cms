@@ -1,3 +1,5 @@
+"use client";
+
 import { createContext, type ReactNode, useContext } from "react";
 import type { SiteContextValue } from "./site-types.js";
 
