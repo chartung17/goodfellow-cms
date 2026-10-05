@@ -12,7 +12,8 @@
     "test": "turbo run test",
     "lint": "biome check .",
     "format": "biome check --write .",
-    "changeset": "changeset"
+    "changeset": "changeset",
+    "test:e2e": "turbo run test:e2e"
   },
   "devDependencies": {
     "@biomejs/biome": "2.5.15",

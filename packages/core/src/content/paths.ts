@@ -31,6 +31,14 @@ export function pathSegments(path: string): string[] {
   return segments;
 }
 
+/** Addresses used by Goodfellow itself, which pages can't use. */
+export const RESERVED_PAGE_PATHS = ["/admin"];
+
+/** Whether a page path is, or is inside, an address Goodfellow reserves. */
+export function isReservedPagePath(path: string): boolean {
+  return RESERVED_PAGE_PATHS.some((reserved) => path === reserved || path.startsWith(`${reserved}/`));
+}
+
 /** Normalizes a page path: `"/about/"` → `"/about"`. */
 export function normalizePagePath(path: string): string {
   return `/${pathSegments(path).join("/")}`;

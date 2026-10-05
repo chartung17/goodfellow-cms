@@ -2,7 +2,7 @@
 
 Guidance for anyone, human or coding agent, changing this repository. Read [README.md](README.md) first for what Goodfellow is.
 
-The repo is in early development. Playwright end-to-end tests aren't set up yet. When you add a tool or script, update this file in the same change.
+The repo is in early development. When you add a tool or script, update this file in the same change.
 
 ## Architecture rules
 
@@ -43,6 +43,16 @@ Content files are the product's data format; treat changes to them like API chan
 - **Site data:** read menus and settings with `useSite()`. Never copy them into a block's props.
 - **No client-side JavaScript yet:** pages are static HTML. Interactive behavior uses HTML and CSS only (`<details>`, `:hover`, `:focus-within`).
 - **Labels:** field labels and option names are for non-technical users ("Space above and below", not "padding-y").
+
+## Admin panel
+
+- **Text:** every string goes through `useStrings()` and the table in `packages/admin/src/strings.tsx`. A test fails if any string uses git terms.
+- **Saving:** build file changes with the helpers in `packages/admin/src/changes.ts`, so files are always written in canonical form, and publish them through `useAdmin().publish()`, which passes the revision the editor loaded.
+- **Local backend:** `@goodfellow/admin/dev` (`localStore()`) is imported only by the dev server's admin entry. Never import it from anything a build includes.
+- **Navigation:** link between screens with `AppLink`, which asks before leaving unpublished changes. Screens with unpublished changes call `useUnsavedChanges()`.
+- **Previews:** previews render in iframes styled by `usePreviewStyles()`: the site's CSS plus the theme and custom CSS being edited, with `@tailwindcss/browser` generating classes the compiled CSS doesn't have yet.
+- **Testing Puck:** Puck renders hidden copies of its fields, so tests select visible ones (`:visible`) and click blocks through their `[data-puck-component]` handle.
+- **Dev server watching:** `content/` is excluded from Vite's watcher and watched separately, because Tailwind's Vite plugin reloads every open page when a file it scans changes. That would reload the admin panel on every publish.
 
 ## Component libraries
 
@@ -86,11 +96,13 @@ pnpm lint
 pnpm typecheck
 pnpm test
 pnpm build
+pnpm test:e2e
 ```
 
 - **Order:** tests and typechecks use other workspace packages' built `dist/` folders, so Turborepo builds dependencies first. If you run Vitest directly inside one package, run `pnpm build` first.
 - **TypeScript 7:** tsdown warns that TypeScript 7's API is experimental. That warning is expected.
-- **Trying a change in a real site:** run `pnpm build`, then `pnpm dev` in `templates/starter` and open http://localhost:4321. Pages re-render on every request, so content edits show up on reload.
+- **Trying a change in a real site:** run `pnpm build`, then `pnpm dev` in `templates/starter` and open http://localhost:4321 (or http://localhost:4321/admin). Pages re-render on every request, so content edits show up on reload. The dev server runs the built `dist/` of each package, so rebuild a package after changing it.
+- **End-to-end tests:** `pnpm test:e2e` runs Playwright against `goodfellow dev` serving a copy of the starter site in `e2e/.site`, reset before every test. Install a browser once with `pnpm --filter @goodfellow/e2e exec playwright install chromium`, or point `PLAYWRIGHT_CHROMIUM_EXECUTABLE` at a Chromium that's already installed.
 
 ## Conventions
 

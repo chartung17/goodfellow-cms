@@ -1,0 +1,100 @@
+import type { IncomingMessage, ServerResponse } from "node:http";
+import { ConflictError, type ContentStore, type FileChange } from "@goodfellow/core";
+import { InvalidPathError } from "./local-files.js";
+
+/** Where the development server exposes the local backend. The admin panel's local store calls these endpoints. */
+export const DEV_API_PREFIX = "/__goodfellow/api";
+
+/** Every request must send this header. Browsers won't send custom headers cross-site without a CORS preflight, which this API never approves. */
+export const DEV_API_HEADER = "x-goodfellow-request";
+
+const MAX_BODY_BYTES = 20 * 1024 * 1024;
+
+function send(res: ServerResponse, status: number, body: unknown): void {
+  res.statusCode = status;
+  res.setHeader("Content-Type", "application/json; charset=utf-8");
+  res.setHeader("Cache-Control", "no-store");
+  res.end(JSON.stringify(body));
+}
+
+async function readJson(req: IncomingMessage): Promise<unknown> {
+  let size = 0;
+  const chunks: Buffer[] = [];
+  for await (const chunk of req) {
+    size += (chunk as Buffer).length;
+    if (size > MAX_BODY_BYTES) throw new RangeError("Request too large.");
+    chunks.push(chunk as Buffer);
+  }
+  return JSON.parse(Buffer.concat(chunks).toString("utf8"));
+}
+
+function isFileChange(value: unknown): value is FileChange {
+  if (typeof value !== "object" || value === null) return false;
+  const change = value as Record<string, unknown>;
+  if (typeof change.path !== "string") return false;
+  return change.delete === true || typeof change.content === "string";
+}
+
+/** Rejects requests that could come from another website: they must carry our header and, if they say where they're from, come from this server. */
+function isTrusted(req: IncomingMessage): boolean {
+  if (req.headers[DEV_API_HEADER] !== "1") return false;
+  const origin = req.headers.origin;
+  return origin === undefined || origin === `http://${req.headers.host}` || origin === `https://${req.headers.host}`;
+}
+
+/**
+ * Handles a request to the development API, or returns `false` if the URL
+ * isn't one of its endpoints. Never mounted outside `goodfellow dev`.
+ */
+export async function handleDevApi(store: ContentStore, req: IncomingMessage, res: ServerResponse): Promise<boolean> {
+  const url = new URL(req.url ?? "/", "http://localhost");
+  if (!url.pathname.startsWith(`${DEV_API_PREFIX}/`)) return false;
+  const endpoint = url.pathname.slice(DEV_API_PREFIX.length + 1);
+
+  if (!isTrusted(req)) {
+    send(res, 403, { error: "forbidden" });
+    return true;
+  }
+
+  try {
+    if (req.method === "GET" && endpoint === "revision") {
+      send(res, 200, { revision: await store.revision() });
+    } else if (req.method === "GET" && endpoint === "files") {
+      send(res, 200, { files: await store.list(url.searchParams.get("dir") ?? "") });
+    } else if (req.method === "GET" && endpoint === "file") {
+      const content = await store.read(url.searchParams.get("path") ?? "");
+      if (content === undefined) send(res, 404, { error: "not-found" });
+      else send(res, 200, { content });
+    } else if (req.method === "POST" && endpoint === "write") {
+      if (!req.headers["content-type"]?.startsWith("application/json")) {
+        send(res, 415, { error: "unsupported-media-type" });
+        return true;
+      }
+      const body = (await readJson(req)) as Record<string, unknown>;
+      const { changes, message, expectedRevision } = body;
+      if (
+        !Array.isArray(changes) ||
+        !changes.every(isFileChange) ||
+        typeof message !== "string" ||
+        typeof expectedRevision !== "string"
+      ) {
+        send(res, 400, { error: "bad-request" });
+        return true;
+      }
+      const result = await store.write(changes, { message, expectedRevision });
+      console.log(`  Saved: ${message}`);
+      send(res, 200, result);
+    } else {
+      send(res, 404, { error: "not-found" });
+    }
+  } catch (error) {
+    if (error instanceof ConflictError) send(res, 409, { error: "conflict" });
+    else if (error instanceof InvalidPathError) send(res, 400, { error: "invalid-path", message: error.message });
+    else if (error instanceof SyntaxError || error instanceof RangeError) send(res, 400, { error: "bad-request" });
+    else {
+      console.error(error);
+      send(res, 500, { error: "server-error", message: (error as Error).message });
+    }
+  }
+  return true;
+}

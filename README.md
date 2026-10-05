@@ -4,7 +4,7 @@ A git-based website builder built on the [Puck](https://puckeditor.com) visual e
 
 Goodfellow gives non-technical site owners a drag-and-drop editor at `/admin` with no server, database or monthly hosting bill. Pages are stored as files in the site's own GitHub or GitLab repository. Every save is a commit, and a free static host (GitHub Pages, GitLab Pages or Vercel) rebuilds the site.
 
-> **Status: early development.** Static rendering works: a site's content files build into a static website. There is no admin panel yet, so content is edited by hand. This README describes what Goodfellow is meant to become; the [roadmap](#roadmap) shows what exists.
+> **Status: early development.** Static rendering and the admin panel work, but only on your own computer: `goodfellow dev` serves the admin panel, and publishing saves files to disk. Signing in and publishing to GitHub or GitLab come next. This README describes what Goodfellow is meant to become; the [roadmap](#roadmap) shows what exists.
 
 ## How it works
 
@@ -60,7 +60,7 @@ Eventually, `npm create goodfellow@latest my-site` will create a new site. Until
 pnpm install
 pnpm build
 cd templates/starter
-pnpm dev        # http://localhost:4321, re-renders as you edit content/
+pnpm dev        # site at http://localhost:4321, admin panel at http://localhost:4321/admin
 pnpm build      # writes the static site to dist/
 pnpm preview    # serves dist/ the way a static host would
 ```
@@ -69,13 +69,26 @@ pnpm preview    # serves dist/ the way a static host would
 
 | Command | What it does |
 |---|---|
-| `goodfellow dev` | Serves the site, rendering each page from the files on disk, and reloads the browser when content changes |
+| `goodfellow dev` | Serves the site, rendering each page from the files on disk and reloading it when content changes, plus the admin panel at `/admin`, which saves to those files |
 | `goodfellow build` | Writes one HTML file per page to `dist/`, builds the CSS and copies `public/`. Also writes `sitemap.xml` and `robots.txt` if the site's address is set. |
 | `goodfellow preview` | Serves `dist/`, including the 404 page |
 
 Options: `--root <dir>`, `--out <dir>`, `--port <port>`, and `--base <path>` for sites served from a subfolder, such as `/my-repo/` on GitHub Pages.
 
 The base path comes from `--base`, then the `GOODFELLOW_BASE` environment variable, then `base` in `goodfellow.config.tsx`. Every root-relative link and image in the built pages is adjusted to match, including links inside rich text. The site's address (`url` in `content/site.json`) should be the full public address, subfolder included.
+
+### The admin panel
+
+Open `/admin` while `goodfellow dev` is running. Everything there is written for people who have never used git.
+
+- **Pages:** create pages, edit them in Puck, change a page's address (updating menu links to it), and delete pages. The editor shows the site's header and footer around the page, styled exactly like the live site.
+- **Header & footer:** edit them in Puck, like pages.
+- **Site settings:** the site's name, address, logo and icons; colors, fonts and corner rounding; menus; and custom CSS. A preview of the home page shows changes as you type.
+- **Live styling:** CSS classes typed into a block, and custom CSS (including Tailwind's `@apply`), take effect in the editor immediately, before the site is rebuilt.
+- **Publishing:** each Publish saves every changed file together. If the files changed since the editor loaded, for example because someone edited them by hand, publishing stops instead of overwriting their changes.
+- **Unpublished changes:** leaving a screen with unpublished changes asks first.
+
+In development, Publish writes straight to the files in `content/`.
 
 ### Built-in blocks
 
@@ -104,14 +117,14 @@ This is a pnpm workspace managed with Turborepo.
 | `packages/github` | `@goodfellow/github` | GitHub backend and token sign-in | Planned |
 | `packages/gitlab` | `@goodfellow/gitlab` | GitLab backend and PKCE sign-in | Planned |
 | `packages/react` | `@goodfellow/react` | Page renderer: layout, class names, theme and, later, template bindings | Started |
-| `packages/admin` | `@goodfellow/admin` | The `<Admin>` editor app | Planned |
+| `packages/admin` | `@goodfellow/admin` | The `<Admin>` editor app | Started |
 | `packages/blocks` | `@goodfellow/blocks` | Built-in, library-agnostic blocks | Started |
 | `packages/cli` | `goodfellow` | `goodfellow dev`, `build` and `preview` | Started |
 | `packages/next` | `@goodfellow/next` | Next.js adapter | Planned |
 | `packages/create-goodfellow` | `create-goodfellow` | Project scaffolder | Planned |
 | `templates/starter` | | The starter site copied by `create-goodfellow` | Started |
 | `examples/parish` | | Example site with collections and custom blocks | Planned |
-| `e2e/` | | End-to-end tests against mocked git APIs | Planned |
+| `e2e/` | | End-to-end tests of the admin panel, run against a copy of the starter site | Started |
 
 ### A Goodfellow site
 
@@ -139,7 +152,7 @@ my-site/
 ## Roadmap
 
 1. **Static rendering** (done). Build a static site from hand-written `content/` files.
-2. **Editor.** The admin panel against local files: pages, site settings, header and footer, custom CSS, live Tailwind preview.
+2. **Editor** (done). The admin panel against local files: pages, site settings, header and footer, custom CSS, live Tailwind preview.
 3. **Git backends.** GitHub and GitLab sign-in, publishing, conflict detection and deploy status, plus GitHub Pages, GitLab Pages and Vercel setups.
 4. **Collections and templates.**
 5. **Starters.** `create-goodfellow` and the parish example.

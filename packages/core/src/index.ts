@@ -13,6 +13,7 @@ export {
   FOOTER_FILE,
   HEADER_FILE,
   InvalidPathError,
+  isReservedPagePath,
   MEDIA_DIR,
   MENUS_FILE,
   normalizePagePath,
@@ -20,6 +21,7 @@ export {
   pageFileToPath,
   pageOutputFile,
   pagePathToFile,
+  RESERVED_PAGE_PATHS,
   SITE_FILE,
 } from "./content/paths.js";
 export {
@@ -38,6 +40,13 @@ export {
   type ThemeColor,
 } from "./content/schemas.js";
 export { serializeContent } from "./content/serialize.js";
+export {
+  ConflictError,
+  type ContentStore,
+  type FileChange,
+  isEditablePath,
+  type WriteOptions,
+} from "./content/store.js";
 export { absoluteUrl, getPageHead, type PageHead } from "./head.js";
 export {
   type ContentKind,
