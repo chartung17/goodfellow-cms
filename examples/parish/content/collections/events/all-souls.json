@@ -1,0 +1,12 @@
+{
+  "version": 1,
+  "fields": {
+    "date": "2026-11-02",
+    "image": "/media/candles.svg",
+    "place": "Church",
+    "summary": "On All Souls' Day, we pray for parishioners and loved ones who have died this year.",
+    "text": "<p>Families of those whose funerals were held at St. Joseph this year are invited to light a candle in their memory. Anyone may add a name to the Book of Remembrance at the back of the church.</p>",
+    "time": "7:00 pm",
+    "title": "Mass of Remembrance"
+  }
+}

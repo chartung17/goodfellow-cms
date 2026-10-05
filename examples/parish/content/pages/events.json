@@ -1,0 +1,91 @@
+{
+  "version": 1,
+  "data": {
+    "content": [
+      {
+        "type": "Section",
+        "props": {
+          "id": "Section-events",
+          "background": "none",
+          "backgroundImage": "",
+          "className": "",
+          "content": [
+            {
+              "type": "Heading",
+              "props": {
+                "id": "Heading-events",
+                "align": "left",
+                "className": "",
+                "level": "h1",
+                "text": "Events"
+              }
+            },
+            {
+              "type": "Text",
+              "props": {
+                "id": "Text-events",
+                "align": "left",
+                "className": "mt-4 text-lg text-muted-foreground",
+                "content": "<p>Everyone is welcome at parish events, whether or not you're a parishioner.</p>"
+              }
+            },
+            {
+              "type": "CollectionList",
+              "props": {
+                "id": "CollectionList-upcoming",
+                "className": "mt-10",
+                "collection": "events",
+                "columns": "3",
+                "dateField": "date",
+                "emptyText": "Nothing on the calendar right now. Check back soon.",
+                "imageField": "image",
+                "layout": "cards",
+                "limit": 0,
+                "order": "default",
+                "show": "upcoming",
+                "summaryField": "summary"
+              }
+            },
+            {
+              "type": "Heading",
+              "props": {
+                "id": "Heading-past",
+                "align": "left",
+                "className": "mt-16 mb-6",
+                "level": "h2",
+                "text": "Past events"
+              }
+            },
+            {
+              "type": "CollectionList",
+              "props": {
+                "id": "CollectionList-past",
+                "className": "",
+                "collection": "events",
+                "columns": "3",
+                "dateField": "date",
+                "emptyText": "No past events yet.",
+                "imageField": "",
+                "layout": "list",
+                "limit": 10,
+                "order": "newest",
+                "show": "past",
+                "summaryField": "summary"
+              }
+            }
+          ],
+          "padding": "lg",
+          "width": "normal"
+        }
+      }
+    ],
+    "root": {
+      "props": {
+        "className": "",
+        "description": "Upcoming events at St. Joseph Parish.",
+        "image": "",
+        "title": "Events"
+      }
+    }
+  }
+}

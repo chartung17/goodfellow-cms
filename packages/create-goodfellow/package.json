@@ -1,0 +1,34 @@
+{
+  "name": "create-goodfellow",
+  "version": "0.0.0",
+  "description": "Creates a new Goodfellow site: npm create goodfellow@latest my-site",
+  "license": "MIT",
+  "type": "module",
+  "bin": {
+    "create-goodfellow": "./bin/create-goodfellow.js"
+  },
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    },
+    "./package.json": "./package.json"
+  },
+  "files": [
+    "bin",
+    "dist",
+    "templates"
+  ],
+  "engines": {
+    "node": ">=22"
+  },
+  "scripts": {
+    "build": "tsdown && node scripts/bundle-templates.mjs",
+    "typecheck": "tsc -p tsconfig.json",
+    "test": "vitest run"
+  },
+  "devDependencies": {
+    "@goodfellow/example-parish": "workspace:*",
+    "@goodfellow/template-starter": "workspace:*"
+  }
+}

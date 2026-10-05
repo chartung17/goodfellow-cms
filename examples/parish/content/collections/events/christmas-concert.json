@@ -1,0 +1,12 @@
+{
+  "version": 1,
+  "fields": {
+    "date": "2026-12-13",
+    "image": "/media/gathering.svg",
+    "place": "Church",
+    "summary": "The parish choir and children's choir sing carols old and new. Free, with a collection for the food pantry.",
+    "text": "<p>Bring family and friends for an afternoon of carols, followed by hot chocolate in the parish hall.</p>",
+    "time": "3:00 pm",
+    "title": "Christmas concert"
+  }
+}

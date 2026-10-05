@@ -7,6 +7,7 @@ import { build } from "./build.js";
 
 const fixture = resolve(import.meta.dirname, "../test/fixtures/site");
 const starter = resolve(import.meta.dirname, "../../../templates/starter");
+const parish = resolve(import.meta.dirname, "../../../examples/parish");
 
 describe("build", () => {
   let outDir: string;
@@ -84,17 +85,53 @@ describe("build", () => {
       await rm(starterOut, { recursive: true, force: true });
     }
   }, 60_000);
+
+  it("builds the parish example, with its own blocks and the site's contact details", async () => {
+    const parishOut = await mkdtemp(join(tmpdir(), "goodfellow-parish-"));
+    try {
+      const result = await build({ root: parish, outDir: parishOut, base: "/" });
+      // Nine pages, plus four events, three news stories and two bulletins. Staff have no pages of their own.
+      expect(result.pages).toHaveLength(18);
+      const home = await readFile(join(parishOut, "index.html"), "utf8");
+      expect(home).toContain("<title>St. Joseph Parish, Anytown</title>");
+      expect(home).toContain("Weekend Masses");
+      expect(home).toContain('href="tel:5550100100"');
+      const bulletin = await readFile(join(parishOut, "bulletins/2026-10-04/index.html"), "utf8");
+      expect(bulletin).toContain('href="/media/bulletin-example.pdf"');
+      const about = await readFile(join(parishOut, "about/index.html"), "utf8");
+      expect(about.indexOf("Fr. Thomas Reed")).toBeLessThan(about.indexOf("Maria Chen"));
+    } finally {
+      await rm(parishOut, { recursive: true, force: true });
+    }
+  }, 60_000);
 });
 
-describe("starter template", () => {
+describe.each([
+  ["starter template", starter],
+  ["parish example", parish],
+])("%s", (_name, root) => {
   it("stores content files in the canonical format the admin panel writes", async () => {
     const { serializeContent } = await import("@goodfellow/core");
-    const contentDir = join(starter, "content");
+    const contentDir = join(root, "content");
     const files = (await readdir(contentDir, { recursive: true })).filter((file) => file.endsWith(".json"));
     expect(files.length).toBeGreaterThan(0);
     for (const file of files) {
       const text = await readFile(join(contentDir, file), "utf8");
       expect(text, file).toBe(serializeContent(JSON.parse(text)));
+    }
+  });
+});
+
+describe("parish example", () => {
+  it("has the same deploy setups as the starter", async () => {
+    for (const file of [
+      ".github/workflows/deploy.yml",
+      ".gitlab-ci.yml",
+      "vercel.json",
+      ".gitignore",
+      "src/styles.css",
+    ]) {
+      expect(await readFile(join(parish, file), "utf8"), file).toBe(await readFile(join(starter, file), "utf8"));
     }
   });
 });

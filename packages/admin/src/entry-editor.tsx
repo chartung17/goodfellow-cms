@@ -134,8 +134,12 @@ function fieldControl(field: CollectionField): Field {
               value={typeof value === "string" ? value : ""}
               onChange={onChange}
             />
-            {field.type === "image" && (
-              <MediaChooser value={typeof value === "string" ? value : ""} kind="image" onChange={onChange} />
+            {(field.type === "image" || field.type === "link") && (
+              <MediaChooser
+                value={typeof value === "string" ? value : ""}
+                kind={field.type === "image" ? "image" : "file"}
+                onChange={onChange}
+              />
             )}
             <Hint text={field.hint} />
           </FieldLabel>

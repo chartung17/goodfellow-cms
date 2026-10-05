@@ -61,6 +61,7 @@ function siteSummary(content: SiteContent, media: string[]): SiteSummary {
       fields: collection.settings.fields.map(({ name, label }) => ({ name, label })),
     })),
     images: siteImages(media),
+    contact: content.settings.contact,
   };
 }
 

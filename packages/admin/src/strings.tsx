@@ -325,6 +325,11 @@ export const defaultStrings = {
   "general.logo": "Logo",
   "general.logoAlt": "Logo description",
   "general.socialImage": "Image when shared on social media",
+  "general.contact": "Contact details",
+  "general.contactHint": "Shown wherever a Contact details block is placed, such as the footer.",
+  "general.address": "Address",
+  "general.phone": "Phone",
+  "general.email": "Email",
 
   "theme.colors": "Colors",
   "theme.fonts": "Fonts",

@@ -47,6 +47,18 @@ test("won't publish invalid settings", async ({ page }) => {
   expect(readSiteFile("content/site.json")).toBe(before);
 });
 
+test("saves the site's contact details, leaving out empty ones", async ({ page }) => {
+  await page.goto("/admin#/settings/general");
+  await page.getByLabel("Address", { exact: true }).fill("100 Church Street\nAnytown");
+  await page.getByLabel("Phone", { exact: true }).fill("(555) 010-0100");
+  await page.getByRole("button", { name: "Publish" }).click();
+  await expect(page.getByText("Published.", { exact: true })).toBeVisible();
+  expect(readJson("content/site.json")).toMatchObject({
+    contact: { address: "100 Church Street\nAnytown", phone: "(555) 010-0100" },
+  });
+  expect(readSiteFile("content/site.json")).not.toContain('"email"');
+});
+
 test("adds a link to a menu", async ({ page }) => {
   await page.goto("/admin#/settings/menus");
   await page.getByRole("tab", { name: "main" }).click();

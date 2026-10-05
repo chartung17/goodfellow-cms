@@ -1,0 +1,17 @@
+export {
+  type Backend,
+  BUNDLED_GITIGNORE,
+  configureBackend,
+  copyTemplate,
+  HOSTS,
+  type Host,
+  hostsFor,
+  packageName,
+  parseRepo,
+  ScaffoldError,
+  type ScaffoldOptions,
+  scaffold,
+  sitePackageJson,
+  TEMPLATES,
+  type TemplateName,
+} from "./scaffold.js";

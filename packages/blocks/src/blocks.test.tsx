@@ -61,7 +61,11 @@ const events: Collection = {
 };
 
 const content: SiteContent = {
-  settings: siteSettingsSchema.parse({ version: 1, title: "Holy Name", logo: { src: "/media/logo.svg", alt: "Logo" } }),
+  settings: siteSettingsSchema.parse({
+    version: 1,
+    title: "St. Joseph",
+    logo: { src: "/media/logo.svg", alt: "Logo" },
+  }),
   menus: {
     main: [
       { label: "Home", href: "/" },
@@ -150,7 +154,28 @@ describe("built-in blocks", () => {
 
   it("shows the site logo and name", async () => {
     const html = await render([{ type: "SiteBrand", props: { id: "b", show: "both", className: "" } }]);
-    expect(html).toContain('<img src="/media/logo.svg" alt="" class="h-10 w-auto"/><span>Holy Name</span>');
+    expect(html).toContain('<img src="/media/logo.svg" alt="" class="h-10 w-auto"/><span>St. Joseph</span>');
+  });
+
+  it("shows the site's contact details, linking the phone number and email address", async () => {
+    const saved = content.settings;
+    content.settings = {
+      ...saved,
+      contact: { address: "1 Church Street\nAnytown", phone: "(555) 010-0100", email: "office@example.org" },
+    };
+    try {
+      const html = await render([
+        {
+          type: "ContactDetails",
+          props: { id: "c", address: true, phone: true, email: false, layout: "stacked", className: "" },
+        },
+      ]);
+      expect(html).toContain('<address class="whitespace-pre-line not-italic">1 Church Street\nAnytown</address>');
+      expect(html).toContain('href="tel:5550100100"');
+      expect(html).not.toContain("office@example.org");
+    } finally {
+      content.settings = saved;
+    }
   });
 
   it("opens buttons in a new tab safely", async () => {

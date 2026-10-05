@@ -41,12 +41,18 @@ function cleanSettings(draft: SiteSettings): unknown {
     favicon: optional(draft.favicon),
     socialImage: optional(draft.socialImage),
     logo: draft.logo?.src.trim() ? { src: draft.logo.src.trim(), alt: draft.logo.alt } : undefined,
+    contact: cleanContact(draft.contact),
     theme: {
       colors,
       fonts: { heading: optional(draft.theme.fonts.heading), body: optional(draft.theme.fonts.body) },
       radius: optional(draft.theme.radius),
     },
   };
+}
+
+function cleanContact(contact: SiteSettings["contact"]): SiteSettings["contact"] {
+  const entries = Object.entries(contact ?? {}).flatMap(([key, value]) => (value?.trim() ? [[key, value.trim()]] : []));
+  return entries.length > 0 ? Object.fromEntries(entries) : undefined;
 }
 
 /** Validation problems keyed by field path, such as `theme.colors.primary`. */
@@ -97,6 +103,32 @@ function GeneralTab({
       />
       <MediaField label={t("general.favicon")} {...text("favicon")} />
       <MediaField label={t("general.socialImage")} {...text("socialImage")} />
+
+      <h2 className="gfa-section-title">{t("general.contact")}</h2>
+      <p className="gfa-hint">{t("general.contactHint")}</p>
+      <Field label={t("general.address")}>
+        {(props) => (
+          <textarea
+            {...props}
+            className="gfa-input"
+            rows={3}
+            value={draft.contact?.address ?? ""}
+            onChange={(event) => onChange({ ...draft, contact: { ...draft.contact, address: event.target.value } })}
+          />
+        )}
+      </Field>
+      <TextField
+        label={t("general.phone")}
+        type="tel"
+        value={draft.contact?.phone ?? ""}
+        onChange={(phone) => onChange({ ...draft, contact: { ...draft.contact, phone } })}
+      />
+      <TextField
+        label={t("general.email")}
+        type="email"
+        value={draft.contact?.email ?? ""}
+        onChange={(email) => onChange({ ...draft, contact: { ...draft.contact, email } })}
+      />
     </div>
   );
 }

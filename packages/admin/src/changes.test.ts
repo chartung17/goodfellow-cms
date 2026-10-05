@@ -136,9 +136,9 @@ describe("movePageChanges", () => {
 
 describe("settings and CSS changes", () => {
   it("writes site settings with their version", () => {
-    const settings = siteSettingsSchema.parse({ version: 1, title: "Holy Name" });
+    const settings = siteSettingsSchema.parse({ version: 1, title: "St. Joseph" });
     const change = siteSettingsFileChange(settings);
-    expect("content" in change && JSON.parse(change.content)).toMatchObject({ version: 1, title: "Holy Name" });
+    expect("content" in change && JSON.parse(change.content)).toMatchObject({ version: 1, title: "St. Joseph" });
   });
 
   it("stores custom CSS with one trailing newline, and deletes the file when it's emptied", () => {

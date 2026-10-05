@@ -4,7 +4,7 @@ A git-based website builder built on the [Puck](https://puckeditor.com) visual e
 
 Goodfellow gives non-technical site owners a drag-and-drop editor at `/admin` with no server, database or monthly hosting bill. Pages are stored as files in the site's own GitHub or GitLab repository. Every save is a commit, and a free static host (GitHub Pages, GitLab Pages or Vercel) rebuilds the site.
 
-> **Status: early development.** Static rendering, the admin panel, collections, the AI assistant, the media library and publishing to GitHub or GitLab work, with deploy setups for GitHub Pages, GitLab Pages and Vercel. Nothing is published to npm yet. This README describes what Goodfellow is meant to become; the [roadmap](#roadmap) shows what exists.
+> **Status: early development.** Static rendering, the admin panel, collections, the AI assistant, the media library, publishing to GitHub or GitLab and `create-goodfellow` work, with deploy setups for GitHub Pages, GitLab Pages and Vercel. Nothing is published to npm yet. This README describes what Goodfellow is meant to become; the [roadmap](#roadmap) shows what exists.
 
 ## How it works
 
@@ -63,12 +63,25 @@ These are the hosts' rules, not Goodfellow's, and they can change. Goodfellow's 
 
 ## Getting started
 
-Eventually, `npm create goodfellow@latest my-site` will create a new site. Until then, try the starter site in this repository (Node 22 or later and pnpm required):
+Create a new site with Node 22 or later:
+
+```sh
+npm create goodfellow@latest my-site
+```
+
+It asks which site to start from, where the site will be stored (GitHub or GitLab) and where it will be hosted, with each host's rules for business sites, and sets the site up to match. Two sites are available:
+
+- **Starter** (`templates/starter`): a home page, an about page and a news section.
+- **Parish example** (`examples/parish`): a made-up parish with Mass times, events, news, bulletins and staff, and blocks of its own. It shows what a complete site looks like and how a developer adds blocks.
+
+To skip the questions, give the answers as options: `npm create goodfellow@latest my-site -- --template parish --github your-name/your-site --host github-pages`. Run it with `--help` for the full list.
+
+Until Goodfellow is published to npm, try the sites in this repository instead (pnpm required):
 
 ```sh
 pnpm install
 pnpm build
-cd templates/starter
+cd templates/starter   # or examples/parish
 pnpm dev        # site at http://localhost:4321, admin panel at http://localhost:4321/admin
 pnpm build      # writes the static site to dist/
 pnpm preview    # serves dist/ the way a static host would
@@ -93,9 +106,9 @@ The base path comes from `--base`, then the `GOODFELLOW_BASE` environment variab
 The admin panel is at `/admin` on the live site, and while `goodfellow dev` is running. Everything there is written for people who have never used git.
 
 - **Pages:** create pages, edit them in Puck, change a page's address (updating menu links to it), and delete pages. The editor shows the site's header and footer around the page, styled exactly like the live site.
-- **Collections:** groups of similar items, such as videos, events or staff. Create a collection, choose its fields (short or long text, formatted text, numbers, dates, links, images and choices from a list), and design the page every item shares in Puck. Then add items by filling in their fields, with a live preview of the item's page. Removing a field removes it from every item in the same publish.
+- **Collections:** groups of similar items, such as videos, events or staff. Create a collection, choose its fields (short or long text, formatted text, numbers, dates, links, images and choices from a list), and design the page every item shares in Puck. Then add items by filling in their fields, with a live preview of the item's page. A link field can point to an uploaded file, such as a PDF. Removing a field removes it from every item in the same publish.
 - **Header & footer:** edit them in Puck, like pages.
-- **Site settings:** the site's name, address, logo and icons; colors, fonts and corner rounding; menus; and custom CSS. A preview of the home page shows changes as you type.
+- **Site settings:** the site's name, address, logo and icons; contact details; colors, fonts and corner rounding; menus; and custom CSS. A preview of the home page shows changes as you type.
 - **Live styling:** CSS classes typed into a block, and custom CSS (including Tailwind's `@apply`), take effect in the editor immediately, before the site is rebuilt.
 - **Signing in:** on the live site, editors sign in with GitHub or GitLab. GitHub uses an access token, created from a link that fills in the right permissions. GitLab offers one-click sign-in once the site's OAuth application is registered, with an access token as the alternative. Editors choose whether to stay signed in on the device.
 - **Publishing:** each Publish saves every changed file in one commit to the site's main branch. If someone else published changes to other files in the meantime, publishing still goes ahead; if they changed the same files, it stops instead of overwriting their work.
@@ -137,6 +150,7 @@ In development, Publish writes straight to the files in `content/`, with no sign
 | Image | An image with optional caption |
 | Menu | One of the site's menus, with dropdowns for submenus |
 | Site name and logo | The site's logo and name, linking home |
+| Contact details | The address, phone number and email address from Site settings, with the phone and email as links |
 | Collection list | A collection's items as a list or cards, with options such as newest first, upcoming only and how many to show |
 | Entry field | One of the item's fields, in a collection's page design only |
 
@@ -159,9 +173,9 @@ This is a pnpm workspace managed with Turborepo.
 | `packages/blocks` | `@goodfellow/blocks` | Built-in, library-agnostic blocks | Started |
 | `packages/cli` | `goodfellow` | `goodfellow dev`, `build` and `preview` | Started |
 | `packages/next` | `@goodfellow/next` | Next.js adapter | Planned |
-| `packages/create-goodfellow` | `create-goodfellow` | Project scaffolder | Planned |
+| `packages/create-goodfellow` | `create-goodfellow` | Creates a new site from the starter or an example | Started |
 | `templates/starter` | | The starter site copied by `create-goodfellow` | Started |
-| `examples/parish` | | Example site with collections and custom blocks | Planned |
+| `examples/parish` | | Example site for a made-up parish, with collections and custom blocks | Started |
 | `e2e/` | | End-to-end tests of the admin panel, run against a copy of the starter site | Started |
 
 ### A Goodfellow site
@@ -195,7 +209,7 @@ my-site/
 4. **Collections and templates** (done). Collections with their own fields, a shared page design for their items, and a block that lists them on other pages.
 5. **AI assistant** (done). Draft and rewrite pages with Claude, OpenAI or a free AI service, called straight from the editor's browser with the editor's own key. Editors without a key can copy a prompt into Claude.ai or another chat app and paste the answer back.
 6. **Media library** (done). Upload, browse and replace images and files from the admin panel, and choose them for blocks and settings.
-7. **Starters.** `create-goodfellow` and the parish example.
+7. **Starters** (done). `create-goodfellow`, which creates a site and sets up its storage and host, and an example parish site with collections and custom blocks.
 8. **Next.js adapter.**
 9. **Documentation site.** Guides for site owners and editors, plus reference docs for developers. Includes each host's rules for commercial sites on its free plan, kept up to date.
 10. **Site setup without a developer.** A web page where anyone can create a site from a starter, store it on GitHub or GitLab, and put it online with GitHub Pages, GitLab Pages or Vercel. It asks what the site is for and recommends a host whose free plan allows it, such as GitLab Pages for a business. Builds work out which repository they're in, so nobody has to edit the config.

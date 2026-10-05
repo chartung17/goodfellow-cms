@@ -1,5 +1,6 @@
 import type { Config } from "@puckeditor/core";
 import { CollectionList, EntryField } from "./collections.js";
+import { ContactDetails } from "./contact.js";
 import { Button, Heading, Image, Text } from "./content.js";
 import { Flex, Grid, Section, Space } from "./layout.js";
 import { Menu, SiteBrand } from "./navigation.js";
@@ -11,6 +12,7 @@ export {
   type EntryFieldProps,
   listedEntries,
 } from "./collections.js";
+export { ContactDetails, type ContactDetailsProps } from "./contact.js";
 export {
   Button,
   type ButtonProps,
@@ -46,6 +48,7 @@ export const blocks = {
   Text,
   Button,
   Image,
+  ContactDetails,
   Menu,
   SiteBrand,
   CollectionList,
@@ -55,7 +58,7 @@ export const blocks = {
 /** Groups for the editor's block list. */
 export const categories = {
   layout: { title: "Layout", components: ["Section", "Grid", "Flex", "Space"] },
-  content: { title: "Content", components: ["Heading", "Text", "Button", "Image"] },
+  content: { title: "Content", components: ["Heading", "Text", "Button", "Image", "ContactDetails"] },
   navigation: { title: "Navigation", components: ["Menu", "SiteBrand"] },
   collections: { title: "Collections", components: ["CollectionList", "EntryField"] },
 } satisfies Config["categories"];
