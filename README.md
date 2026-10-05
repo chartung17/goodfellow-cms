@@ -92,7 +92,7 @@ The base path comes from `--base`, then the `GOODFELLOW_BASE` environment variab
 | Menu | One of the site's menus, with dropdowns for submenus |
 | Site name and logo | The site's logo and name, linking home |
 
-Blocks use the site's theme colors, fonts and corner radius, and every block accepts extra CSS classes.
+Blocks use the site's theme colors, fonts and corner radius. Every block accepts extra CSS classes, which override the block's own styles: `py-4` on a Section replaces its default padding.
 
 ## Repository layout
 

@@ -29,7 +29,8 @@
     "test": "vitest run"
   },
   "dependencies": {
-    "@goodfellow/core": "workspace:*"
+    "@goodfellow/core": "workspace:*",
+    "tailwind-merge": "3.7.0"
   },
   "peerDependencies": {
     "@puckeditor/core": "0.23.0",
