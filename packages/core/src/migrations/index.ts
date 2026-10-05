@@ -1,5 +1,5 @@
 /** The kinds of content file, each with its own version number. */
-export type ContentKind = "site" | "menus" | "page" | "layout";
+export type ContentKind = "site" | "menus" | "page" | "layout" | "collection" | "entry";
 
 /** The version this release of Goodfellow writes for each kind of file. */
 export const CURRENT_VERSION: Record<ContentKind, number> = {
@@ -7,6 +7,8 @@ export const CURRENT_VERSION: Record<ContentKind, number> = {
   menus: 1,
   page: 1,
   layout: 1,
+  collection: 1,
+  entry: 1,
 };
 
 /** Upgrades a file from version `from` to `from + 1`. */
@@ -23,6 +25,8 @@ export const migrations: MigrationRegistry = {
   menus: [],
   page: [],
   layout: [],
+  collection: [],
+  entry: [],
 };
 
 export class MigrationError extends Error {

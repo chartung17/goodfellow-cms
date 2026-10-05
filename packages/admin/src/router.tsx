@@ -85,3 +85,13 @@ export function Link({
     />
   );
 }
+
+export type CollectionTab = "entries" | "template" | "settings";
+
+export function collectionHref(id: string, tab: CollectionTab = "entries"): string {
+  return tab === "entries" ? `#/collections/${id}` : `#/collections/${id}/${tab}`;
+}
+
+export function entryEditorHref(collection: string, slug: string): string {
+  return `#/collections/${collection}/edit?slug=${encodeURIComponent(slug)}`;
+}

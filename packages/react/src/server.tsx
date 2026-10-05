@@ -1,5 +1,6 @@
 import {
   absoluteUrl,
+  findEntry,
   type GoodfellowConfig,
   getPageHead,
   googleFontsUrl,
@@ -9,6 +10,7 @@ import {
 } from "@goodfellow/core";
 import { type Config, type Data, type Metadata, migrate, resolveAllData } from "@puckeditor/core";
 import { prerender } from "react-dom/static";
+import { applyEntry } from "./entry.js";
 import { PageBody, siteMetadata } from "./page-body.js";
 import { createPuckConfig } from "./puck-config.js";
 import type { SiteContextValue } from "./site-context.js";
@@ -42,15 +44,32 @@ function toAbsolute(siteUrl: string | undefined, url: string | undefined): strin
  * output is final static HTML with no client-side JavaScript required.
  */
 export function createPageRenderer(config: GoodfellowConfig) {
-  const pageConfig = createPuckConfig(config, "page");
-  const layoutConfig = createPuckConfig(config, "layout");
+  const configs = {
+    page: createPuckConfig(config, "page"),
+    layout: createPuckConfig(config, "layout"),
+    template: createPuckConfig(config, "template"),
+  };
 
   return async function renderPage(content: SiteContent, page: Page, assets: PageAssets = {}): Promise<string> {
     const { settings } = content;
-    const site: SiteContextValue = { settings, menus: content.menus, path: page.path };
+    let site: SiteContextValue = { settings, menus: content.menus, path: page.path, collections: content.collections };
+    let pageConfig = configs.page;
+    let data = page.content.data as Data;
+
+    // An entry's page is its collection's template, with the entry's values filled in.
+    if (page.entry) {
+      const found = findEntry(content, page.entry.collection, page.entry.slug);
+      if (!found) throw new Error(`${page.file} isn't an entry in the "${page.entry.collection}" collection.`);
+      site = { ...site, collection: found.collection, entry: found.entry };
+      pageConfig = configs.template;
+      data = applyEntry(migrate(data), pageConfig, found.collection, found.entry, settings.language);
+      page = { ...page, content: { ...page.content, data: data as Page["content"]["data"] } };
+    }
+
     const metadata = siteMetadata(site);
+    const layoutConfig = configs.layout;
     const [pageData, header, footer] = await Promise.all([
-      prepareData(page.content.data, pageConfig, metadata),
+      prepareData(data, pageConfig, metadata),
       prepareData(content.header.data, layoutConfig, metadata),
       prepareData(content.footer.data, layoutConfig, metadata),
     ]);

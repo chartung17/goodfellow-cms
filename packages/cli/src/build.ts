@@ -1,6 +1,6 @@
 import { mkdir, readFile, rm, writeFile } from "node:fs/promises";
 import { dirname, join, relative, resolve } from "node:path";
-import { absoluteUrl, loadSiteContent, pageOutputFile } from "@goodfellow/core";
+import { absoluteUrl, allPages, loadSiteContent, pageOutputFile } from "@goodfellow/core";
 import { createServer, build as viteBuild } from "vite";
 import { ADMIN_ENTRY, adminEntryPlugin, adminHtml } from "./admin-entry.js";
 import { applyBasePath, normalizeBase } from "./base-path.js";
@@ -110,8 +110,9 @@ export async function build(options: BuildOptions = {}): Promise<BuildResult> {
       await writeFile(join(outDir, "admin/index.html"), html);
     }
 
+    const pages = allPages(content);
     const written: string[] = [];
-    for (const page of content.pages) {
+    for (const page of pages) {
       const html = applyBasePath(await renderPage(content, page, { stylesheets }), base);
       const file = join(outDir, pageOutputFile(page.path));
       await mkdir(dirname(file), { recursive: true });
@@ -121,7 +122,7 @@ export async function build(options: BuildOptions = {}): Promise<BuildResult> {
 
     const { url } = content.settings;
     if (url) {
-      const urls = content.pages
+      const urls = pages
         .filter((page) => page.path !== "/404")
         .map((page) => `  <url><loc>${escapeXml(absoluteUrl(url, page.path))}</loc></url>`);
       await writeFile(

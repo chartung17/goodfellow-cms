@@ -9,6 +9,8 @@ const registry: MigrationRegistry = {
   menus: [],
   page: [],
   layout: [],
+  collection: [],
+  entry: [],
 };
 
 describe("migrateContent", () => {

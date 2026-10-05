@@ -27,6 +27,15 @@ Content files are the product's data format; treat changes to them like API chan
 - **Formatting is owned by the serializer.** Biome doesn't format `content/**/*.json`. A test checks that the starter template's content files are in canonical form, so after editing them by hand, re-save them with `serializeContent`.
 - **Atomic saves.** A save that touches several files is a single commit. Every write passes the commit the editor started from, so that saving over someone else's change fails and triggers the merge flow instead of silently overwriting.
 
+## Collections
+
+- **Files:** a collection is a folder, `content/collections/<id>/`, holding `_collection.json` (its name, item name, fields, optional address pattern such as `/videos/{slug}`, optional sort order and Puck template) and one `<slug>.json` per entry with the entry's `fields`. Every collection has a text field named `title`.
+- **Stable names:** like block props, a collection's folder name and its fields' `name`s are what content refers to. The admin panel never renames them, and a field's type can't change once published.
+- **No stale values:** removing a field or a choice removes it from every entry in the same save (`collectionSettingsChanges()`), because the loader rejects values that don't match their field.
+- **Addresses:** `allPages()` lists pages and entries' pages together. Use it wherever addresses are served or checked, so an entry can never take a page's address or the other way round.
+- **Templates:** `{name}` placeholders in any text prop are filled in by `applyEntry()`, escaped in rich text. Blocks that need the entry itself read `useSite().entry` and `useSite().collection`, or Puck's `metadata` in `resolveFields` and `resolveData`. Wrap blocks that only make sense in templates in `templateOnly()`, which leaves them out of the page, header and footer editors.
+- **Rich text from entries** is rendered through a hidden `richtext` field that `resolveData` fills in, so Puck sanitizes it like any other rich text. Never render an entry's HTML directly.
+
 ## Puck
 
 - Use `@puckeditor/core`. `@measured/puck` is the old package name; don't import it.
@@ -40,7 +49,7 @@ Content files are the product's data format; treat changes to them like API chan
 - **Combining classes:** use `cx()` from `@goodfellow/react`, with `className` last. It uses tailwind-merge, so an editor's classes override the block's defaults instead of conflicting with them.
 - **Complete class names:** write Tailwind classes as complete strings, using lookup tables for options (`{ sm: "gap-3", md: "gap-6" }`). Never build class names from parts, or Tailwind won't find them.
 - **Theme tokens:** style with theme classes (`bg-primary`, `text-muted-foreground`, `font-heading`, `rounded-lg`) rather than fixed colors, so blocks follow the site's theme.
-- **Site data:** read menus and settings with `useSite()`. Never copy them into a block's props.
+- **Site data:** read menus, settings and collections with `useSite()`. Never copy them into a block's props.
 - **No client-side JavaScript yet:** pages are static HTML. Interactive behavior uses HTML and CSS only (`<details>`, `:hover`, `:focus-within`).
 - **Labels:** field labels and option names are for non-technical users ("Space above and below", not "padding-y").
 

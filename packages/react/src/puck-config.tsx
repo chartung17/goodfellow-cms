@@ -49,22 +49,49 @@ export function withClassName(component: AnyComponentConfig): AnyComponentConfig
   };
 }
 
-export type PuckConfigKind = "page" | "layout";
+const TEMPLATE_ONLY = Symbol.for("goodfellow.templateOnly");
 
 /**
- * Turns a site's Goodfellow config into the Puck config for pages or for the
- * header and footer. Both share the site's blocks; only pages have page settings.
+ * Marks a block as only for collection templates, such as one that shows a
+ * field of the entry being displayed. It's left out of the editor for pages,
+ * the header and the footer.
+ */
+export function templateOnly<T extends AnyComponentConfig>(component: T): T {
+  return Object.assign(component, { [TEMPLATE_ONLY]: true });
+}
+
+export function isTemplateOnly(component: AnyComponentConfig): boolean {
+  return TEMPLATE_ONLY in component;
+}
+
+/** Pages; the header and footer; or a collection's template, which is a page that can also show the entry's fields. */
+export type PuckConfigKind = "page" | "layout" | "template";
+
+/**
+ * Turns a site's Goodfellow config into the Puck config for pages, for the
+ * header and footer, or for collection templates. They share the site's
+ * blocks; pages and templates also have page settings.
  */
 export function createPuckConfig(config: GoodfellowConfig, kind: PuckConfigKind): Config {
-  const components = Object.fromEntries(
-    Object.entries(config.blocks).map(([name, component]) => [name, withClassName(component)]),
+  const included = Object.entries(config.blocks).filter(
+    ([, component]) => kind === "template" || !isTemplateOnly(component),
   );
+  const names = new Set(included.map(([name]) => name));
+  const components = Object.fromEntries(included.map(([name, component]) => [name, withClassName(component)]));
+  const categories =
+    config.categories &&
+    Object.fromEntries(
+      Object.entries(config.categories).map(([key, category]) => [
+        key,
+        { ...category, components: category.components?.filter((name) => names.has(String(name))) },
+      ]),
+    );
 
   return {
     components,
-    ...(config.categories && { categories: config.categories }),
+    ...(categories && { categories }),
     root: {
-      fields: kind === "page" ? pageRootFields : {},
+      fields: kind === "layout" ? {} : pageRootFields,
       render: ({ children }: { children?: ReactNode }) => <>{children}</>,
     },
   } as Config;

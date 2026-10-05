@@ -4,7 +4,7 @@ A git-based website builder built on the [Puck](https://puckeditor.com) visual e
 
 Goodfellow gives non-technical site owners a drag-and-drop editor at `/admin` with no server, database or monthly hosting bill. Pages are stored as files in the site's own GitHub or GitLab repository. Every save is a commit, and a free static host (GitHub Pages, GitLab Pages or Vercel) rebuilds the site.
 
-> **Status: early development.** Static rendering, the admin panel and publishing to GitHub or GitLab work, with deploy setups for GitHub Pages, GitLab Pages and Vercel. Nothing is published to npm yet. This README describes what Goodfellow is meant to become; the [roadmap](#roadmap) shows what exists.
+> **Status: early development.** Static rendering, the admin panel, collections and publishing to GitHub or GitLab work, with deploy setups for GitHub Pages, GitLab Pages and Vercel. Nothing is published to npm yet. This README describes what Goodfellow is meant to become; the [roadmap](#roadmap) shows what exists.
 
 ## How it works
 
@@ -50,6 +50,14 @@ Goodfellow runs entirely on free tiers, but those tiers have limits worth knowin
 | Build minutes | Unlimited for public repos, 2,000/month for private | 400/month (or build on Vercel instead) |
 | Sign-in | Personal access token (fine-grained, or classic for collaborators) | OAuth (PKCE) or personal access token |
 
+**Commercial sites:** each host's free plan has its own rules about business use, so check them before choosing:
+
+- **GitHub Pages** isn't allowed for running an online business, a shop, or any site mainly for selling things or software as a service ([GitHub Pages limits](https://docs.github.com/en/pages/getting-started-with-github-pages/github-pages-limits)). It also shouldn't handle passwords or card numbers.
+- **Vercel's free Hobby plan** is for personal, non-commercial use only. Vercel counts a site as commercial if anyone involved in making it gains financially, including a developer paid to build or update it, and if it takes payments, advertises products or services for sale, or shows ads. Asking for donations is allowed ([Vercel fair use guidelines](https://vercel.com/docs/limits/fair-use-guidelines#commercial-usage)).
+- **GitLab Pages:** we haven't found a rule against business sites on GitLab's free plan, so it's the free option to use for one. Check [GitLab's terms](https://about.gitlab.com/terms/) for your own case.
+
+These are the hosts' rules, not Goodfellow's, and they can change. Goodfellow's documentation will keep them current.
+
 **GitHub sign-in:** GitHub doesn't let collaborators on someone else's repository use fine-grained tokens. For sites with several editors, put the repository in a free GitHub organization and add editors as members; otherwise collaborators need a classic token.
 
 ## Getting started
@@ -84,6 +92,7 @@ The base path comes from `--base`, then the `GOODFELLOW_BASE` environment variab
 The admin panel is at `/admin` on the live site, and while `goodfellow dev` is running. Everything there is written for people who have never used git.
 
 - **Pages:** create pages, edit them in Puck, change a page's address (updating menu links to it), and delete pages. The editor shows the site's header and footer around the page, styled exactly like the live site.
+- **Collections:** groups of similar items, such as videos, events or staff. Create a collection, choose its fields (short or long text, formatted text, numbers, dates, links, images and choices from a list), and design the page every item shares in Puck. Then add items by filling in their fields, with a live preview of the item's page. Removing a field removes it from every item in the same publish.
 - **Header & footer:** edit them in Puck, like pages.
 - **Site settings:** the site's name, address, logo and icons; colors, fonts and corner rounding; menus; and custom CSS. A preview of the home page shows changes as you type.
 - **Live styling:** CSS classes typed into a block, and custom CSS (including Tailwind's `@apply`), take effect in the editor immediately, before the site is rebuilt.
@@ -108,6 +117,10 @@ In development, Publish writes straight to the files in `content/`, with no sign
 | Image | An image with optional caption |
 | Menu | One of the site's menus, with dropdowns for submenus |
 | Site name and logo | The site's logo and name, linking home |
+| Collection list | A collection's items as a list or cards, with options such as newest first, upcoming only and how many to show |
+| Entry field | One of the item's fields, in a collection's page design only |
+
+In a collection's page design, any text can also show an item's field by naming it in braces: a Heading with `{title}`, a Button linking to `{video}`. The page's title and description work the same way.
 
 Blocks use the site's theme colors, fonts and corner radius. Every block accepts extra CSS classes, which override the block's own styles: `py-4` on a Section replaces its default padding.
 
@@ -117,10 +130,10 @@ This is a pnpm workspace managed with Turborepo.
 
 | Path | Package | Purpose | Status |
 |---|---|---|---|
-| `packages/core` | `@goodfellow/core` | Config, content model, migrations and, later, collections, Puck data diff and merge, and the `GitBackend` interface. No React or DOM. | Started |
+| `packages/core` | `@goodfellow/core` | Config, content model, collections, migrations, the `GitBackend` interface and, later, Puck data diff and merge. No React or DOM. | Started |
 | `packages/github` | `@goodfellow/github` | GitHub backend and token sign-in | Started |
 | `packages/gitlab` | `@goodfellow/gitlab` | GitLab backend, with OAuth (PKCE) and token sign-in | Started |
-| `packages/react` | `@goodfellow/react` | Page renderer: layout, class names, theme and, later, template bindings | Started |
+| `packages/react` | `@goodfellow/react` | Page renderer: layout, class names, theme and collection templates | Started |
 | `packages/admin` | `@goodfellow/admin` | The `<Admin>` editor app | Started |
 | `packages/blocks` | `@goodfellow/blocks` | Built-in, library-agnostic blocks | Started |
 | `packages/cli` | `goodfellow` | `goodfellow dev`, `build` and `preview` | Started |
@@ -143,8 +156,8 @@ my-site/
 │   ├── layout/footer.json
 │   ├── pages/index.json     # one file per page, mirroring the URL
 │   ├── collections/videos/
-│   │   ├── _collection.json # fields, URL pattern, template
-│   │   └── my-video.json    # one entry
+│   │   ├── _collection.json # fields, address pattern, template
+│   │   └── easter-vigil.json # one item: its field values
 │   └── styles/custom.css
 ├── public/media/            # uploaded files
 ├── src/styles.css           # imports Tailwind and the theme; scans content/ for classes
@@ -158,13 +171,13 @@ my-site/
 1. **Static rendering** (done). Build a static site from hand-written `content/` files.
 2. **Editor** (done). The admin panel against local files: pages, site settings, header and footer, custom CSS, live Tailwind preview.
 3. **Git backends** (done). GitHub and GitLab sign-in, publishing, conflict detection and deploy status, plus GitHub Pages, GitLab Pages and Vercel setups.
-4. **Collections and templates.**
+4. **Collections and templates** (done). Collections with their own fields, a shared page design for their items, and a block that lists them on other pages.
 5. **AI assistant.** Draft and rewrite pages with Claude, OpenAI or a free AI service, called straight from the editor's browser with the editor's own key. Editors without a key can copy a prompt into Claude.ai or another chat app and paste the answer back.
 6. **Media library.** Upload, browse and replace images and files from the admin panel.
 7. **Starters.** `create-goodfellow` and the parish example.
 8. **Next.js adapter.**
-9. **Documentation site.** Guides for site owners and editors, plus reference docs for developers.
-10. **Site setup without a developer.** A web page where anyone can create a site from a starter, store it on GitHub or GitLab, and put it online with GitHub Pages, GitLab Pages or Vercel. Builds work out which repository they're in, so nobody has to edit the config.
+9. **Documentation site.** Guides for site owners and editors, plus reference docs for developers. Includes each host's rules for commercial sites on its free plan, kept up to date.
+10. **Site setup without a developer.** A web page where anyone can create a site from a starter, store it on GitHub or GitLab, and put it online with GitHub Pages, GitLab Pages or Vercel. It asks what the site is for and recommends a host whose free plan allows it, such as GitLab Pages for a business. Builds work out which repository they're in, so nobody has to edit the config.
 11. **Custom domains.** Connect a domain from the admin panel. Goodfellow sets the domain on the host where it can, lists the records to add at the domain's registrar, with guides for popular registrars, and shows when the domain is working.
 12. **Running a site without a developer.**
     - Invite and remove editors from the admin panel.

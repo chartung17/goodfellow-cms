@@ -1,9 +1,64 @@
-import { type Page, type SiteContent, siteSettingsSchema } from "@goodfellow/core";
+import {
+  type Collection,
+  collectionFileSchema,
+  type Page,
+  type SiteContent,
+  siteSettingsSchema,
+} from "@goodfellow/core";
+import { createPuckConfig } from "@goodfellow/react";
 import { createPageRenderer } from "@goodfellow/react/server";
 import { describe, expect, it } from "vitest";
-import { blocks, categories } from "./index.js";
+import { blocks, categories, listedEntries } from "./index.js";
 
 const renderPage = createPageRenderer({ blocks, categories });
+
+const events: Collection = {
+  id: "events",
+  file: "content/collections/events/_collection.json",
+  settings: collectionFileSchema.parse({
+    version: 1,
+    name: "Events",
+    entryName: "Event",
+    path: "/events/{slug}",
+    fields: [
+      { name: "title", label: "Title", type: "text" },
+      { name: "date", label: "Date", type: "date" },
+      { name: "photo", label: "Photo", type: "image" },
+      { name: "summary", label: "Summary", type: "textarea" },
+      { name: "body", label: "Text", type: "richtext" },
+    ],
+    sort: { field: "date", order: "asc" },
+    template: {
+      root: { props: { title: "{title}" } },
+      content: [
+        { type: "EntryField", props: { id: "t", field: "title", style: "title", className: "" } },
+        { type: "EntryField", props: { id: "d", field: "date", style: "small", className: "" } },
+        { type: "EntryField", props: { id: "b", field: "body", style: "text", className: "" } },
+        { type: "EntryField", props: { id: "p", field: "photo", style: "text", className: "" } },
+      ],
+    },
+  }),
+  entries: [
+    ["picnic", "Parish picnic", "2026-07-12", "Food & games"],
+    ["fish-fry", "Fish fry", "2026-03-06", ""],
+    ["undated", "Undated", undefined, ""],
+  ].map(([slug, title, date, summary]) => ({
+    collection: "events",
+    slug: slug as string,
+    file: `content/collections/events/${slug}.json`,
+    path: `/events/${slug}`,
+    content: {
+      version: 1,
+      fields: {
+        title,
+        ...(date && { date }),
+        summary,
+        body: "<p>Join us <script>alert(1)</script></p>",
+        ...(slug === "picnic" && { photo: "/media/picnic.jpg" }),
+      },
+    },
+  })),
+};
 
 const content: SiteContent = {
   settings: siteSettingsSchema.parse({ version: 1, title: "Holy Name", logo: { src: "/media/logo.svg", alt: "Logo" } }),
@@ -16,6 +71,7 @@ const content: SiteContent = {
   header: { version: 1, data: { root: {}, content: [] } },
   footer: { version: 1, data: { root: {}, content: [] } },
   pages: [],
+  collections: [events],
   customCss: "",
 };
 
@@ -113,5 +169,100 @@ describe("built-in blocks", () => {
       },
     ]);
     expect(html).toContain('target="_blank" rel="noopener noreferrer"');
+  });
+
+  it("lists a collection's entries as cards linking to their pages", async () => {
+    const html = await render([
+      {
+        type: "CollectionList",
+        props: {
+          id: "l",
+          collection: "events",
+          layout: "cards",
+          columns: "3",
+          imageField: "photo",
+          dateField: "date",
+          summaryField: "summary",
+          order: "newest",
+          show: "all",
+          limit: 2,
+          emptyText: "",
+          className: "",
+        },
+      },
+    ]);
+    expect(html).toContain('<ul class="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">');
+    expect(html.indexOf("Parish picnic")).toBeLessThan(html.indexOf("Fish fry"));
+    expect(html).not.toContain("Undated");
+    expect(html).toContain(
+      '<img src="/media/picnic.jpg" alt="" loading="lazy" class="aspect-video w-full object-cover"/>',
+    );
+    expect(html).toContain('<time dateTime="2026-07-12" class="text-sm text-muted-foreground">July 12, 2026</time>');
+    expect(html).toContain(
+      '<a href="/events/picnic" class="after:absolute after:inset-0 hover:underline">Parish picnic</a>',
+    );
+    expect(html).toContain("Food &amp; games");
+  });
+
+  it("shows the empty text when nothing matches", async () => {
+    const html = await render([
+      {
+        type: "CollectionList",
+        props: {
+          id: "l",
+          collection: "events",
+          layout: "list",
+          columns: "3",
+          imageField: "",
+          dateField: "date",
+          summaryField: "",
+          order: "default",
+          show: "upcoming",
+          limit: 0,
+          emptyText: "No events planned",
+          className: "",
+        },
+      },
+    ]);
+    // Every event in the fixture is in the past.
+    expect(html).toContain('<p class="text-muted-foreground">No events planned</p>');
+  });
+
+  it("filters and orders entries by date", () => {
+    const options = { dateField: "date", order: "default", show: "upcoming", limit: 0 } as const;
+    expect(listedEntries(events, options, "2026-05-01").map((e) => e.slug)).toEqual(["picnic"]);
+    expect(listedEntries(events, { ...options, show: "past" }, "2026-05-01").map((e) => e.slug)).toEqual(["fish-fry"]);
+    expect(listedEntries(events, { ...options, show: "all" }).map((e) => e.slug)).toEqual([
+      "fish-fry",
+      "picnic",
+      "undated",
+    ]);
+    expect(listedEntries(events, { ...options, show: "all", order: "title" }).map((e) => e.slug)).toEqual([
+      "fish-fry",
+      "picnic",
+      "undated",
+    ]);
+  });
+
+  it("renders an entry's fields in its template, with rich text sanitized", async () => {
+    const picnic = events.entries[0];
+    const html = await renderPage(content, {
+      path: "/events/picnic",
+      file: picnic?.file ?? "",
+      content: { version: 1, data: events.settings.template },
+      entry: { collection: "events", slug: "picnic" },
+    });
+    const main = html.slice(html.indexOf("<main"), html.indexOf("</main>"));
+    expect(main).toMatch(/<h1 class="text-4xl[^"]*">Parish picnic<\/h1>/);
+    expect(main).toContain(
+      '<p class="text-sm text-muted-foreground"><time dateTime="2026-07-12">July 12, 2026</time></p>',
+    );
+    expect(main).toContain("Join us");
+    expect(main).not.toContain("<script");
+    expect(main).toContain('<img src="/media/picnic.jpg" alt="Parish picnic" class="w-full rounded-lg"/>');
+  });
+
+  it("leaves entry fields out of the page editor", () => {
+    expect(Object.keys(createPuckConfig({ blocks, categories }, "page").components)).not.toContain("EntryField");
   });
 });

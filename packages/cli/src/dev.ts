@@ -2,6 +2,7 @@ import { type FSWatcher, watch } from "node:fs";
 import type { IncomingMessage, ServerResponse } from "node:http";
 import { join, resolve } from "node:path";
 import {
+  allPages,
   CONTENT_DIR,
   ContentError,
   loadSiteContent,
@@ -49,9 +50,10 @@ function findPage(content: SiteContent, pathname: string): { page: Page; status:
   } catch {
     path = "";
   }
-  const page = content.pages.find((candidate) => candidate.path === path);
+  const pages = allPages(content);
+  const page = pages.find((candidate) => candidate.path === path);
   if (page) return { page, status: 200 };
-  const notFound = content.pages.find((candidate) => candidate.path === "/404");
+  const notFound = pages.find((candidate) => candidate.path === "/404");
   return notFound && { page: notFound, status: 404 };
 }
 

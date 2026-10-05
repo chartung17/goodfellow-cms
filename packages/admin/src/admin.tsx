@@ -1,7 +1,11 @@
 import { ContentError, type ContentStore, type GitHost, type GoodfellowConfig } from "@goodfellow/core";
 import { createRoot } from "react-dom/client";
-import { AdminProvider, type PreviewOptions, useAdmin } from "./admin-context.js";
+import { AdminProvider, type PreviewOptions, useAdmin, useSiteContent } from "./admin-context.js";
+import { EntriesScreen, TemplateScreen } from "./collection-screen.js";
+import { CollectionSettingsScreen } from "./collection-settings.js";
+import { CollectionsScreen } from "./collections-screen.js";
 import { LayoutEditorScreen, PageEditorScreen } from "./editor-screens.js";
+import { EntryEditorScreen } from "./entry-editor.js";
 import { PagesScreen } from "./pages-screen.js";
 import { useRoute } from "./router.js";
 import { SETTINGS_TABS, SettingsScreen, type SettingsTab } from "./settings-screen.js";
@@ -44,9 +48,31 @@ function LoadError({ error }: { error: unknown }) {
   );
 }
 
+function CollectionRoute({ id, sub, slug }: { id: string; sub?: string; slug: string }) {
+  const t = useStrings();
+  const { content } = useSiteContent();
+  if (sub === "edit") return <EntryEditorScreen collectionId={id} slug={slug} />;
+  const collection = content.collections.find((candidate) => candidate.id === id);
+  if (!collection) {
+    return (
+      <div className="gfa-screen">
+        <p>{t("collection.notFound")}</p>
+        <AppLink href="#/collections">{t("collection.back")}</AppLink>
+      </div>
+    );
+  }
+  if (sub === "template") return <TemplateScreen collection={collection} />;
+  if (sub === "settings") return <CollectionSettingsScreen key={collection.id} collection={collection} />;
+  return <EntriesScreen collection={collection} />;
+}
+
 function Screen() {
   const { segments, params } = useRoute();
-  const [section, sub] = segments;
+  const [section, sub, tab] = segments;
+
+  if (section === "collections") {
+    return sub ? <CollectionRoute id={sub} sub={tab} slug={params.get("slug") ?? ""} /> : <CollectionsScreen />;
+  }
 
   if (section === "pages" && sub === "edit") return <PageEditorScreen path={params.get("path") ?? "/"} />;
   if (section === "layout") return <LayoutEditorScreen part={sub === "footer" ? "footer" : "header"} />;
@@ -96,7 +122,7 @@ function Shell() {
   const t = useStrings();
   const { state, siteUrl } = useAdmin();
   const [section] = useRoute().segments;
-  const current = section === "layout" || section === "settings" ? section : "pages";
+  const current = section === "layout" || section === "settings" || section === "collections" ? section : "pages";
 
   return (
     <div className="gfa-app">
@@ -105,6 +131,9 @@ function Shell() {
         <nav className="gfa-nav" aria-label={t("app.title")}>
           <AppLink href="#/pages" aria-current={current === "pages" ? "page" : undefined}>
             {t("nav.pages")}
+          </AppLink>
+          <AppLink href="#/collections" aria-current={current === "collections" ? "page" : undefined}>
+            {t("nav.collections")}
           </AppLink>
           <AppLink href="#/layout/header" aria-current={current === "layout" ? "page" : undefined}>
             {t("nav.layout")}

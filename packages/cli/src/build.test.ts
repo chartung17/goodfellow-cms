@@ -22,7 +22,7 @@ describe("build", () => {
   const read = (file: string) => readFile(join(outDir, file), "utf8");
 
   it("writes one HTML file per page, with clean URLs", () => {
-    expect(pages).toHaveLength(3);
+    expect(pages).toHaveLength(4);
     expect(existsSync(join(outDir, "index.html"))).toBe(true);
     expect(existsSync(join(outDir, "news/index.html"))).toBe(true);
     expect(existsSync(join(outDir, "404.html"))).toBe(true);
@@ -32,6 +32,12 @@ describe("build", () => {
     const html = await read("index.html");
     expect(html).toContain('<p class="greeting text-teal-600">Hello, <!-- -->world<!-- -->!</p>');
     expect(html).toContain('<div class="bg-rose-200">');
+  });
+
+  it("builds a page for each entry in a collection, from its template", async () => {
+    const html = await read("talks/hope/index.html");
+    expect(html).toContain("<title>On hope</title>");
+    expect(html).toContain("Hello, <!-- -->Fr. Smith<!-- -->!");
   });
 
   it("applies the config's base path to every root-relative URL", async () => {
@@ -58,6 +64,7 @@ describe("build", () => {
     const sitemap = await read("sitemap.xml");
     expect(sitemap).toContain("<loc>https://example.org/site/</loc>");
     expect(sitemap).toContain("<loc>https://example.org/site/news</loc>");
+    expect(sitemap).toContain("<loc>https://example.org/site/talks/hope</loc>");
     expect(sitemap).not.toContain("404");
     expect(await read("robots.txt")).toContain("Sitemap: https://example.org/site/sitemap.xml");
   });
@@ -66,10 +73,13 @@ describe("build", () => {
     const starterOut = await mkdtemp(join(tmpdir(), "goodfellow-starter-"));
     try {
       const result = await build({ root: starter, outDir: starterOut, base: "/" });
-      expect(result.pages).toHaveLength(3);
+      // Four pages, plus a page for each of the two news stories.
+      expect(result.pages).toHaveLength(6);
       const html = await readFile(join(starterOut, "about/index.html"), "utf8");
       expect(html).toContain("<title>About us | My site</title>");
       expect(html).toContain('<nav aria-label="main">');
+      const story = await readFile(join(starterOut, "news/welcome/index.html"), "utf8");
+      expect(story).toContain("<title>Welcome to our new website | My site</title>");
     } finally {
       await rm(starterOut, { recursive: true, force: true });
     }

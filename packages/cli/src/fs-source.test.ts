@@ -15,7 +15,7 @@ describe("fileSystemSource", () => {
 
   it("returns nothing for missing files and folders", async () => {
     expect(await source.read("content/menus.json")).toBeUndefined();
-    expect(await source.list("content/collections")).toEqual([]);
+    expect(await source.list("content/missing")).toEqual([]);
   });
 
   it("reads files as text", async () => {

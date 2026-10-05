@@ -13,6 +13,8 @@ npm run preview  # serves dist/
 
 On your own computer, the admin panel saves straight to the files in `content/`.
 
+The News page and its stories are an example of a collection: a group of similar items that share one page design. Change it or delete it under **Collections** in the admin panel.
+
 ## Putting the site online
 
 Setup takes four steps. It's done once, usually by whoever set up the site.
@@ -41,18 +43,20 @@ Also set the site's address under **Site settings → General → Site address**
 
 ### 3. Choose a host
 
-**GitHub Pages** (free for public repositories)
+Each host's free plan has its own rules about business use. If the site is for a business, sells anything, shows ads, or is built or looked after by someone who's paid for it, check those rules first. As of October 2026, GitHub Pages and Vercel's free plan don't allow most of these, and GitLab Pages has no rule against them that we know of. See [Commercial sites](https://github.com/chartung17/goodfellow-cms#requirements-and-limits) in Goodfellow's README.
+
+**GitHub Pages** (free for public repositories; not for online businesses or shops)
 
 1. In the repository on GitHub, go to **Settings → Pages** and set **Source** to **GitHub Actions**.
 2. Push. `.github/workflows/deploy.yml` builds and publishes the site on every change and once a night. If your main branch isn't called `main`, change it in that file.
 
-**GitLab Pages** (free, including for private projects)
+**GitLab Pages** (free, including for private projects; no rule against business sites that we know of)
 
 1. Push. `.gitlab-ci.yml` builds and publishes the site on every change to the default branch.
 2. For nightly rebuilds, add a schedule under **Build → Pipeline schedules**.
 3. The site's address is under **Deploy → Pages**.
 
-**Vercel** (works with GitHub and GitLab)
+**Vercel** (works with GitHub and GitLab; the free plan is for non-commercial sites only)
 
 1. Import the repository in Vercel. `vercel.json` already has the right settings.
 2. For nightly rebuilds, create a deploy hook under **Settings → Git → Deploy Hooks**, and call it from a scheduled GitHub Action or GitLab pipeline schedule.

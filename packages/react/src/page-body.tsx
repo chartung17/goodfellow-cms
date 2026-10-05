@@ -13,7 +13,14 @@ export interface PageBodyProps {
 
 /** The Puck metadata every block receives, mirroring `useSite()`. */
 export function siteMetadata(site: SiteContextValue): Metadata {
-  return { site: site.settings, menus: site.menus, path: site.path };
+  return {
+    site: site.settings,
+    menus: site.menus,
+    path: site.path,
+    collections: site.collections,
+    collection: site.collection,
+    entry: site.entry,
+  };
 }
 
 /** A page's visible content: the site header, the page itself and the site footer. */

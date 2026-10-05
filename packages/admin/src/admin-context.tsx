@@ -46,6 +46,7 @@ interface AdminContextValue {
   config: GoodfellowConfig;
   pageConfig: Config;
   layoutConfig: Config;
+  templateConfig: Config;
   preview: PreviewOptions;
   siteUrl: string;
   state: LoadState;
@@ -98,6 +99,7 @@ export function AdminProvider({
   const [deploy, setDeploy] = useState<DeployProgress>();
   const pageConfig = useMemo(() => createPuckConfig(config, "page"), [config]);
   const layoutConfig = useMemo(() => createPuckConfig(config, "layout"), [config]);
+  const templateConfig = useMemo(() => createPuckConfig(config, "template"), [config]);
 
   const loadAndHandle = useCallback(async () => {
     const next = await load(store);
@@ -153,8 +155,20 @@ export function AdminProvider({
   }, [deploy, store]);
 
   const value = useMemo(
-    () => ({ config, pageConfig, layoutConfig, preview, siteUrl, state, account, deploy, reload, publish }),
-    [config, pageConfig, layoutConfig, preview, siteUrl, state, account, deploy, reload, publish],
+    () => ({
+      config,
+      pageConfig,
+      layoutConfig,
+      templateConfig,
+      preview,
+      siteUrl,
+      state,
+      account,
+      deploy,
+      reload,
+      publish,
+    }),
+    [config, pageConfig, layoutConfig, templateConfig, preview, siteUrl, state, account, deploy, reload, publish],
   );
 
   return <AdminContext.Provider value={value}>{children}</AdminContext.Provider>;
