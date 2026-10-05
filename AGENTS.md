@@ -2,7 +2,7 @@
 
 Guidance for anyone, human or coding agent, changing this repository. Read [README.md](README.md) first for what Goodfellow is.
 
-The repo is in early development. Several tools and scripts below are decided but not set up yet; when you add one, update this file in the same change.
+The repo is in early development. Playwright end-to-end tests aren't set up yet. When you add a tool or script, update this file in the same change.
 
 ## Architecture rules
 
@@ -24,6 +24,7 @@ Content files are the product's data format; treat changes to them like API chan
 - **One file per page or entry.** `content/pages/about.json` serves `/about`; `content/pages/index.json` serves `/`. Never bundle several pages into one file.
 - **Stable output.** Write JSON with 2-space indentation, a trailing newline and a stable key order, so diffs stay small and readable. Use the shared serializer in `@goodfellow/core`; never call `JSON.stringify` on content directly.
 - **Versioned.** Every content file has a `version` field. A change to the shape of stored data needs a migration in `packages/core/migrations` and a test that migrates a file from the previous version.
+- **Formatting is owned by the serializer.** Biome doesn't format `content/**/*.json`. A test checks that the starter template's content files are in canonical form, so after editing them by hand, re-save them with `serializeContent`.
 - **Atomic saves.** A save that touches several files is a single commit. Every write passes the commit the editor started from, so that saving over someone else's change fails and triggers the merge flow instead of silently overwriting.
 
 ## Puck
@@ -31,6 +32,17 @@ Content files are the product's data format; treat changes to them like API chan
 - Use `@puckeditor/core`. `@measured/puck` is the old package name; don't import it.
 - Puck is pre-1.0 and its minor versions have breaking changes. Pin an exact version in every package, and upgrade it in one dedicated change across the workspace.
 - Prefer Puck's own APIs (slots, the `metadata` API, `richtext` fields, plugins, overrides, the dictionary) over reimplementing them.
+
+## Blocks
+
+- **Never rename** a block's key in a site's `blocks` or any of its props. Content files refer to blocks and props by name, so a rename needs a content migration.
+- **CSS classes:** every block has a `className` prop. Declare `className: classNameField` and apply it to the block's outermost element. A block that doesn't declare it gets wrapped in a `<div>` that carries the classes.
+- **Combining classes:** use `cx()` from `@goodfellow/react`, with `className` last. It uses tailwind-merge, so an editor's classes override the block's defaults instead of conflicting with them.
+- **Complete class names:** write Tailwind classes as complete strings, using lookup tables for options (`{ sm: "gap-3", md: "gap-6" }`). Never build class names from parts, or Tailwind won't find them.
+- **Theme tokens:** style with theme classes (`bg-primary`, `text-muted-foreground`, `font-heading`, `rounded-lg`) rather than fixed colors, so blocks follow the site's theme.
+- **Site data:** read menus and settings with `useSite()`. Never copy them into a block's props.
+- **No client-side JavaScript yet:** pages are static HTML. Interactive behavior uses HTML and CSS only (`<details>`, `:hover`, `:focus-within`).
+- **Labels:** field labels and option names are for non-technical users ("Space above and below", not "padding-y").
 
 ## Component libraries
 
@@ -66,7 +78,7 @@ The admin panel is for people who have never used git.
 | Versioning and changelogs | Changesets |
 | Node | 22 or later |
 
-Once the workspace exists, run these from the repo root before every commit:
+Run these from the repo root before every commit. CI runs the same steps.
 
 ```sh
 pnpm install
@@ -75,6 +87,10 @@ pnpm typecheck
 pnpm test
 pnpm build
 ```
+
+- **Order:** tests and typechecks use other workspace packages' built `dist/` folders, so Turborepo builds dependencies first. If you run Vitest directly inside one package, run `pnpm build` first.
+- **TypeScript 7:** tsdown warns that TypeScript 7's API is experimental. That warning is expected.
+- **Trying a change in a real site:** run `pnpm build`, then `pnpm dev` in `templates/starter` and open http://localhost:4321. Pages re-render on every request, so content edits show up on reload.
 
 ## Conventions
 
@@ -101,3 +117,14 @@ Use these terms consistently in code, UI and docs.
 | Entry | One item in a collection: field values only |
 | Backend | A `GitBackend` implementation for one git host |
 | Publish | Commit changes to the site's main branch |
+
+<!-- BEGIN:turborepo-agent-rules -->
+
+# This is NOT the Turborepo you know
+
+Turborepo configuration, task behavior, and CLI commands can vary between installed versions and may differ from your training data. Resolve the `turbo` package from this file's directory or relevant workspace; in monorepos, it may not be visible from the repository root. For example, run `node -p "require.resolve('turbo/package.json')"` from a workspace that depends on `turbo`.
+
+Read `docs/README.md` inside that installed package first, then read the relevant pages from its `docs/` directory before changing Turborepo configuration or commands. Heed deprecation notices. These bundled docs match the installed package version and are available without network access.
+
+This block is written and re-added by `turbo` before repository-scoped commands when an AI agent is detected. In the Turborepo source repository, its template is defined in `crates/turborepo-cli/src/cli/agent_guidance.rs`. Removing the managed block while updates are enabled means a later qualifying invocation will add it again. Set `"agentGuidance": false` in the root `turbo.json` or `turbo.jsonc` to opt out; this does not remove an existing block. Keep the block committed with your work to avoid an uncommitted change on the next agent invocation.
+<!-- END:turborepo-agent-rules -->

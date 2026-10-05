@@ -1,0 +1,33 @@
+{
+  "name": "@goodfellow/core",
+  "version": "0.0.0",
+  "description": "Goodfellow's content model, config and file format. Runs in Node and the browser.",
+  "license": "MIT",
+  "type": "module",
+  "sideEffects": false,
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    },
+    "./package.json": "./package.json"
+  },
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "tsdown",
+    "typecheck": "tsc -p tsconfig.json",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "zod": "4.6.5"
+  },
+  "peerDependencies": {
+    "@puckeditor/core": "0.23.0"
+  },
+  "devDependencies": {
+    "@puckeditor/core": "0.23.0",
+    "react": "19.3.0"
+  }
+}

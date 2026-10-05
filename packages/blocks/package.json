@@ -1,0 +1,42 @@
+{
+  "name": "@goodfellow/blocks",
+  "version": "0.0.0",
+  "description": "Goodfellow's built-in blocks. Styled with Tailwind and the site theme only.",
+  "license": "MIT",
+  "type": "module",
+  "sideEffects": [
+    "*.css"
+  ],
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    },
+    "./styles.css": "./styles.css",
+    "./package.json": "./package.json"
+  },
+  "files": [
+    "dist",
+    "styles.css"
+  ],
+  "scripts": {
+    "build": "tsdown",
+    "typecheck": "tsc -p tsconfig.json",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "@goodfellow/react": "workspace:*"
+  },
+  "peerDependencies": {
+    "@puckeditor/core": "0.23.0",
+    "react": "^19.0.0"
+  },
+  "devDependencies": {
+    "@goodfellow/core": "workspace:*",
+    "@puckeditor/core": "0.23.0",
+    "@types/react": "^19.2.0",
+    "@types/react-dom": "^19.2.0",
+    "react": "19.3.0",
+    "react-dom": "19.3.0"
+  }
+}
