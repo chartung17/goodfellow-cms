@@ -4,7 +4,7 @@ import { absoluteUrl, loadSiteContent, pageOutputFile } from "@goodfellow/core";
 import { createServer, build as viteBuild } from "vite";
 import { applyBasePath, normalizeBase } from "./base-path.js";
 import { fileSystemSource } from "./fs-source.js";
-import { baseViteConfig, findConfigFile, loadServerEntry, writeStylesEntry } from "./site.js";
+import { baseViteConfig, findConfigFile, loadServerEntry, writeStylesEntries } from "./site.js";
 
 export interface BuildOptions {
   /** The site's folder. Defaults to the current directory. */
@@ -42,7 +42,7 @@ export async function build(options: BuildOptions = {}): Promise<BuildResult> {
     const { config, renderPage } = await loadServerEntry(server);
     const base = normalizeBase(options.base ?? config.base);
     const content = await loadSiteContent(fileSystemSource(root));
-    const stylesEntry = await writeStylesEntry(root, config);
+    const stylesEntry = (await writeStylesEntries(root, config)).site;
 
     // Build the CSS (Tailwind scans content/ for class names) and copy public/ into the output.
     await viteBuild({

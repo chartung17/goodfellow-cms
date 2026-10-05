@@ -1,5 +1,7 @@
+import { type FSWatcher, watch } from "node:fs";
 import type { IncomingMessage, ServerResponse } from "node:http";
-import { join, relative, resolve } from "node:path";
+import { createRequire } from "node:module";
+import { join, resolve } from "node:path";
 import {
   CONTENT_DIR,
   ContentError,
@@ -8,14 +10,28 @@ import {
   type Page,
   type SiteContent,
 } from "@goodfellow/core";
+import react from "@vitejs/plugin-react";
 import { createServer, type Plugin, type ViteDevServer } from "vite";
+import { handleDevApi } from "./dev-api.js";
 import { fileSystemSource } from "./fs-source.js";
-import { baseViteConfig, findConfigFile, loadServerEntry, writeStylesEntry } from "./site.js";
+import { localFileStore } from "./local-files.js";
+import {
+  baseViteConfig,
+  devUrl,
+  findConfigFile,
+  loadServerEntry,
+  type StylesEntries,
+  writeStylesEntries,
+} from "./site.js";
 
 export interface DevOptions {
   root?: string;
   port?: number;
 }
+
+const ADMIN_ENTRY = "virtual:goodfellow/admin";
+const RESOLVED_ADMIN_ENTRY = `\0${ADMIN_ENTRY}`;
+const CONTENT_CHANGED = "goodfellow:content-changed";
 
 function escapeHtml(text: string): string {
   return text.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
@@ -41,24 +57,100 @@ function findPage(content: SiteContent, pathname: string): { page: Page; status:
   return notFound && { page: notFound, status: 404 };
 }
 
-/** Serves pages rendered on request from the files on disk, reloading the browser whenever content changes. */
-function pagesPlugin(root: string, stylesEntry: () => string): Plugin {
-  return {
-    name: "goodfellow:dev-pages",
-    configureServer(server: ViteDevServer) {
-      const contentDir = join(root, CONTENT_DIR);
-      server.watcher.on("all", (_event, file) => {
-        if (file.startsWith(contentDir)) server.ws.send({ type: "full-reload" });
-      });
+/** Reloads site pages when content changes on disk. The admin panel doesn't listen, so saving never reloads the editor. */
+const RELOAD_ON_CONTENT_CHANGE = `<script type="module">
+import { createHotContext } from "/@vite/client";
+createHotContext("/__goodfellow/reload").on("${CONTENT_CHANGED}", () => location.reload());
+</script>`;
 
-      // Runs after Vite's own middleware, so assets and public/ files are served first.
+const ADMIN_HTML = `<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="robots" content="noindex" />
+    <title>Site admin</title>
+  </head>
+  <body>
+    <div id="gf-admin"></div>
+    <script type="module" src="/@id/__x00__${ADMIN_ENTRY}"></script>
+  </body>
+</html>
+`;
+
+/** The admin panel's entry: the site's own config, the local backend, and what previews need to look like the site. */
+function adminEntryPlugin(configFile: string, root: string, styles: () => StylesEntries): Plugin {
+  const tailwindBrowser = createRequire(import.meta.url).resolve("@tailwindcss/browser");
+  return {
+    name: "goodfellow:admin-entry",
+    resolveId: (id) => (id === ADMIN_ENTRY ? RESOLVED_ADMIN_ENTRY : undefined),
+    load: (id) =>
+      id === RESOLVED_ADMIN_ENTRY
+        ? [
+            `import config from ${JSON.stringify(configFile)};`,
+            `import { mountAdmin } from "@goodfellow/admin";`,
+            `import { localStore } from "@goodfellow/admin/dev";`,
+            `import "@puckeditor/core/puck.css";`,
+            `import "@goodfellow/admin/styles.css";`,
+            `import themeCss from "@goodfellow/react/theme.css?raw";`,
+            `import tailwindBrowserUrl from ${JSON.stringify(`${tailwindBrowser}?url`)};`,
+            `mountAdmin(document.getElementById("gf-admin"), {`,
+            "  config,",
+            "  store: localStore(),",
+            `  preview: { stylesheets: [${JSON.stringify(`${devUrl(root, styles().preview)}?direct`)}], themeCss, tailwindBrowserUrl },`,
+            `  siteUrl: "/",`,
+            "});",
+          ].join("\n")
+        : undefined,
+  };
+}
+
+/**
+ * Tells site pages to reload when content changes, after making Vite recompile
+ * the site's CSS (Tailwind scans content/ for class names).
+ *
+ * content/ is hidden from Vite's own watcher on purpose: Tailwind's Vite plugin
+ * reloads every open page when a file it scans changes, which would reload the
+ * admin panel (and lose the editor's state) each time it publishes.
+ */
+function watchContent(server: ViteDevServer, root: string, styles: () => StylesEntries): FSWatcher {
+  let timer: ReturnType<typeof setTimeout> | undefined;
+  const watcher = watch(join(root, CONTENT_DIR), { recursive: true }, () => {
+    clearTimeout(timer);
+    timer = setTimeout(() => {
+      const { moduleGraph } = server.environments.client;
+      for (const entry of [styles().site, styles().preview]) {
+        for (const module of moduleGraph.getModulesByFile(entry) ?? []) moduleGraph.invalidateModule(module);
+      }
+      server.environments.client.hot.send({ type: "custom", event: CONTENT_CHANGED });
+    }, 50);
+  });
+  server.httpServer?.once("close", () => watcher.close());
+  return watcher;
+}
+
+/** Serves the local backend's API, the admin panel at /admin, and pages rendered on request from the files on disk. */
+function devPlugin(root: string, styles: () => StylesEntries): Plugin {
+  const store = localFileStore(root);
+  return {
+    name: "goodfellow:dev",
+    configureServer(server: ViteDevServer) {
+      watchContent(server, root, styles);
+
+      // Runs after Vite's own middleware, so modules, assets and public/ files are served first.
       return () => {
         server.middlewares.use(async (req: IncomingMessage, res: ServerResponse, next: () => void) => {
+          if (await handleDevApi(store, req, res)) return;
           if (req.method !== "GET" && req.method !== "HEAD") return next();
           const url = new URL(req.url ?? "/", "http://localhost");
-          if (/\.[a-z0-9]+$/i.test(url.pathname)) return next();
 
           res.setHeader("Content-Type", "text/html; charset=utf-8");
+          if (url.pathname === "/admin" || url.pathname === "/admin/") {
+            res.end(await server.transformIndexHtml("/admin", ADMIN_HTML));
+            return;
+          }
+          if (/\.[a-z0-9]+$/i.test(url.pathname)) return next();
+
           try {
             const content = await loadSiteContent(fileSystemSource(root));
             const match = findPage(content, url.pathname);
@@ -68,10 +160,12 @@ function pagesPlugin(root: string, stylesEntry: () => string): Plugin {
               return;
             }
             const { renderPage } = await loadServerEntry(server);
-            const stylesheet = `/${relative(root, stylesEntry()).split("\\").join("/")}?direct`;
-            const html = await renderPage(content, match.page, { stylesheets: [stylesheet] });
+            const html = await renderPage(content, match.page, {
+              stylesheets: [`${devUrl(root, styles().site)}?direct`],
+            });
             res.statusCode = match.status;
-            res.end(await server.transformIndexHtml(url.pathname, html));
+            const transformed = await server.transformIndexHtml(url.pathname, html);
+            res.end(transformed.replace("</body>", `${RELOAD_ON_CONTENT_CHANGE}</body>`));
           } catch (error) {
             res.statusCode = 500;
             if (error instanceof ContentError) {
@@ -93,23 +187,39 @@ function pagesPlugin(root: string, stylesEntry: () => string): Plugin {
   };
 }
 
-/** Starts the development server. Resolves once it's listening. */
+/** Starts the development server, with the admin panel at /admin. Resolves once it's listening. */
 export async function dev(options: DevOptions = {}): Promise<ViteDevServer> {
   const root = resolve(options.root ?? ".");
   const configFile = findConfigFile(root);
-  let stylesEntry = "";
+  let styles: StylesEntries | undefined;
+  const getStyles = () => {
+    if (!styles) throw new Error("The development server isn't ready yet.");
+    return styles;
+  };
 
+  const base = baseViteConfig(root, configFile);
   const server = await createServer({
-    ...baseViteConfig(root, configFile),
+    ...base,
     appType: "custom",
     logLevel: "info",
-    server: { port: options.port ?? 4321 },
-    plugins: [...(baseViteConfig(root, configFile).plugins ?? []), pagesPlugin(root, () => stylesEntry)],
+    server: {
+      port: options.port ?? 4321,
+      strictPort: options.port !== undefined,
+      // Watched separately by watchContent().
+      watch: { ignored: [`${join(root, CONTENT_DIR)}/**`] },
+    },
+    plugins: [
+      react(),
+      ...(base.plugins ?? []),
+      adminEntryPlugin(configFile, root, getStyles),
+      devPlugin(root, getStyles),
+    ],
   });
 
   const { config } = await loadServerEntry(server);
-  stylesEntry = await writeStylesEntry(root, config);
+  styles = await writeStylesEntries(root, config);
   await server.listen();
   server.printUrls();
+  server.config.logger.info(`  ➜  Admin:   ${server.resolvedUrls?.local[0] ?? "/"}admin`);
   return server;
 }

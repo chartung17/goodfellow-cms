@@ -5,6 +5,7 @@ import {
   CUSTOM_CSS_FILE,
   FOOTER_FILE,
   HEADER_FILE,
+  isReservedPagePath,
   MENUS_FILE,
   PAGES_DIR,
   pageFileToPath,
@@ -133,6 +134,11 @@ export async function loadSiteContent(source: ContentSource): Promise<SiteConten
           path = pageFileToPath(file);
         } catch (error) {
           problems.push({ file, message: (error as Error).message });
+          return;
+        }
+
+        if (isReservedPagePath(path)) {
+          problems.push({ file, message: `can't be used: ${path} is reserved for the admin panel. Rename the file.` });
           return;
         }
 

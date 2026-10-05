@@ -1,0 +1,47 @@
+{
+  "name": "@goodfellow/admin",
+  "version": "0.0.0",
+  "description": "Goodfellow's admin panel: a visual editor for a site's pages, layout and settings.",
+  "license": "MIT",
+  "type": "module",
+  "sideEffects": [
+    "*.css"
+  ],
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    },
+    "./dev": {
+      "types": "./dist/dev.d.ts",
+      "import": "./dist/dev.js"
+    },
+    "./styles.css": "./styles.css",
+    "./package.json": "./package.json"
+  },
+  "files": [
+    "dist",
+    "styles.css"
+  ],
+  "scripts": {
+    "build": "tsdown",
+    "typecheck": "tsc -p tsconfig.json",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "@goodfellow/core": "workspace:*",
+    "@goodfellow/react": "workspace:*"
+  },
+  "peerDependencies": {
+    "@puckeditor/core": "0.23.0",
+    "react": "^19.0.0",
+    "react-dom": "^19.0.0"
+  },
+  "devDependencies": {
+    "@puckeditor/core": "0.23.0",
+    "@types/react": "^19.2.0",
+    "@types/react-dom": "^19.2.0",
+    "react": "19.3.0",
+    "react-dom": "19.3.0"
+  }
+}

@@ -7,5 +7,5 @@
   "access": "public",
   "baseBranch": "main",
   "updateInternalDependencies": "patch",
-  "ignore": ["@goodfellow/template-starter"]
+  "ignore": ["@goodfellow/template-starter", "@goodfellow/e2e"]
 }

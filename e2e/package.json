@@ -1,12 +1,10 @@
 {
-  "name": "@goodfellow/template-starter",
+  "name": "@goodfellow/e2e",
   "version": "0.0.0",
   "private": true,
   "type": "module",
   "scripts": {
-    "dev": "goodfellow dev",
-    "build": "goodfellow build",
-    "preview": "goodfellow preview",
+    "test:e2e": "playwright test",
     "typecheck": "tsc -p tsconfig.json"
   },
   "dependencies": {
@@ -20,7 +18,8 @@
     "tailwindcss": "4.3.3"
   },
   "devDependencies": {
-    "goodfellow": "workspace:*",
-    "@types/react": "^19.2.0"
+    "@playwright/test": "1.63.0",
+    "@types/node": "^22.19.0",
+    "goodfellow": "workspace:*"
   }
 }

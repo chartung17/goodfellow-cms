@@ -1,6 +1,6 @@
 import { existsSync } from "node:fs";
 import { mkdir, writeFile } from "node:fs/promises";
-import { dirname, join, relative, resolve } from "node:path";
+import { join, relative, resolve } from "node:path";
 import { CUSTOM_CSS_FILE, type GoodfellowConfig } from "@goodfellow/core";
 import type { PageRenderer } from "@goodfellow/react/server";
 import tailwindcss from "@tailwindcss/vite";
@@ -59,12 +59,20 @@ export function baseViteConfig(root: string, configFile: string): InlineConfig {
   };
 }
 
+export interface StylesEntries {
+  /** The site's stylesheet followed by the admin's custom CSS: what pages load. */
+  site: string;
+  /** The site's stylesheet alone. Admin previews add the custom CSS being edited themselves. */
+  preview: string;
+}
+
 /**
- * Writes the stylesheet Vite builds: the site's stylesheet followed by the
- * admin's custom CSS (unlayered, so it overrides block styles). Lives in
- * node_modules/.goodfellow so it never shows up in the site's repository.
+ * Writes the stylesheets Vite builds: the site's stylesheet followed by the
+ * admin's custom CSS (unlayered, so it overrides block styles), and one without
+ * the custom CSS for admin previews. They live in node_modules/.goodfellow so
+ * they never show up in the site's repository.
  */
-export async function writeStylesEntry(root: string, config: GoodfellowConfig): Promise<string> {
+export async function writeStylesEntries(root: string, config: GoodfellowConfig): Promise<StylesEntries> {
   const styles = resolve(root, config.styles ?? "src/styles.css");
   if (!existsSync(styles)) {
     throw new SiteSetupError(
@@ -72,13 +80,20 @@ export async function writeStylesEntry(root: string, config: GoodfellowConfig): 
     );
   }
 
-  const entry = join(root, "node_modules/.goodfellow/styles.css");
-  const importPath = (file: string) => JSON.stringify(relative(dirname(entry), file).split("\\").join("/"));
-  const lines = [`@import ${importPath(styles)};`];
+  const dir = join(root, "node_modules/.goodfellow");
+  const importPath = (file: string) => JSON.stringify(relative(dir, file).split("\\").join("/"));
+  const siteLines = [`@import ${importPath(styles)};`];
   const customCss = join(root, CUSTOM_CSS_FILE);
-  if (existsSync(customCss)) lines.push(`@import ${importPath(customCss)};`);
+  if (existsSync(customCss)) siteLines.push(`@import ${importPath(customCss)};`);
 
-  await mkdir(dirname(entry), { recursive: true });
-  await writeFile(entry, `${lines.join("\n")}\n`);
-  return entry;
+  await mkdir(dir, { recursive: true });
+  const entries = { site: join(dir, "styles.css"), preview: join(dir, "preview.css") };
+  await writeFile(entries.site, `${siteLines.join("\n")}\n`);
+  await writeFile(entries.preview, `@import ${importPath(styles)};\n`);
+  return entries;
+}
+
+/** The URL path the dev server serves a file in the site at. */
+export function devUrl(root: string, file: string): string {
+  return `/${relative(root, file).split("\\").join("/")}`;
 }

@@ -82,3 +82,12 @@ describe("loadSiteContent", () => {
     ]);
   });
 });
+
+describe("reserved addresses", () => {
+  it("refuses a page at the admin panel's address", async () => {
+    const error = await loadSiteContent(memorySource({ "content/pages/admin.json": page("Admin") })).catch(
+      (caught: unknown) => caught,
+    );
+    expect((error as ContentError).problems[0]?.message).toMatch(/reserved for the admin panel/);
+  });
+});

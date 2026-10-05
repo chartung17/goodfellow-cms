@@ -30,6 +30,68 @@ importers:
         specifier: 5.0.3
         version: 5.0.3(@types/node@22.20.5)(happy-dom@20.14.5)(vite@8.3.2(@types/node@22.20.5)(jiti@2.7.0)(yaml@2.9.1))
 
+  e2e:
+    dependencies:
+      '@goodfellow/admin':
+        specifier: workspace:*
+        version: link:../packages/admin
+      '@goodfellow/blocks':
+        specifier: workspace:*
+        version: link:../packages/blocks
+      '@goodfellow/core':
+        specifier: workspace:*
+        version: link:../packages/core
+      '@goodfellow/react':
+        specifier: workspace:*
+        version: link:../packages/react
+      '@puckeditor/core':
+        specifier: 0.23.0
+        version: 0.23.0(@floating-ui/dom@1.8.0)(@types/react-dom@19.3.0(@types/react@19.3.0))(@types/react@19.3.0)(react-dom@19.3.0(react@19.3.0))(react@19.3.0)(use-sync-external-store@1.7.0(react@19.3.0))
+      react:
+        specifier: 19.3.0
+        version: 19.3.0
+      react-dom:
+        specifier: 19.3.0
+        version: 19.3.0(react@19.3.0)
+      tailwindcss:
+        specifier: 4.3.3
+        version: 4.3.3
+    devDependencies:
+      '@playwright/test':
+        specifier: 1.63.0
+        version: 1.63.0
+      '@types/node':
+        specifier: ^22.19.0
+        version: 22.20.5
+      goodfellow:
+        specifier: workspace:*
+        version: link:../packages/cli
+
+  packages/admin:
+    dependencies:
+      '@goodfellow/core':
+        specifier: workspace:*
+        version: link:../core
+      '@goodfellow/react':
+        specifier: workspace:*
+        version: link:../react
+    devDependencies:
+      '@puckeditor/core':
+        specifier: 0.23.0
+        version: 0.23.0(@floating-ui/dom@1.8.0)(@types/react-dom@19.3.0(@types/react@19.3.0))(@types/react@19.3.0)(react-dom@19.3.0(react@19.3.0))(react@19.3.0)(use-sync-external-store@1.7.0(react@19.3.0))
+      '@types/react':
+        specifier: ^19.2.0
+        version: 19.3.0
+      '@types/react-dom':
+        specifier: ^19.2.0
+        version: 19.3.0(@types/react@19.3.0)
+      react:
+        specifier: 19.3.0
+        version: 19.3.0
+      react-dom:
+        specifier: 19.3.0
+        version: 19.3.0(react@19.3.0)
+
   packages/blocks:
     dependencies:
       '@goodfellow/react':
@@ -60,13 +122,22 @@ importers:
       '@goodfellow/core':
         specifier: workspace:*
         version: link:../core
+      '@tailwindcss/browser':
+        specifier: 4.3.3
+        version: 4.3.3
       '@tailwindcss/vite':
         specifier: 4.3.3
         version: 4.3.3(vite@8.3.2(@types/node@22.20.5)(jiti@2.7.0)(yaml@2.9.1))
+      '@vitejs/plugin-react':
+        specifier: 6.1.1
+        version: 6.1.1(vite@8.3.2(@types/node@22.20.5)(jiti@2.7.0)(yaml@2.9.1))
       vite:
         specifier: 8.3.2
         version: 8.3.2(@types/node@22.20.5)(jiti@2.7.0)(yaml@2.9.1)
     devDependencies:
+      '@goodfellow/admin':
+        specifier: workspace:*
+        version: link:../admin
       '@goodfellow/blocks':
         specifier: workspace:*
         version: link:../blocks
@@ -126,6 +197,9 @@ importers:
 
   templates/starter:
     dependencies:
+      '@goodfellow/admin':
+        specifier: workspace:*
+        version: link:../../packages/admin
       '@goodfellow/blocks':
         specifier: workspace:*
         version: link:../../packages/blocks
@@ -348,6 +422,11 @@ packages:
 
   '@oxc-project/types@0.152.0':
     resolution: {integrity: sha512-oM/5rLBm2tPkg0iBgkH/FOeR3PCDpY19GTgAZjMFM8h9WI9VW7cLgzp6nwtarYKmovavIQZ+Fe/RKX/8C8O/Rw==}
+
+  '@playwright/test@1.63.0':
+    resolution: {integrity: sha512-oxMK4vllB9RK5NQ2l1pq1IfOf2AvnEuj/vYGDj0H2nMtmtZpKtCwt/l00GEO6xjGfpBNAvjovvYdCm50dRQkpQ==}
+    engines: {node: '>=20'}
+    hasBin: true
 
   '@pnpm/deps.graph-sequencer@1100.0.1':
     resolution: {integrity: sha512-pOr5+q1fLYKwFN3LAJuGZEnfXDcQ73zqgDHMtGy+K+uIoUqyY+6MeDCWFwfu+4EFuq76I5EPFofoNAI+Bmmq4A==}
@@ -666,6 +745,9 @@ packages:
 
   '@rolldown/pluginutils@1.0.1':
     resolution: {integrity: sha512-2j9bGt5Jh8hj+vPtgzPtl72j0yRxHAyumoo6TNfAjsLB04UtpSvPbPcDcBMxz7n+9CYB0c1GxQFxYRg2jimqGw==}
+
+  '@tailwindcss/browser@4.3.3':
+    resolution: {integrity: sha512-fFaqX18SiyiukLoEI7/cVc0B65mkTslDNo2TxazSDZ9rKs5umOEoujmEkpy8z6GrMdoVzBDbWD8j5DTKLyAWWw==}
 
   '@tailwindcss/node@4.3.3':
     resolution: {integrity: sha512-/T8IKEsf9VTU6tLjgC7+sv2mOPtQxzE2jMw7u4Tt40Tx+QSZxpzh95/H6cMKoja9XuW7iMdLJYBB0o9G1CaAgg==}
@@ -1067,6 +1149,22 @@ packages:
     engines: {node: '>=16.20.0'}
     cpu: [x64]
     os: [win32]
+
+  '@vitejs/plugin-react@6.1.1':
+    resolution: {integrity: sha512-yxLaQV9gkhS8ezJqCM6+ndU7mDY6gqAg75NQ+0IjwEI8IYOmQCgkRwHKVSfWXW076DsqMo0Dk+0FK1U+M5RgFw==}
+    engines: {node: ^20.19.0 || >=22.12.0}
+    peerDependencies:
+      '@rolldown/plugin-babel': ^0.1.7 || ^0.2.0
+      babel-plugin-react-compiler: ^1.0.0
+      oxc-transform-react: ^0.145.0
+      vite: ^8.0.0
+    peerDependenciesMeta:
+      '@rolldown/plugin-babel':
+        optional: true
+      babel-plugin-react-compiler:
+        optional: true
+      oxc-transform-react:
+        optional: true
 
   '@vitest/mocker@5.0.3':
     resolution: {integrity: sha512-T8sWAIbkSyAjkwTcaEc3Iu0o9A27X1/kdXrizhZkGuSKScRQtRzclfAMpOTcGdXCsqxeWlpGy3XjqaW8CpLORg==}
@@ -1552,6 +1650,16 @@ packages:
   picomatch@4.0.7:
     resolution: {integrity: sha512-qcJu88Q2IWqJsDD529JKMdwGm/dvInW4HvQnRwiH9JtihJvzGOscDtHE3x1pBKeUOTysQ8kVmLnJ2kJu7yhcGA==}
     engines: {node: '>=12'}
+
+  playwright-core@1.63.0:
+    resolution: {integrity: sha512-rYCsBF/M5HjUch52bbtVONEFjv6Xu8sm8h72dNlR5bzIE1fvC/bxgspzkjSfU+MweEMmPM8KJebG6nnyxo5mCg==}
+    engines: {node: '>=20'}
+    hasBin: true
+
+  playwright@1.63.0:
+    resolution: {integrity: sha512-+7ziBLidS4NaNCdt57SUDT+wYmmd5fmiQejUic/kb+YsYSCPyOOE9sebzMjNmQrsnNpDJqd4WHvV/8lfKfUDUg==}
+    engines: {node: '>=20'}
+    hasBin: true
 
   postcss@8.5.28:
     resolution: {integrity: sha512-RRuzqDtt5Y9h3quz5hWhK+TPnsmVs6WwSU6LkJMeY4HstUEDuYTG8UJSdawMRzmzAtV+KEoG8N3Qg2qLy5vM/A==}
@@ -2205,6 +2313,10 @@ snapshots:
 
   '@oxc-project/types@0.152.0': {}
 
+  '@playwright/test@1.63.0':
+    dependencies:
+      playwright: 1.63.0
+
   '@pnpm/deps.graph-sequencer@1100.0.1': {}
 
   '@preact/signals-core@1.14.4': {}
@@ -2488,6 +2600,8 @@ snapshots:
     optional: true
 
   '@rolldown/pluginutils@1.0.1': {}
+
+  '@tailwindcss/browser@4.3.3': {}
 
   '@tailwindcss/node@4.3.3':
     dependencies:
@@ -2798,6 +2912,11 @@ snapshots:
 
   '@typescript/typescript-win32-x64@7.0.2':
     optional: true
+
+  '@vitejs/plugin-react@6.1.1(vite@8.3.2(@types/node@22.20.5)(jiti@2.7.0)(yaml@2.9.1))':
+    dependencies:
+      '@rolldown/pluginutils': 1.0.1
+      vite: 8.3.2(@types/node@22.20.5)(jiti@2.7.0)(yaml@2.9.1)
 
   '@vitest/mocker@5.0.3(vite@8.3.2(@types/node@22.20.5)(jiti@2.7.0)(yaml@2.9.1))':
     dependencies:
@@ -3113,6 +3232,12 @@ snapshots:
   picocolors@1.1.1: {}
 
   picomatch@4.0.7: {}
+
+  playwright-core@1.63.0: {}
+
+  playwright@1.63.0:
+    dependencies:
+      playwright-core: 1.63.0
 
   postcss@8.5.28:
     dependencies:
