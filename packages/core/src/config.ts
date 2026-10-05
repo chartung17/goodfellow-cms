@@ -1,4 +1,5 @@
 import type { ComponentConfig, Config } from "@puckeditor/core";
+import type { GitHost } from "./git.js";
 
 /**
  * A site's `goodfellow.config.tsx`. The site build and its `/admin` page both
@@ -17,6 +18,11 @@ export interface GoodfellowConfig {
    * subfolder (for example `/my-repo/` on GitHub Pages). Defaults to `/`.
    */
   base?: string;
+  /**
+   * Where the site's repository lives, such as `github({ repo: "owner/name" })`.
+   * Builds include the admin panel at `/admin` only when this is set.
+   */
+  backend?: GitHost;
 }
 
 /** Declares a site config with full type checking. Returns it unchanged. */

@@ -54,6 +54,8 @@ export function baseViteConfig(root: string, configFile: string): InlineConfig {
     root,
     configFile: false,
     envDir: false,
+    // One cache per site, even when sites share a node_modules folder (such as in a monorepo).
+    cacheDir: join(root, "node_modules/.vite"),
     logLevel: "warn",
     plugins: [tailwindcss(), serverEntryPlugin(configFile)],
   };

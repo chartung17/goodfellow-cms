@@ -54,6 +54,13 @@ Content files are the product's data format; treat changes to them like API chan
 - **Testing Puck:** Puck renders hidden copies of its fields, so tests select visible ones (`:visible`) and click blocks through their `[data-puck-component]` handle.
 - **Dev server watching:** `content/` is excluded from Vite's watcher and watched separately, because Tailwind's Vite plugin reloads every open page when a file it scans changes. That would reload the admin panel on every publish.
 
+## Backends
+
+- **Reads are pinned:** a backend's reads see the revision its last `revision()` call returned, so loading the site is consistent even if someone publishes meanwhile. Trees and blobs are cached by id, since they never change.
+- **Saving:** the admin panel publishes through `writeChanges()` from `@goodfellow/core`. It retries on top of other people's commits when they only touched other files, and throws `ConflictError` when they touched the same ones. Backends must throw `ConflictError` when the branch has moved (GitHub: `expectedHeadOid`; GitLab: a branch check plus each file's `last_commit_id`).
+- **Sign-in problems** throw `SignInError` with a `problem` the admin panel turns into text. Backends never supply UI text; token links name string-table keys instead.
+- **Fakes:** each backend package exports a fake of its host's API from `@goodfellow/<host>/testing`, built on `FakeRepo` from `@goodfellow/core/testing`. Unit tests pass the fake's `fetch`; end-to-end tests route the browser's requests to its `handle` with `routeToFake()`. Never import `/testing` entry points from code that ships.
+
 ## Component libraries
 
 shadcn support is on hold until `puckeditor/puck-configs` has a license. Don't copy or adapt any code from that repository until it does.
@@ -102,7 +109,7 @@ pnpm test:e2e
 - **Order:** tests and typechecks use other workspace packages' built `dist/` folders, so Turborepo builds dependencies first. If you run Vitest directly inside one package, run `pnpm build` first.
 - **TypeScript 7:** tsdown warns that TypeScript 7's API is experimental. That warning is expected.
 - **Trying a change in a real site:** run `pnpm build`, then `pnpm dev` in `templates/starter` and open http://localhost:4321 (or http://localhost:4321/admin). Pages re-render on every request, so content edits show up on reload. The dev server runs the built `dist/` of each package, so rebuild a package after changing it.
-- **End-to-end tests:** `pnpm test:e2e` runs Playwright against `goodfellow dev` serving a copy of the starter site in `e2e/.site`, reset before every test. Install a browser once with `pnpm --filter @goodfellow/e2e exec playwright install chromium`, or point `PLAYWRIGHT_CHROMIUM_EXECUTABLE` at a Chromium that's already installed.
+- **End-to-end tests:** `pnpm test:e2e` runs Playwright against `goodfellow dev` serving a copy of the starter site in `e2e/.site` (reset before every test), and against production builds of the starter with each git backend (`e2e/.site-github` and `e2e/.site-gitlab`), whose API calls go to the fakes. Install a browser once with `pnpm --filter @goodfellow/e2e exec playwright install chromium`, or point `PLAYWRIGHT_CHROMIUM_EXECUTABLE` at a Chromium that's already installed.
 
 ## Conventions
 

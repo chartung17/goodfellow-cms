@@ -1,10 +1,11 @@
-import { ContentError, type ContentStore, type GoodfellowConfig } from "@goodfellow/core";
+import { ContentError, type ContentStore, type GitHost, type GoodfellowConfig } from "@goodfellow/core";
 import { createRoot } from "react-dom/client";
 import { AdminProvider, type PreviewOptions, useAdmin } from "./admin-context.js";
 import { LayoutEditorScreen, PageEditorScreen } from "./editor-screens.js";
 import { PagesScreen } from "./pages-screen.js";
 import { useRoute } from "./router.js";
 import { SETTINGS_TABS, SettingsScreen, type SettingsTab } from "./settings-screen.js";
+import { SignInGate } from "./sign-in.js";
 import { type Strings, StringsProvider, useStrings } from "./strings.js";
 import { Button, ErrorMessage } from "./ui.js";
 import { AppLink } from "./use-link.js";
@@ -12,8 +13,13 @@ import { AppLink } from "./use-link.js";
 export interface AdminProps {
   /** The site's `goodfellow.config.tsx`. */
   config: GoodfellowConfig;
-  /** Where the site's files are read from and published to. */
-  store: ContentStore;
+  /**
+   * Where the site's files are read from and published to, without signing in.
+   * Used by `goodfellow dev`. Otherwise the admin panel signs in to `host`.
+   */
+  store?: ContentStore;
+  /** The git host the site is stored on. Defaults to the config's `backend`. */
+  host?: GitHost;
   preview: PreviewOptions;
   /** The live site's address, for "View" links. Defaults to `/`. */
   siteUrl?: string;
@@ -51,6 +57,41 @@ function Screen() {
   return <PagesScreen />;
 }
 
+function DeployIndicator() {
+  const t = useStrings();
+  const { deploy } = useAdmin();
+  if (!deploy || deploy.state === "unknown") return null;
+  return (
+    <span className={`gfa-deploy gfa-deploy-${deploy.state}`} role="status">
+      {t(deploy.state === "building" ? "deploy.building" : deploy.state === "live" ? "deploy.live" : "deploy.failed")}
+      {deploy.state === "failed" && deploy.detailsUrl && (
+        <>
+          {" "}
+          <a href={deploy.detailsUrl} target="_blank" rel="noreferrer">
+            {t("deploy.details")}
+          </a>
+        </>
+      )}
+    </span>
+  );
+}
+
+function AccountMenu() {
+  const t = useStrings();
+  const { account } = useAdmin();
+  if (!account) return null;
+  const { user } = account;
+  return (
+    <div className="gfa-account">
+      {user.avatarUrl && <img src={user.avatarUrl} alt="" width={24} height={24} />}
+      <span title={t("account.signedInAs", { name: user.login })}>{user.name || user.login}</span>
+      <Button variant="ghost" onClick={account.signOut}>
+        {t("account.signOut")}
+      </Button>
+    </div>
+  );
+}
+
 function Shell() {
   const t = useStrings();
   const { state, siteUrl } = useAdmin();
@@ -72,9 +113,11 @@ function Shell() {
             {t("nav.settings")}
           </AppLink>
         </nav>
+        <DeployIndicator />
         <a className="gfa-topbar-link" href={siteUrl} target="_blank" rel="noreferrer">
           {t("app.viewSite")}
         </a>
+        <AccountMenu />
       </header>
       <main className="gfa-content">
         {state.status === "loading" && <p className="gfa-screen">{t("loading")}</p>}
@@ -85,15 +128,40 @@ function Shell() {
   );
 }
 
-/** The admin panel. Render it on its own page, such as `/admin`. */
-export function Admin({ config, store, preview, siteUrl = "/", strings }: AdminProps) {
+function MissingBackend() {
+  const t = useStrings();
   return (
-    <StringsProvider strings={strings}>
-      <AdminProvider config={config} store={store} preview={preview} siteUrl={siteUrl}>
-        <Shell />
-      </AdminProvider>
-    </StringsProvider>
+    <div className="gfa-screen">
+      <ErrorMessage message={t("setup.noBackend")} />
+    </div>
   );
+}
+
+/** The admin panel. Render it on its own page, such as `/admin`. */
+export function Admin({ config, store, host = config.backend, preview, siteUrl = "/", strings }: AdminProps) {
+  const body = store ? (
+    <AdminProvider config={config} store={store} preview={preview} siteUrl={siteUrl}>
+      <Shell />
+    </AdminProvider>
+  ) : host ? (
+    <SignInGate host={host}>
+      {(backend, signOut) => (
+        <AdminProvider
+          config={config}
+          store={backend}
+          account={{ user: backend.user, hostName: host.name, signOut: () => signOut() }}
+          preview={preview}
+          siteUrl={siteUrl}
+          onSignInError={(error) => signOut(error)}
+        >
+          <Shell />
+        </AdminProvider>
+      )}
+    </SignInGate>
+  ) : (
+    <MissingBackend />
+  );
+  return <StringsProvider strings={strings}>{body}</StringsProvider>;
 }
 
 /** Renders the admin panel into an element. */

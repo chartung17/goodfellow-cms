@@ -41,6 +41,12 @@ importers:
       '@goodfellow/core':
         specifier: workspace:*
         version: link:../packages/core
+      '@goodfellow/github':
+        specifier: workspace:*
+        version: link:../packages/github
+      '@goodfellow/gitlab':
+        specifier: workspace:*
+        version: link:../packages/gitlab
       '@goodfellow/react':
         specifier: workspace:*
         version: link:../packages/react
@@ -170,6 +176,26 @@ importers:
         specifier: 19.3.0
         version: 19.3.0
 
+  packages/github:
+    dependencies:
+      '@goodfellow/core':
+        specifier: workspace:*
+        version: link:../core
+    devDependencies:
+      '@puckeditor/core':
+        specifier: 0.23.0
+        version: 0.23.0(@floating-ui/dom@1.8.0)(@types/react-dom@19.3.0(@types/react@19.3.0))(@types/react@19.3.0)(react-dom@19.3.0(react@19.3.0))(react@19.3.0)(use-sync-external-store@1.7.0(react@19.3.0))
+
+  packages/gitlab:
+    dependencies:
+      '@goodfellow/core':
+        specifier: workspace:*
+        version: link:../core
+    devDependencies:
+      '@puckeditor/core':
+        specifier: 0.23.0
+        version: 0.23.0(@floating-ui/dom@1.8.0)(@types/react-dom@19.3.0(@types/react@19.3.0))(@types/react@19.3.0)(react-dom@19.3.0(react@19.3.0))(react@19.3.0)(use-sync-external-store@1.7.0(react@19.3.0))
+
   packages/react:
     dependencies:
       '@goodfellow/core':
@@ -206,6 +232,12 @@ importers:
       '@goodfellow/core':
         specifier: workspace:*
         version: link:../../packages/core
+      '@goodfellow/github':
+        specifier: workspace:*
+        version: link:../../packages/github
+      '@goodfellow/gitlab':
+        specifier: workspace:*
+        version: link:../../packages/gitlab
       '@goodfellow/react':
         specifier: workspace:*
         version: link:../../packages/react

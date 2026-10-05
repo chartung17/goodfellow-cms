@@ -1,6 +1,5 @@
 import { type FSWatcher, watch } from "node:fs";
 import type { IncomingMessage, ServerResponse } from "node:http";
-import { createRequire } from "node:module";
 import { join, resolve } from "node:path";
 import {
   CONTENT_DIR,
@@ -12,6 +11,7 @@ import {
 } from "@goodfellow/core";
 import react from "@vitejs/plugin-react";
 import { createServer, type Plugin, type ViteDevServer } from "vite";
+import { ADMIN_ENTRY, adminEntryPlugin, adminHtml } from "./admin-entry.js";
 import { handleDevApi } from "./dev-api.js";
 import { fileSystemSource } from "./fs-source.js";
 import { localFileStore } from "./local-files.js";
@@ -29,8 +29,6 @@ export interface DevOptions {
   port?: number;
 }
 
-const ADMIN_ENTRY = "virtual:goodfellow/admin";
-const RESOLVED_ADMIN_ENTRY = `\0${ADMIN_ENTRY}`;
 const CONTENT_CHANGED = "goodfellow:content-changed";
 
 function escapeHtml(text: string): string {
@@ -63,48 +61,6 @@ import { createHotContext } from "/@vite/client";
 createHotContext("/__goodfellow/reload").on("${CONTENT_CHANGED}", () => location.reload());
 </script>`;
 
-const ADMIN_HTML = `<!DOCTYPE html>
-<html lang="en">
-  <head>
-    <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <meta name="robots" content="noindex" />
-    <title>Site admin</title>
-  </head>
-  <body>
-    <div id="gf-admin"></div>
-    <script type="module" src="/@id/__x00__${ADMIN_ENTRY}"></script>
-  </body>
-</html>
-`;
-
-/** The admin panel's entry: the site's own config, the local backend, and what previews need to look like the site. */
-function adminEntryPlugin(configFile: string, root: string, styles: () => StylesEntries): Plugin {
-  const tailwindBrowser = createRequire(import.meta.url).resolve("@tailwindcss/browser");
-  return {
-    name: "goodfellow:admin-entry",
-    resolveId: (id) => (id === ADMIN_ENTRY ? RESOLVED_ADMIN_ENTRY : undefined),
-    load: (id) =>
-      id === RESOLVED_ADMIN_ENTRY
-        ? [
-            `import config from ${JSON.stringify(configFile)};`,
-            `import { mountAdmin } from "@goodfellow/admin";`,
-            `import { localStore } from "@goodfellow/admin/dev";`,
-            `import "@puckeditor/core/puck.css";`,
-            `import "@goodfellow/admin/styles.css";`,
-            `import themeCss from "@goodfellow/react/theme.css?raw";`,
-            `import tailwindBrowserUrl from ${JSON.stringify(`${tailwindBrowser}?url`)};`,
-            `mountAdmin(document.getElementById("gf-admin"), {`,
-            "  config,",
-            "  store: localStore(),",
-            `  preview: { stylesheets: [${JSON.stringify(`${devUrl(root, styles().preview)}?direct`)}], themeCss, tailwindBrowserUrl },`,
-            `  siteUrl: "/",`,
-            "});",
-          ].join("\n")
-        : undefined,
-  };
-}
-
 /**
  * Tells site pages to reload when content changes, after making Vite recompile
  * the site's CSS (Tailwind scans content/ for class names).
@@ -113,9 +69,13 @@ function adminEntryPlugin(configFile: string, root: string, styles: () => Styles
  * reloads every open page when a file it scans changes, which would reload the
  * admin panel (and lose the editor's state) each time it publishes.
  */
-function watchContent(server: ViteDevServer, root: string, styles: () => StylesEntries): FSWatcher {
+function watchContent(server: ViteDevServer, root: string, styles: () => StylesEntries): void {
+  const dir = join(root, CONTENT_DIR);
   let timer: ReturnType<typeof setTimeout> | undefined;
-  const watcher = watch(join(root, CONTENT_DIR), { recursive: true }, () => {
+  let watcher: FSWatcher | undefined;
+  let closed = false;
+
+  const changed = () => {
     clearTimeout(timer);
     timer = setTimeout(() => {
       const { moduleGraph } = server.environments.client;
@@ -124,9 +84,30 @@ function watchContent(server: ViteDevServer, root: string, styles: () => StylesE
       }
       server.environments.client.hot.send({ type: "custom", event: CONTENT_CHANGED });
     }, 50);
+  };
+
+  // Watching breaks if folders are deleted while it scans them (for example when
+  // content/ is replaced wholesale), so start again whenever it fails.
+  const start = () => {
+    if (closed) return;
+    try {
+      watcher = watch(dir, { recursive: true }, changed);
+      watcher.on("error", () => {
+        watcher?.close();
+        changed();
+        setTimeout(start, 250);
+      });
+    } catch {
+      setTimeout(start, 250);
+    }
+  };
+  start();
+
+  server.httpServer?.once("close", () => {
+    closed = true;
+    clearTimeout(timer);
+    watcher?.close();
   });
-  server.httpServer?.once("close", () => watcher.close());
-  return watcher;
 }
 
 /** Serves the local backend's API, the admin panel at /admin, and pages rendered on request from the files on disk. */
@@ -146,7 +127,8 @@ function devPlugin(root: string, styles: () => StylesEntries): Plugin {
 
           res.setHeader("Content-Type", "text/html; charset=utf-8");
           if (url.pathname === "/admin" || url.pathname === "/admin/") {
-            res.end(await server.transformIndexHtml("/admin", ADMIN_HTML));
+            const html = adminHtml({ scripts: [`/@id/__x00__${ADMIN_ENTRY}`] });
+            res.end(await server.transformIndexHtml("/admin", html));
             return;
           }
           if (/\.[a-z0-9]+$/i.test(url.pathname)) return next();
@@ -211,7 +193,12 @@ export async function dev(options: DevOptions = {}): Promise<ViteDevServer> {
     plugins: [
       react(),
       ...(base.plugins ?? []),
-      adminEntryPlugin(configFile, root, getStyles),
+      adminEntryPlugin(configFile, {
+        mode: "dev",
+        get previewStylesheet() {
+          return `${devUrl(root, getStyles().preview)}?direct`;
+        },
+      }),
       devPlugin(root, getStyles),
     ],
   });
