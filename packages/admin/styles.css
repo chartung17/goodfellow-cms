@@ -722,3 +722,44 @@ body,
   color: var(--gfa-muted);
   font-size: 13px;
 }
+
+.gfa-ai {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 16px;
+  font:
+    14px / 1.5 ui-sans-serif,
+    system-ui,
+    -apple-system,
+    "Segoe UI",
+    sans-serif;
+}
+
+.gfa-ai,
+.gfa-ai * {
+  box-sizing: border-box;
+}
+
+.gfa-ai-title {
+  margin: 0;
+  font-size: 16px;
+}
+
+.gfa-ai textarea {
+  resize: vertical;
+}
+
+.gfa-ai-actions {
+  display: flex;
+  gap: 8px;
+}
+
+.gfa-ai-service summary {
+  cursor: pointer;
+  font-weight: 600;
+}
+
+.gfa-ai-settings {
+  margin-top: 12px;
+}

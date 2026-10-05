@@ -4,7 +4,7 @@ A git-based website builder built on the [Puck](https://puckeditor.com) visual e
 
 Goodfellow gives non-technical site owners a drag-and-drop editor at `/admin` with no server, database or monthly hosting bill. Pages are stored as files in the site's own GitHub or GitLab repository. Every save is a commit, and a free static host (GitHub Pages, GitLab Pages or Vercel) rebuilds the site.
 
-> **Status: early development.** Static rendering, the admin panel, collections and publishing to GitHub or GitLab work, with deploy setups for GitHub Pages, GitLab Pages and Vercel. Nothing is published to npm yet. This README describes what Goodfellow is meant to become; the [roadmap](#roadmap) shows what exists.
+> **Status: early development.** Static rendering, the admin panel, collections, the AI assistant and publishing to GitHub or GitLab work, with deploy setups for GitHub Pages, GitLab Pages and Vercel. Nothing is published to npm yet. This README describes what Goodfellow is meant to become; the [roadmap](#roadmap) shows what exists.
 
 ## How it works
 
@@ -29,6 +29,7 @@ Planned for the first release:
 - **Header and footer built in Puck**, with navigation menus stored separately so links survive a change of design.
 - **Site settings** in the admin panel: title, favicon, metadata, theme colors and fonts.
 - **Collections and templates.** Build a layout once (for example `/videos/{slug}`), then add entries by filling in a simple form.
+- **AI assistant.** Describe what you want and AI writes it into the page, rewrites a block, or fills in an item's fields. Editors choose the AI service: Claude, OpenAI, a free service, or any chat app by copy and paste.
 - **Class names and custom CSS.** Any block can take Tailwind classes, and admins can write site-wide CSS. Classes appear in the editor preview immediately, before the site is rebuilt.
 - **Custom blocks** for developers: any React component can become a block.
 - **Sign-in without a server:**
@@ -100,6 +101,21 @@ The admin panel is at `/admin` on the live site, and while `goodfellow dev` is r
 - **Publishing:** each Publish saves every changed file in one commit to the site's main branch. If someone else published changes to other files in the meantime, publishing still goes ahead; if they changed the same files, it stops instead of overwriting their work.
 - **Live status:** after publishing, the top bar shows when the live site has been rebuilt, or that the rebuild failed, with a link to the details. This works with GitHub Pages, GitLab Pages and Vercel.
 - **Unpublished changes:** leaving a screen with unpublished changes asks first.
+- **AI assistant:** the **AI** tab beside the editor writes with AI. Describe what you want: with nothing selected it adds new blocks to the end of the page, with a block selected it changes that block, and for a collection's item it fills in the fields. The result goes straight into the editor, so you can check it, change it or undo it before publishing. It's told never to make up facts such as times or names, and to leave `[placeholders]` instead.
+
+### AI services
+
+Each editor chooses an AI service in the AI tab's settings, and it's called straight from their browser. There's no server, so each editor uses their own account:
+
+| Service | Needs | Cost |
+|---|---|---|
+| Claude (Opus 5.5, Sonnet 5.5 or Haiku 4.5) | An API key from the [Claude Console](https://platform.claude.com/settings/keys) | Charged per use, roughly a few cents for a page |
+| OpenAI, Google Gemini, Groq, Mistral, OpenRouter | An API key from the service | Gemini, Groq, Mistral and OpenRouter have free tiers with limits |
+| OVHcloud AI Endpoints | Nothing | Free, about 2 requests a minute |
+| A chat app such as Claude.ai or ChatGPT | Copying the request in and the answer back | Whatever your chat app plan includes, including free plans |
+| Any other OpenAI-compatible service | Its address, and a key if it needs one | Varies |
+
+Keys stay in the editor's browser: for the session, or on the device if they choose, and they're forgotten on sign-out. They're only ever sent to the service they belong to. Free models write less reliably than Claude, so answers are always checked before they're used. A site can limit the services offered with `ai: { providers: ["anthropic", "manual"] }` in `goodfellow.config.tsx`, or remove the assistant with `ai: false`.
 
 In development, Publish writes straight to the files in `content/`, with no sign-in.
 
@@ -135,6 +151,7 @@ This is a pnpm workspace managed with Turborepo.
 | `packages/gitlab` | `@goodfellow/gitlab` | GitLab backend, with OAuth (PKCE) and token sign-in | Started |
 | `packages/react` | `@goodfellow/react` | Page renderer: layout, class names, theme and collection templates | Started |
 | `packages/admin` | `@goodfellow/admin` | The `<Admin>` editor app | Started |
+| `packages/ai` | `@goodfellow/ai` | The AI assistant's requests, answer checking and AI service clients. No React. | Started |
 | `packages/blocks` | `@goodfellow/blocks` | Built-in, library-agnostic blocks | Started |
 | `packages/cli` | `goodfellow` | `goodfellow dev`, `build` and `preview` | Started |
 | `packages/next` | `@goodfellow/next` | Next.js adapter | Planned |
@@ -172,7 +189,7 @@ my-site/
 2. **Editor** (done). The admin panel against local files: pages, site settings, header and footer, custom CSS, live Tailwind preview.
 3. **Git backends** (done). GitHub and GitLab sign-in, publishing, conflict detection and deploy status, plus GitHub Pages, GitLab Pages and Vercel setups.
 4. **Collections and templates** (done). Collections with their own fields, a shared page design for their items, and a block that lists them on other pages.
-5. **AI assistant.** Draft and rewrite pages with Claude, OpenAI or a free AI service, called straight from the editor's browser with the editor's own key. Editors without a key can copy a prompt into Claude.ai or another chat app and paste the answer back.
+5. **AI assistant** (done). Draft and rewrite pages with Claude, OpenAI or a free AI service, called straight from the editor's browser with the editor's own key. Editors without a key can copy a prompt into Claude.ai or another chat app and paste the answer back.
 6. **Media library.** Upload, browse and replace images and files from the admin panel.
 7. **Starters.** `create-goodfellow` and the parish example.
 8. **Next.js adapter.**

@@ -18,7 +18,12 @@ export async function routeToFake(page: Page, origin: string, handle: (request: 
     async (route) => {
       const request = route.request();
       if (request.method() === "OPTIONS") {
-        await route.fulfill({ status: 204, headers: CORS });
+        // Allow whatever headers the browser asks to send, such as the Anthropic SDK's.
+        const asked = request.headers()["access-control-request-headers"];
+        await route.fulfill({
+          status: 204,
+          headers: { ...CORS, ...(asked && { "access-control-allow-headers": asked }) },
+        });
         return;
       }
       const body = request.postDataBuffer();

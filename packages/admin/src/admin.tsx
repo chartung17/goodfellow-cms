@@ -1,6 +1,7 @@
 import { ContentError, type ContentStore, type GitHost, type GoodfellowConfig } from "@goodfellow/core";
 import { createRoot } from "react-dom/client";
 import { AdminProvider, type PreviewOptions, useAdmin, useSiteContent } from "./admin-context.js";
+import { forgetAiKeys } from "./ai-settings.js";
 import { EntriesScreen, TemplateScreen } from "./collection-screen.js";
 import { CollectionSettingsScreen } from "./collection-settings.js";
 import { CollectionsScreen } from "./collections-screen.js";
@@ -178,7 +179,15 @@ export function Admin({ config, store, host = config.backend, preview, siteUrl =
         <AdminProvider
           config={config}
           store={backend}
-          account={{ user: backend.user, hostName: host.name, signOut: () => signOut() }}
+          account={{
+            user: backend.user,
+            hostName: host.name,
+            signOut: () => {
+              // Signing out also forgets AI keys, so the next person on this computer can't use them.
+              forgetAiKeys();
+              signOut();
+            },
+          }}
           preview={preview}
           siteUrl={siteUrl}
           onSignInError={(error) => signOut(error)}

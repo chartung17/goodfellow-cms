@@ -8,7 +8,7 @@ The repo is in early development. When you add a tool or script, update this fil
 
 These hold across the whole codebase. A change that breaks one needs an explicit decision from the maintainer, not a workaround.
 
-1. **No server at runtime.** A deployed site is static files only. The admin panel calls the GitHub or GitLab API directly from the browser. Server-side code is out of scope for now, including the OAuth worker and a Claude connector (MCP server). The planned AI assistant calls AI services straight from the editor's browser. The one exception is the development-only local backend in `goodfellow dev`, which must never ship in a build.
+1. **No server at runtime.** A deployed site is static files only. The admin panel calls the GitHub or GitLab API directly from the browser. Server-side code is out of scope for now, including the OAuth worker and a Claude connector (MCP server). The AI assistant (`@goodfellow/ai`) calls AI services straight from the editor's browser, with each editor's own key. The one exception is the development-only local backend in `goodfellow dev`, which must never ship in a build.
 2. **GitHub and GitLab are equal.** Every backend feature goes through the `GitBackend` interface in `@goodfellow/core` and must be implemented for both `@goodfellow/github` and `@goodfellow/gitlab` in the same change. If one host cannot support a feature, the interface must expose that as a capability flag and the admin panel must handle its absence. Nothing outside the backend packages may call a git host API or branch on the host name.
 3. **`@goodfellow/core` has no React and no DOM.** It must run in Node and the browser. Type-only imports from `@puckeditor/core` are fine.
 4. **The admin panel is built with the site's config.** `@goodfellow/admin` exports a component, not a prebuilt app, so the editor always includes the site's own blocks. The site and its `/admin` page import the same `goodfellow.config.tsx`.
@@ -35,6 +35,14 @@ Content files are the product's data format; treat changes to them like API chan
 - **Addresses:** `allPages()` lists pages and entries' pages together. Use it wherever addresses are served or checked, so an entry can never take a page's address or the other way round.
 - **Templates:** `{name}` placeholders in any text prop are filled in by `applyEntry()`, escaped in rich text. Blocks that need the entry itself read `useSite().entry` and `useSite().collection`, or Puck's `metadata` in `resolveFields` and `resolveData`. Wrap blocks that only make sense in templates in `templateOnly()`, which leaves them out of the page, header and footer editors.
 - **Rich text from entries** is rendered through a hidden `richtext` field that `resolveData` fills in, so Puck sanitizes it like any other rich text. Never render an entry's HTML directly.
+
+## AI assistant
+
+- **Split:** `@goodfellow/ai` builds requests, checks answers and talks to AI services, with no React. The panel itself is in the admin panel (`ai-panel.tsx`), a Puck plugin in every editor, with its text in the string table.
+- **Answers as data:** blocks come back as a flat list with parent ids, because structured outputs can't describe nesting. Always turn answers into content with `toContent()` or `toValues()`, which drop anything that doesn't fit the site's fields. Never use an answer as it came, since free services don't always follow the schema.
+- **Custom fields** don't say what they hold, so give them `metadata: { ai: … }` (an `AiFieldHint`) for the assistant to fill them in.
+- **Claude** is called through the official `@anthropic-ai/sdk`, loaded only when used, with structured outputs and server-side safety fallbacks. Other services use the OpenAI-compatible chat API. Don't call Claude through an OpenAI-compatible endpoint.
+- **New services** must allow requests from browsers (CORS), or they can't work without a server.
 
 ## Puck
 
@@ -77,9 +85,10 @@ shadcn support is on hold until `puckeditor/puck-configs` has a license. Don't c
 ## Security
 
 - **Tokens:** never log tokens, include them in error messages or URLs, or send them anywhere except the git host's API. Store them only where the user chose (session or local storage), and clear them on sign-out.
+- **AI keys** follow the same rules: sent only to their own service, kept only where the editor chose, cleared on sign-out, and removed from error messages with `redact()`.
 - **Custom CSS:** when injecting admin-written CSS into a page, escape anything that could close the `<style>` element.
 - **Rich text and embeds:** sanitize rich text when rendering it. Embeds only render in sandboxed iframes or through an allowlisted provider.
-- **Tests:** never call the real GitHub or GitLab APIs in tests; use the mocked API fixtures. Never commit real tokens, even expired ones.
+- **Tests:** never call the real GitHub, GitLab or AI services' APIs in tests; use the fakes (`@goodfellow/ai/testing` for AI services). Never commit real tokens or keys, even expired ones.
 
 ## Writing for non-technical users
 

@@ -103,12 +103,15 @@ test("stays signed in only when asked, and signs out", async ({ page, context })
   await setup(third);
   await third.goto(`${GITHUB_SITE}/admin/`);
   await expect(third.locator(".gfa-account")).toContainText("Maria");
+  await third.evaluate(() => localStorage.setItem("goodfellow.ai.key.anthropic", "sk-ant-saved"));
 
   await third.getByRole("button", { name: "Sign out" }).click();
   await expect(third.getByRole("heading", { name: "Sign in to edit this site" })).toBeVisible();
   expect(await third.evaluate(() => Object.keys(localStorage).filter((key) => key.startsWith("goodfellow:")))).toEqual(
     [],
   );
+  // AI keys go too, so the next person on this computer can't use them.
+  expect(await third.evaluate(() => localStorage.getItem("goodfellow.ai.key.anthropic"))).toBeNull();
 });
 
 test("asks to sign in again when the token stops working", async ({ page }) => {

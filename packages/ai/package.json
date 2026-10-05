@@ -1,0 +1,41 @@
+{
+  "name": "@goodfellow/ai",
+  "version": "0.0.0",
+  "description": "Goodfellow's AI assistant: drafts and rewrites pages with Claude, OpenAI or a free AI service, straight from the browser.",
+  "license": "MIT",
+  "type": "module",
+  "sideEffects": false,
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    },
+    "./testing": {
+      "types": "./dist/testing.d.ts",
+      "import": "./dist/testing.js"
+    },
+    "./package.json": "./package.json"
+  },
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "tsdown",
+    "typecheck": "tsc -p tsconfig.json",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "@anthropic-ai/sdk": "0.131.0",
+    "@goodfellow/core": "workspace:*"
+  },
+  "peerDependencies": {
+    "@puckeditor/core": "0.23.0"
+  },
+  "devDependencies": {
+    "@goodfellow/blocks": "workspace:*",
+    "@goodfellow/react": "workspace:*",
+    "@puckeditor/core": "0.23.0",
+    "@types/react": "^19.2.0",
+    "react": "19.3.0"
+  }
+}

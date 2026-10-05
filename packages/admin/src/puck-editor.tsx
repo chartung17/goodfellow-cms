@@ -3,6 +3,7 @@ import { cx, type SiteContextValue, SiteProvider, siteMetadata } from "@goodfell
 import { type Config, type Data, migrate, type Plugin, Puck, Render, type UiState } from "@puckeditor/core";
 import { type ReactNode, useMemo, useRef, useState } from "react";
 import { useAdmin, useSiteContent } from "./admin-context.js";
+import { aiPlugin } from "./ai-panel.js";
 import { storedData } from "./changes.js";
 import { usePreviewStyles } from "./preview.js";
 import { useUnsavedChanges } from "./router.js";
@@ -123,7 +124,7 @@ export function PuckEditor({
   plugins,
 }: PuckEditorProps) {
   const t = useStrings();
-  const { pageConfig, layoutConfig, templateConfig, publish, reload } = useAdmin();
+  const { config: siteConfig, pageConfig, layoutConfig, templateConfig, publish, reload } = useAdmin();
   const { content } = useSiteContent();
   const [status, setStatus] = useState<
     | { type: "idle" | "publishing" | "done" }
@@ -172,6 +173,15 @@ export function PuckEditor({
       setStatus({ type: "failed", reason: result.reason, error: result.error });
     }
   };
+
+  const aiLabel = t("ai.label");
+  const allPlugins = useMemo(
+    () => [
+      ...(plugins ?? []),
+      ...(siteConfig.ai === false ? [] : [aiPlugin({ kind, path, title, collection }, aiLabel)]),
+    ],
+    [plugins, siteConfig.ai, kind, path, title, collection, aiLabel],
+  );
 
   const overrides = useMemo(
     () => ({
@@ -233,7 +243,7 @@ export function PuckEditor({
             height="100%"
             iframe={{ syncHostStyles: false }}
             ui={ui}
-            plugins={plugins}
+            plugins={allPlugins}
             overrides={overrides}
             onChange={(next) => setDirty(serializeContent(storedData(next)) !== published.current)}
             onPublish={onPublish}

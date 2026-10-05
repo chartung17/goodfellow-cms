@@ -29,6 +29,7 @@
     "test": "vitest run"
   },
   "dependencies": {
+    "@goodfellow/ai": "workspace:*",
     "@goodfellow/core": "workspace:*",
     "@goodfellow/react": "workspace:*"
   },
