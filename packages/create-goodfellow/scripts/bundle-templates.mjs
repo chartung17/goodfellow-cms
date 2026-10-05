@@ -9,7 +9,7 @@ const here = dirname(fileURLToPath(import.meta.url));
 const repo = join(here, "../../..");
 const out = join(here, "../templates");
 
-const sources = { starter: "templates/starter", parish: "examples/parish" };
+const sources = { starter: "templates/starter", parish: "examples/parish", next: "templates/next" };
 
 rmSync(out, { recursive: true, force: true });
 for (const [name, source] of Object.entries(sources)) {

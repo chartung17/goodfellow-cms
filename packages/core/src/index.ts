@@ -1,3 +1,4 @@
+export { applyBasePath, normalizeBase, withBase } from "./base-path.js";
 export { type AiConfig, defineConfig, type GoodfellowConfig } from "./config.js";
 export {
   type Collection,
@@ -97,6 +98,7 @@ export {
   type TokenLink,
 } from "./git.js";
 export { absoluteUrl, getPageHead, type PageHead } from "./head.js";
+export { type ImageSize, imageSize } from "./image-size.js";
 export {
   type ContentKind,
   CURRENT_VERSION,

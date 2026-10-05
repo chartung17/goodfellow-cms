@@ -27,3 +27,12 @@ export function applyBasePath(html: string, base: string): string {
       style.replace(/url\((&quot;|&#x27;|'|)\/(?!\/)/g, `url($1${prefix}/`),
     );
 }
+
+/**
+ * Prefixes one root-relative address with the base path: `/about` → `/repo/about`.
+ * Absolute, protocol-relative (`//host`), relative and fragment addresses are left alone.
+ */
+export function withBase(url: string, base: string | undefined): string {
+  const prefix = normalizeBase(base).slice(0, -1);
+  return prefix && url.startsWith("/") && !url.startsWith("//") ? `${prefix}${url}` : url;
+}

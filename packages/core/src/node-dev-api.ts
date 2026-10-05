@@ -1,6 +1,6 @@
 import type { IncomingMessage, ServerResponse } from "node:http";
-import { ConflictError, type ContentStore, type FileChange } from "@goodfellow/core";
-import { InvalidPathError } from "./local-files.js";
+import { ConflictError, type ContentStore, type FileChange } from "./index.js";
+import { InvalidPathError } from "./node-local-files.js";
 
 /** Where the development server exposes the local backend. The admin panel's local store calls these endpoints. */
 export const DEV_API_PREFIX = "/__goodfellow/api";
@@ -41,23 +41,56 @@ function toFileChange(value: unknown): FileChange | undefined {
   return undefined;
 }
 
-/** Rejects requests that could come from another website: they must carry our header and, if they say where they're from, come from this server. */
-function isTrusted(req: IncomingMessage): boolean {
+export interface DevApiOptions {
+  /**
+   * Whether to accept a request that says it comes from `origin`. By default
+   * only this server's own address is, but a server behind a proxy (such as
+   * Next.js's development server) sees a different address in `host`.
+   */
+  trustOrigin?: (origin: string, host: string | undefined) => boolean;
+}
+
+function sameOrigin(origin: string, host: string | undefined): boolean {
+  return origin === `http://${host}` || origin === `https://${host}`;
+}
+
+const LOCAL_HOSTNAMES = new Set(["localhost", "127.0.0.1", "[::1]"]);
+
+/** Whether both the page and the server's address are on this computer. A website that resolves its name to this computer still sends its own name. */
+export function isLocalOrigin(origin: string, host: string | undefined): boolean {
+  try {
+    return (
+      LOCAL_HOSTNAMES.has(new URL(origin).hostname) &&
+      host !== undefined &&
+      LOCAL_HOSTNAMES.has(new URL(`http://${host}`).hostname)
+    );
+  } catch {
+    return false;
+  }
+}
+
+/** Rejects requests that could come from another website: they must carry our header and, if they say where they're from, come from a trusted page. */
+function isTrusted(req: IncomingMessage, trustOrigin: DevApiOptions["trustOrigin"] = sameOrigin): boolean {
   if (req.headers[DEV_API_HEADER] !== "1") return false;
   const origin = req.headers.origin;
-  return origin === undefined || origin === `http://${req.headers.host}` || origin === `https://${req.headers.host}`;
+  return origin === undefined || trustOrigin(origin, req.headers.host);
 }
 
 /**
  * Handles a request to the development API, or returns `false` if the URL
  * isn't one of its endpoints. Never mounted outside `goodfellow dev`.
  */
-export async function handleDevApi(store: ContentStore, req: IncomingMessage, res: ServerResponse): Promise<boolean> {
+export async function handleDevApi(
+  store: ContentStore,
+  req: IncomingMessage,
+  res: ServerResponse,
+  options: DevApiOptions = {},
+): Promise<boolean> {
   const url = new URL(req.url ?? "/", "http://localhost");
   if (!url.pathname.startsWith(`${DEV_API_PREFIX}/`)) return false;
   const endpoint = url.pathname.slice(DEV_API_PREFIX.length + 1);
 
-  if (!isTrusted(req)) {
+  if (!isTrusted(req, options.trustOrigin)) {
     send(res, 403, { error: "forbidden" });
     return true;
   }

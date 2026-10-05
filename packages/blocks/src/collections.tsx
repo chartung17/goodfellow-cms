@@ -10,7 +10,7 @@ import {
   sortCollectionEntries,
   sortEntries,
 } from "@goodfellow/core";
-import { classNameField, cx, templateOnly, useSite } from "@goodfellow/react";
+import { classNameField, cx, SiteImage, SiteLink, templateOnly, useSite } from "@goodfellow/react";
 import type { ComponentConfig, Fields, RichText } from "@puckeditor/core";
 import type { ReactNode } from "react";
 import { options } from "./options.js";
@@ -70,13 +70,13 @@ function EntryFieldView({ field, style, value, className }: EntryFieldProps) {
     case "richtext":
       return <div className={cx("gf-prose", className)}>{value}</div>;
     case "image":
-      return <img src={String(raw)} alt={entryTitle(entry)} className={cx("w-full rounded-lg", className)} />;
+      return <SiteImage src={String(raw)} alt={entryTitle(entry)} className={cx("w-full rounded-lg", className)} />;
     case "link":
       return (
         <p className={cx(styleClasses[style], className)}>
-          <a href={String(raw)} className="text-primary underline underline-offset-2">
+          <SiteLink href={String(raw)} className="text-primary underline underline-offset-2">
             {String(raw)}
-          </a>
+          </SiteLink>
         </p>
       );
     case "textarea":
@@ -229,7 +229,7 @@ function CollectionListView({
               )}
             >
               {image && (
-                <img
+                <SiteImage
                   src={image}
                   alt=""
                   loading="lazy"
@@ -246,9 +246,9 @@ function CollectionListView({
                 )}
                 <h3 className="font-heading text-lg font-semibold">
                   {entry.path ? (
-                    <a href={entry.path} className="after:absolute after:inset-0 hover:underline">
+                    <SiteLink href={entry.path} className="after:absolute after:inset-0 hover:underline">
                       {title}
-                    </a>
+                    </SiteLink>
                   ) : (
                     title
                   )}

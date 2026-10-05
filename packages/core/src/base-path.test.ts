@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { applyBasePath, normalizeBase } from "./base-path.js";
+import { applyBasePath, normalizeBase, withBase } from "./base-path.js";
 
 describe("normalizeBase", () => {
   it.each([
@@ -40,5 +40,16 @@ describe("applyBasePath", () => {
 
   it("does nothing for the root base", () => {
     expect(applyBasePath('<a href="/about">', "/")).toBe('<a href="/about">');
+  });
+});
+
+describe("withBase", () => {
+  it("prefixes root-relative addresses only", () => {
+    expect(withBase("/about", "/repo/")).toBe("/repo/about");
+    expect(withBase("/", "/repo/")).toBe("/repo/");
+    expect(withBase("https://example.org/x", "/repo/")).toBe("https://example.org/x");
+    expect(withBase("//cdn.example.org/x", "/repo/")).toBe("//cdn.example.org/x");
+    expect(withBase("#top", "/repo/")).toBe("#top");
+    expect(withBase("/about", undefined)).toBe("/about");
   });
 });

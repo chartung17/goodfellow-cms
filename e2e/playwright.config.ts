@@ -26,6 +26,20 @@ export default defineConfig({
       reuseExistingServer: false,
       timeout: 60_000,
     },
+    // The Next.js template under `next dev`.
+    {
+      command: "node scripts/start-next-site.mjs 4403",
+      url: "http://localhost:4403/about/",
+      reuseExistingServer: false,
+      timeout: 120_000,
+    },
+    // A production build of the Next.js template served from /site/, like a GitHub Pages project site.
+    {
+      command: "node scripts/start-next-built-site.mjs 4404",
+      url: "http://localhost:4404/site/",
+      reuseExistingServer: false,
+      timeout: 240_000,
+    },
     // Production builds of the starter with each git backend, served like a static host.
     ...(["github", "gitlab"] as const).map((name, index) => ({
       command: `node scripts/start-built-site.mjs ${name}`,

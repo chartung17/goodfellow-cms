@@ -1,0 +1,9 @@
+/* The site's styles, used by its pages but not the admin panel. */
+@import "tailwindcss";
+@import "@goodfellow/react/theme.css";
+@import "@goodfellow/blocks/styles.css";
+/* Site-wide CSS written in the admin panel. */
+@import "../content/styles/custom.css";
+
+/* Lets Tailwind find class names typed into the editor. */
+@source "../content";

@@ -29,6 +29,7 @@
   },
   "devDependencies": {
     "@goodfellow/example-parish": "workspace:*",
+    "@goodfellow/template-next": "workspace:*",
     "@goodfellow/template-starter": "workspace:*"
   }
 }

@@ -1,6 +1,5 @@
 import {
   absoluteUrl,
-  findEntry,
   type GoodfellowConfig,
   getPageHead,
   googleFontsUrl,
@@ -8,29 +7,15 @@ import {
   type SiteContent,
   themeToCss,
 } from "@goodfellow/core";
-import { type Config, type Data, type Metadata, migrate, resolveAllData } from "@puckeditor/core";
 import { prerender } from "react-dom/static";
-import { applyEntry } from "./entry.js";
-import { PageBody, siteMetadata } from "./page-body.js";
-import { createPuckConfig } from "./puck-config.js";
-import type { SiteContextValue } from "./site-context.js";
+import { PageBody } from "./page-body.js";
+import { createPuckConfigs, preparePage } from "./prepare.js";
 
 export interface PageAssets {
   /** Stylesheet URLs, in order. */
   stylesheets?: string[];
   /** Module script URLs, in order. */
   scripts?: string[];
-}
-
-/**
- * Brings stored Puck data up to date with the installed Puck version, then runs
- * every block's `resolveData`, so blocks can fetch or compute content at build time.
- */
-async function prepareData(data: unknown, config: Config, metadata: Metadata): Promise<Data> {
-  const stored = data as Data;
-  // Puck's DropZone-to-slot migration needs the config and logs on every call, so only run it on data that has zones.
-  const migrated = migrate(stored, stored.zones && Object.keys(stored.zones).length > 0 ? config : undefined);
-  return resolveAllData(migrated, config, metadata);
 }
 
 function toAbsolute(siteUrl: string | undefined, url: string | undefined): string | undefined {
@@ -44,35 +29,12 @@ function toAbsolute(siteUrl: string | undefined, url: string | undefined): strin
  * output is final static HTML with no client-side JavaScript required.
  */
 export function createPageRenderer(config: GoodfellowConfig) {
-  const configs = {
-    page: createPuckConfig(config, "page"),
-    layout: createPuckConfig(config, "layout"),
-    template: createPuckConfig(config, "template"),
-  };
+  const configs = createPuckConfigs(config);
 
   return async function renderPage(content: SiteContent, page: Page, assets: PageAssets = {}): Promise<string> {
     const { settings } = content;
-    let site: SiteContextValue = { settings, menus: content.menus, path: page.path, collections: content.collections };
-    let pageConfig = configs.page;
-    let data = page.content.data as Data;
-
-    // An entry's page is its collection's template, with the entry's values filled in.
-    if (page.entry) {
-      const found = findEntry(content, page.entry.collection, page.entry.slug);
-      if (!found) throw new Error(`${page.file} isn't an entry in the "${page.entry.collection}" collection.`);
-      site = { ...site, collection: found.collection, entry: found.entry };
-      pageConfig = configs.template;
-      data = applyEntry(migrate(data), pageConfig, found.collection, found.entry, settings.language);
-      page = { ...page, content: { ...page.content, data: data as Page["content"]["data"] } };
-    }
-
-    const metadata = siteMetadata(site);
-    const layoutConfig = configs.layout;
-    const [pageData, header, footer] = await Promise.all([
-      prepareData(data, pageConfig, metadata),
-      prepareData(content.header.data, layoutConfig, metadata),
-      prepareData(content.footer.data, layoutConfig, metadata),
-    ]);
+    const prepared = await preparePage(configs, content, page);
+    page = prepared.page;
 
     const head = getPageHead(settings, page);
     const fontsUrl = googleFontsUrl(settings.theme);
@@ -108,12 +70,12 @@ export function createPageRenderer(config: GoodfellowConfig) {
         </head>
         <body>
           <PageBody
-            site={site}
-            pageConfig={pageConfig}
-            layoutConfig={layoutConfig}
-            page={pageData}
-            header={header}
-            footer={footer}
+            site={prepared.site}
+            pageConfig={prepared.pageConfig}
+            layoutConfig={prepared.layoutConfig}
+            page={prepared.data}
+            header={prepared.header}
+            footer={prepared.footer}
           />
           {assets.scripts?.map((src) => (
             <script key={src} type="module" src={src} />

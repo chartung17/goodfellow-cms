@@ -1,9 +1,9 @@
 import { mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import { ConflictError, type ContentStore } from "@goodfellow/core";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
-import { InvalidPathError, localFileStore } from "./local-files.js";
+import { ConflictError, type ContentStore } from "./index.js";
+import { InvalidPathError, localFileStore } from "./node-local-files.js";
 
 describe("localFileStore", () => {
   let root: string;

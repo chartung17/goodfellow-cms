@@ -1,4 +1,4 @@
-import { classNameField, cx, mediaField } from "@goodfellow/react";
+import { classNameField, cx, mediaField, SiteImage, SiteLink } from "@goodfellow/react";
 import type { ComponentConfig, RichText } from "@puckeditor/core";
 import { options, yesNo } from "./options.js";
 
@@ -107,7 +107,7 @@ export const Button: ComponentConfig<ButtonProps> = {
   },
   defaultProps: { label: "Learn more", href: "/", variant: "primary", size: "md", newTab: false, className: "" },
   render: ({ label, href, variant, size, newTab, className }) => (
-    <a
+    <SiteLink
       href={href}
       className={cx(
         "inline-flex items-center justify-center rounded-md font-medium whitespace-nowrap transition",
@@ -118,7 +118,7 @@ export const Button: ComponentConfig<ButtonProps> = {
       {...(newTab && { target: "_blank", rel: "noopener noreferrer" })}
     >
       {label}
-    </a>
+    </SiteLink>
   ),
 };
 
@@ -158,7 +158,7 @@ export const Image: ComponentConfig<ImageProps> = {
   render: ({ src, alt, caption, aspect, rounded, className }) => (
     <figure className={className || undefined}>
       {src ? (
-        <img
+        <SiteImage
           src={src}
           alt={alt}
           loading="lazy"
