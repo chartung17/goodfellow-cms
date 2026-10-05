@@ -37,7 +37,7 @@ Planned for the first release:
 - **Deploy setups** for GitHub Pages, GitLab Pages and Vercel, including a nightly rebuild for time-based content.
 - **Works with or without a framework.** A standalone command-line tool builds the site with no framework at all, and a Next.js adapter is planned.
 
-Planned for later: [Puck AI](https://puckeditor.com/docs/ai/getting-started), OAuth sign-in for GitHub via a small Cloudflare Worker, more component libraries (shadcn first), review workflows (pull/merge requests from the admin panel), per-user permissions, import/export, plugins and themes, and Bitbucket support.
+Planned for later: OAuth sign-in for GitHub via a small Cloudflare Worker, a Claude connector for editing the site from a chat, more component libraries (shadcn first), review workflows (pull/merge requests from the admin panel), per-user permissions, import/export, plugins and themes, and Bitbucket support.
 
 ## Requirements and limits
 
@@ -159,11 +159,19 @@ my-site/
 2. **Editor** (done). The admin panel against local files: pages, site settings, header and footer, custom CSS, live Tailwind preview.
 3. **Git backends** (done). GitHub and GitLab sign-in, publishing, conflict detection and deploy status, plus GitHub Pages, GitLab Pages and Vercel setups.
 4. **Collections and templates.**
-5. **Starters.** `create-goodfellow` and the parish example.
-6. **Next.js adapter.**
-7. **Documentation site.** Guides for site owners and editors, plus reference docs for developers.
-8. **Site setup without a developer.** A web page where anyone can create a site from a starter, store it on GitHub or GitLab, and put it online with GitHub Pages, GitLab Pages or Vercel. Builds work out which repository they're in, so nobody has to edit the config.
-9. **Custom domains.** Connect a domain from the admin panel. Goodfellow sets the domain on the host where it can, lists the records to add at the domain's registrar, with guides for popular registrars, and shows when the domain is working.
+5. **AI assistant.** Draft and rewrite pages with Claude, OpenAI or a free AI service, called straight from the editor's browser with the editor's own key. Editors without a key can copy a prompt into Claude.ai or another chat app and paste the answer back.
+6. **Media library.** Upload, browse and replace images and files from the admin panel.
+7. **Starters.** `create-goodfellow` and the parish example.
+8. **Next.js adapter.**
+9. **Documentation site.** Guides for site owners and editors, plus reference docs for developers.
+10. **Site setup without a developer.** A web page where anyone can create a site from a starter, store it on GitHub or GitLab, and put it online with GitHub Pages, GitLab Pages or Vercel. Builds work out which repository they're in, so nobody has to edit the config.
+11. **Custom domains.** Connect a domain from the admin panel. Goodfellow sets the domain on the host where it can, lists the records to add at the domain's registrar, with guides for popular registrars, and shows when the domain is working.
+12. **Running a site without a developer.**
+    - Invite and remove editors from the admin panel.
+    - Version history, with a way to restore an earlier version of a page.
+    - Automatic updates: a scheduled job updates Goodfellow and publishes the update only if the site still builds.
+    - Plain-language explanations when a rebuild fails.
+    - Contact forms, through a form service the site owner can set up without a developer.
 
 ## Contributing
 
