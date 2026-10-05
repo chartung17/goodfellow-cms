@@ -4,7 +4,7 @@ A git-based website builder built on the [Puck](https://puckeditor.com) visual e
 
 Goodfellow gives non-technical site owners a drag-and-drop editor at `/admin` with no server, database or monthly hosting bill. Pages are stored as files in the site's own GitHub or GitLab repository. Every save is a commit, and a free static host (GitHub Pages, GitLab Pages or Vercel) rebuilds the site.
 
-> **Status: early development.** Nothing here is usable yet. This README describes what Goodfellow is meant to become; the [roadmap](#roadmap) shows what exists.
+> **Status: early development.** Static rendering works: a site's content files build into a static website. There is no admin panel yet, so content is edited by hand. This README describes what Goodfellow is meant to become; the [roadmap](#roadmap) shows what exists.
 
 ## How it works
 
@@ -54,32 +54,64 @@ Goodfellow runs entirely on free tiers, but those tiers have limits worth knowin
 
 ## Getting started
 
-Not available yet. The plan is:
+Eventually, `npm create goodfellow@latest my-site` will create a new site. Until then, try the starter site in this repository (Node 22 or later and pnpm required):
 
 ```sh
-npm create goodfellow@latest my-site
+pnpm install
+pnpm build
+cd templates/starter
+pnpm dev        # http://localhost:4321, re-renders as you edit content/
+pnpm build      # writes the static site to dist/
+pnpm preview    # serves dist/ the way a static host would
 ```
 
-followed by pushing the new site to GitHub or GitLab and connecting a static host.
+### Commands
+
+| Command | What it does |
+|---|---|
+| `goodfellow dev` | Serves the site, rendering each page from the files on disk, and reloads the browser when content changes |
+| `goodfellow build` | Writes one HTML file per page to `dist/`, builds the CSS and copies `public/`. Also writes `sitemap.xml` and `robots.txt` if the site's address is set. |
+| `goodfellow preview` | Serves `dist/`, including the 404 page |
+
+Options: `--root <dir>`, `--out <dir>`, `--port <port>`, and `--base <path>` for sites served from a subfolder, such as `/my-repo/` on GitHub Pages.
+
+The base path comes from `--base`, then the `GOODFELLOW_BASE` environment variable, then `base` in `goodfellow.config.tsx`. Every root-relative link and image in the built pages is adjusted to match, including links inside rich text. The site's address (`url` in `content/site.json`) should be the full public address, subfolder included.
+
+### Built-in blocks
+
+| Block | Purpose |
+|---|---|
+| Section | A full-width band of the page with a background, centering its content |
+| Columns | Equal-width columns that stack on phones |
+| Row | Blocks side by side, such as a group of buttons |
+| Space | Empty vertical space |
+| Heading | A heading, from page title (H1) down to H4 |
+| Text | Formatted text: paragraphs, lists, links |
+| Button | A link styled as a button |
+| Image | An image with optional caption |
+| Menu | One of the site's menus, with dropdowns for submenus |
+| Site name and logo | The site's logo and name, linking home |
+
+Blocks use the site's theme colors, fonts and corner radius, and every block accepts extra CSS classes.
 
 ## Repository layout
 
 This is a pnpm workspace managed with Turborepo.
 
-| Path | Package | Purpose |
-|---|---|---|
-| `packages/core` | `@goodfellow/core` | Config, content model, collections, migrations, Puck data diff and merge, and the `GitBackend` interface. No React or DOM. |
-| `packages/github` | `@goodfellow/github` | GitHub backend and token sign-in |
-| `packages/gitlab` | `@goodfellow/gitlab` | GitLab backend and PKCE sign-in |
-| `packages/react` | `@goodfellow/react` | Page renderer: layout, template bindings, class names, theme |
-| `packages/admin` | `@goodfellow/admin` | The `<Admin>` editor app |
-| `packages/blocks` | `@goodfellow/blocks` | Built-in, library-agnostic blocks |
-| `packages/cli` | `goodfellow` | `goodfellow dev`, `build` and `preview` |
-| `packages/next` | `@goodfellow/next` | Next.js adapter |
-| `packages/create-goodfellow` | `create-goodfellow` | Project scaffolder |
-| `templates/` | | Starter sites copied by `create-goodfellow` |
-| `examples/parish` | | Example site with collections and custom blocks |
-| `e2e/` | | End-to-end tests against mocked git APIs |
+| Path | Package | Purpose | Status |
+|---|---|---|---|
+| `packages/core` | `@goodfellow/core` | Config, content model, migrations and, later, collections, Puck data diff and merge, and the `GitBackend` interface. No React or DOM. | Started |
+| `packages/github` | `@goodfellow/github` | GitHub backend and token sign-in | Planned |
+| `packages/gitlab` | `@goodfellow/gitlab` | GitLab backend and PKCE sign-in | Planned |
+| `packages/react` | `@goodfellow/react` | Page renderer: layout, class names, theme and, later, template bindings | Started |
+| `packages/admin` | `@goodfellow/admin` | The `<Admin>` editor app | Planned |
+| `packages/blocks` | `@goodfellow/blocks` | Built-in, library-agnostic blocks | Started |
+| `packages/cli` | `goodfellow` | `goodfellow dev`, `build` and `preview` | Started |
+| `packages/next` | `@goodfellow/next` | Next.js adapter | Planned |
+| `packages/create-goodfellow` | `create-goodfellow` | Project scaffolder | Planned |
+| `templates/starter` | | The starter site copied by `create-goodfellow` | Started |
+| `examples/parish` | | Example site with collections and custom blocks | Planned |
+| `e2e/` | | End-to-end tests against mocked git APIs | Planned |
 
 ### A Goodfellow site
 
@@ -98,6 +130,7 @@ my-site/
 │   │   └── my-video.json    # one entry
 │   └── styles/custom.css
 ├── public/media/            # uploaded files
+├── src/styles.css           # imports Tailwind and the theme; scans content/ for classes
 ├── .github/workflows/deploy.yml
 ├── .gitlab-ci.yml
 └── vercel.json
@@ -105,7 +138,7 @@ my-site/
 
 ## Roadmap
 
-1. **Static rendering.** Build a static site from hand-written `content/` files.
+1. **Static rendering** (done). Build a static site from hand-written `content/` files.
 2. **Editor.** The admin panel against local files: pages, site settings, header and footer, custom CSS, live Tailwind preview.
 3. **Git backends.** GitHub and GitLab sign-in, publishing, conflict detection and deploy status, plus GitHub Pages, GitLab Pages and Vercel setups.
 4. **Collections and templates.**

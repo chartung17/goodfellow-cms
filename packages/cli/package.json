@@ -1,0 +1,46 @@
+{
+  "name": "goodfellow",
+  "version": "0.0.0",
+  "description": "Build, develop and preview Goodfellow sites.",
+  "license": "UNLICENSED",
+  "type": "module",
+  "bin": {
+    "goodfellow": "./bin/goodfellow.js"
+  },
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    },
+    "./package.json": "./package.json"
+  },
+  "files": [
+    "bin",
+    "dist"
+  ],
+  "scripts": {
+    "build": "tsdown",
+    "typecheck": "tsc -p tsconfig.json",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "@goodfellow/core": "workspace:*",
+    "@tailwindcss/vite": "4.3.3",
+    "vite": "8.3.2"
+  },
+  "peerDependencies": {
+    "@goodfellow/react": "workspace:*",
+    "@puckeditor/core": "0.23.0",
+    "react": "^19.0.0",
+    "react-dom": "^19.0.0",
+    "tailwindcss": "^4.0.0"
+  },
+  "devDependencies": {
+    "@goodfellow/blocks": "workspace:*",
+    "@goodfellow/react": "workspace:*",
+    "@puckeditor/core": "0.23.0",
+    "react": "19.3.0",
+    "react-dom": "19.3.0",
+    "tailwindcss": "4.3.3"
+  }
+}

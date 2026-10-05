@@ -1,0 +1,59 @@
+/*
+ * Styles for Goodfellow's built-in blocks. Import after "tailwindcss" and
+ * "@goodfellow/react/theme.css".
+ */
+
+/* Let Tailwind find the classes the blocks use. */
+@source "./dist";
+
+@layer components {
+  /* Puck wraps rich text in its own elements, so match the content tags rather than direct children. */
+  .gf-prose :where(p, ul, ol, blockquote, pre, hr, h2, h3, h4):not(:first-child) {
+    margin-top: 1em;
+  }
+
+  .gf-prose h2 {
+    font-size: 1.5rem;
+    line-height: 1.3;
+    font-weight: 700;
+    margin-top: 1.5em;
+  }
+
+  .gf-prose h3 {
+    font-size: 1.25rem;
+    line-height: 1.4;
+    font-weight: 600;
+    margin-top: 1.25em;
+  }
+
+  .gf-prose a {
+    color: var(--color-primary);
+    text-decoration: underline;
+    text-underline-offset: 2px;
+  }
+
+  .gf-prose ul {
+    list-style: disc;
+    padding-left: 1.5em;
+  }
+
+  .gf-prose ol {
+    list-style: decimal;
+    padding-left: 1.5em;
+  }
+
+  .gf-prose blockquote {
+    border-left: 3px solid var(--color-border);
+    padding-left: 1em;
+    color: var(--color-muted-foreground);
+  }
+
+  .gf-prose hr {
+    border-top: 1px solid var(--color-border);
+  }
+
+  .gf-prose code {
+    font-family: ui-monospace, monospace;
+    font-size: 0.9em;
+  }
+}
