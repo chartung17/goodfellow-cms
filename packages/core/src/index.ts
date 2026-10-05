@@ -1,4 +1,4 @@
-export { defineConfig, type GoodfellowConfig } from "./config.js";
+export { type AiConfig, defineConfig, type GoodfellowConfig } from "./config.js";
 export {
   type Collection,
   type Entry,

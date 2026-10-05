@@ -1,3 +1,4 @@
+import type { AiFieldHint } from "@goodfellow/ai";
 import {
   type Collection,
   type CollectionField,
@@ -37,7 +38,36 @@ function Hint({ text }: { text?: string }) {
 }
 
 /** The Puck field for one of a collection's fields, shown in the editor's sidebar. */
+/** What the AI assistant is told a field holds, since it can't tell from a custom field. */
+function aiHint(field: CollectionField): AiFieldHint {
+  const description = field.hint;
+  switch (field.type) {
+    case "number":
+      return { type: "number", description };
+    case "date":
+      return { type: "date", description };
+    case "select":
+      return { type: "choice", options: field.options ?? [], description };
+    case "link":
+      return {
+        type: "string",
+        description: [description, "A web address or a page address such as /about"].filter(Boolean).join(". "),
+      };
+    case "image":
+      return {
+        type: "string",
+        description: [description, "An image address. Leave empty unless one is given"].filter(Boolean).join(". "),
+      };
+    default:
+      return { type: "string", description };
+  }
+}
+
 function puckField(field: CollectionField): Field {
+  return { ...fieldControl(field), metadata: { ai: aiHint(field) } };
+}
+
+function fieldControl(field: CollectionField): Field {
   const label = field.required ? `${field.label} *` : field.label;
   switch (field.type) {
     case "richtext":
@@ -197,7 +227,7 @@ function formValues(collection: Collection, entry: Entry): Record<string, unknow
 
 function EntryEditor({ collection, entry }: { collection: Collection; entry: Entry }) {
   const t = useStrings();
-  const { templateConfig, layoutConfig } = useAdmin();
+  const { config: siteConfig, templateConfig, layoutConfig } = useAdmin();
   const { content } = useSiteContent();
   const { fields } = collection.settings;
 
@@ -234,9 +264,14 @@ function EntryEditor({ collection, entry }: { collection: Collection; entry: Ent
       data={data}
       collection={collection}
       config={config}
-      // Entries have no blocks to add, so there's no block list: just the fields and the preview.
-      ui={{ leftSideBarVisible: false }}
-      plugins={entryPlugins}
+      // Entries have no blocks to add, so instead of the block list the left side has the AI
+      // assistant, open at the start. Without it, there's nothing on the left at all.
+      ui={
+        siteConfig.ai === false
+          ? { leftSideBarVisible: false }
+          : { leftSideBarVisible: true, plugin: { current: "ai" } }
+      }
+      plugins={siteConfig.ai === false ? entryPlugins : undefined}
       validate={(next) => {
         const values: Record<string, unknown> = next.root.props ?? {};
         const missing = fields.filter((field) => field.required && isEmptyValue(values[field.name]));

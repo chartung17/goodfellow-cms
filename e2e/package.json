@@ -9,6 +9,7 @@
   },
   "dependencies": {
     "@goodfellow/admin": "workspace:*",
+    "@goodfellow/ai": "workspace:*",
     "@goodfellow/blocks": "workspace:*",
     "@goodfellow/core": "workspace:*",
     "@goodfellow/github": "workspace:*",

@@ -23,6 +23,19 @@ export interface GoodfellowConfig {
    * Builds include the admin panel at `/admin` only when this is set.
    */
   backend?: GitHost;
+  /**
+   * The AI assistant in the editor, which drafts and rewrites content with an
+   * AI service each editor chooses. On by default; `false` removes it.
+   */
+  ai?: false | AiConfig;
+}
+
+export interface AiConfig {
+  /**
+   * The AI services editors can choose from, by id, such as `["anthropic", "manual"]`.
+   * Defaults to all of them. See `PROVIDER_IDS` in `@goodfellow/ai`.
+   */
+  providers?: string[];
 }
 
 /** Declares a site config with full type checking. Returns it unchanged. */

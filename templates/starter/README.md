@@ -80,6 +80,10 @@ Delete the setup files for the hosts you don't use.
 
 Every editor needs permission to change the repository: on GitHub, write access; on GitLab, the Developer role or higher.
 
+## Writing with AI
+
+The admin panel's **AI** tab can draft pages, rewrite blocks and fill in news stories. Each editor picks an AI service there. Claude and some others need the editor's own API key and charge for use; there are free options, including copying the request into a chat app such as Claude.ai. To offer only some services, or to turn the assistant off, see `ai` in [Goodfellow's README](https://github.com/chartung17/goodfellow-cms#ai-services).
+
 ## Publishing
 
 Each **Publish** in the admin panel saves its changes as one commit to the main branch, which starts a new build. The admin panel shows when the live site has been updated, usually within a minute or two. If someone else changed the same page in the meantime, publishing stops and explains what happened, instead of overwriting their work.
