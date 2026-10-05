@@ -50,6 +50,14 @@ Goodfellow runs entirely on free tiers, but those tiers have limits worth knowin
 | Build minutes | Unlimited for public repos, 2,000/month for private | 400/month (or build on Vercel instead) |
 | Sign-in | Personal access token (fine-grained, or classic for collaborators) | OAuth (PKCE) or personal access token |
 
+**Commercial sites:** each host's free plan has its own rules about business use, so check them before choosing:
+
+- **GitHub Pages** isn't allowed for running an online business, a shop, or any site mainly for selling things or software as a service ([GitHub Pages limits](https://docs.github.com/en/pages/getting-started-with-github-pages/github-pages-limits)). It also shouldn't handle passwords or card numbers.
+- **Vercel's free Hobby plan** is for personal, non-commercial use only. Vercel counts a site as commercial if anyone involved in making it gains financially, including a developer paid to build or update it, and if it takes payments, advertises products or services for sale, or shows ads. Asking for donations is allowed ([Vercel fair use guidelines](https://vercel.com/docs/limits/fair-use-guidelines#commercial-usage)).
+- **GitLab Pages:** we haven't found a rule against business sites on GitLab's free plan, so it's the free option to use for one. Check [GitLab's terms](https://about.gitlab.com/terms/) for your own case.
+
+These are the hosts' rules, not Goodfellow's, and they can change. Goodfellow's documentation will keep them current.
+
 **GitHub sign-in:** GitHub doesn't let collaborators on someone else's repository use fine-grained tokens. For sites with several editors, put the repository in a free GitHub organization and add editors as members; otherwise collaborators need a classic token.
 
 ## Getting started
@@ -168,8 +176,8 @@ my-site/
 6. **Media library.** Upload, browse and replace images and files from the admin panel.
 7. **Starters.** `create-goodfellow` and the parish example.
 8. **Next.js adapter.**
-9. **Documentation site.** Guides for site owners and editors, plus reference docs for developers.
-10. **Site setup without a developer.** A web page where anyone can create a site from a starter, store it on GitHub or GitLab, and put it online with GitHub Pages, GitLab Pages or Vercel. Builds work out which repository they're in, so nobody has to edit the config.
+9. **Documentation site.** Guides for site owners and editors, plus reference docs for developers. Includes each host's rules for commercial sites on its free plan, kept up to date.
+10. **Site setup without a developer.** A web page where anyone can create a site from a starter, store it on GitHub or GitLab, and put it online with GitHub Pages, GitLab Pages or Vercel. It asks what the site is for and recommends a host whose free plan allows it, such as GitLab Pages for a business. Builds work out which repository they're in, so nobody has to edit the config.
 11. **Custom domains.** Connect a domain from the admin panel. Goodfellow sets the domain on the host where it can, lists the records to add at the domain's registrar, with guides for popular registrars, and shows when the domain is working.
 12. **Running a site without a developer.**
     - Invite and remove editors from the admin panel.
