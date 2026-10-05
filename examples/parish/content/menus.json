@@ -1,0 +1,63 @@
+{
+  "version": 1,
+  "menus": {
+    "footer": [
+      {
+        "href": "/mass-times",
+        "label": "Mass times"
+      },
+      {
+        "href": "/bulletins",
+        "label": "Bulletins"
+      },
+      {
+        "href": "/sacraments",
+        "label": "Sacraments"
+      },
+      {
+        "href": "/contact",
+        "label": "Contact us"
+      }
+    ],
+    "main": [
+      {
+        "href": "/",
+        "label": "Home"
+      },
+      {
+        "href": "/mass-times",
+        "label": "Mass times"
+      },
+      {
+        "href": "/sacraments",
+        "label": "Sacraments"
+      },
+      {
+        "children": [
+          {
+            "href": "/events",
+            "label": "Events"
+          },
+          {
+            "href": "/news",
+            "label": "News"
+          },
+          {
+            "href": "/bulletins",
+            "label": "Bulletins"
+          }
+        ],
+        "href": "/events",
+        "label": "Parish life"
+      },
+      {
+        "href": "/about",
+        "label": "About us"
+      },
+      {
+        "href": "/contact",
+        "label": "Contact"
+      }
+    ]
+  }
+}

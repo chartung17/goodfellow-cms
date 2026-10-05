@@ -62,6 +62,15 @@ export const siteSettingsSchema = z.object({
   titleTemplate: z.string().default("%s"),
   /** Image shown when a page is shared on social media, unless the page sets its own. */
   socialImage: z.string().optional(),
+  /** How to get in touch, shown by the Contact details block wherever it's placed. */
+  contact: z
+    .object({
+      /** A postal address; line breaks are kept. */
+      address: z.string().optional(),
+      phone: z.string().optional(),
+      email: z.string().optional(),
+    })
+    .optional(),
   theme: themeSchema.default({ colors: {}, fonts: {} }),
 });
 

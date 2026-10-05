@@ -11,7 +11,7 @@ import { github, githubTokenLinks } from "./index.js";
 import { fakeGitHub } from "./testing.js";
 
 const FILES = {
-  "content/site.json": '{"version":1,"title":"Holy Name"}',
+  "content/site.json": '{"version":1,"title":"St. Joseph"}',
   "content/pages/index.json": '{"version":1,"data":{"root":{"props":{"title":"Home"}},"content":[]}}',
   "content/pages/about.json": '{"version":1,"data":{"root":{"props":{"title":"About"}},"content":[]}}',
   "src/styles.css": "@import 'tailwindcss';",
@@ -112,7 +112,7 @@ describe("reading", () => {
   it("loads the site's content", async () => {
     const { backend } = await signedIn();
     const content = await loadSiteContent(backend);
-    expect(content.settings.title).toBe("Holy Name");
+    expect(content.settings.title).toBe("St. Joseph");
     expect(content.pages.map((page) => page.path)).toEqual(["/", "/about"]);
   });
 

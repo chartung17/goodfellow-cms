@@ -49,9 +49,9 @@ const config: GoodfellowConfig = {
 
 const settings = siteSettingsSchema.parse({
   version: 1,
-  title: "Holy Name",
+  title: "St. Joseph",
   url: "https://example.org",
-  titleTemplate: "%s | Holy Name",
+  titleTemplate: "%s | St. Joseph",
   socialImage: "/media/share.png",
   theme: { colors: { primary: "#1e3a8a" }, fonts: { heading: "Cinzel" } },
 });
@@ -94,7 +94,7 @@ describe("renderPage", () => {
     );
 
     expect(html.startsWith('<!DOCTYPE html><html lang="en">')).toBe(true);
-    expect(html).toContain("<title>About | Holy Name</title>");
+    expect(html).toContain("<title>About | St. Joseph</title>");
     expect(html).toContain('<link rel="canonical" href="https://example.org/about"/>');
     expect(html).toContain('<meta property="og:image" content="https://example.org/media/share.png"/>');
     expect(html).toContain('<link rel="stylesheet" href="/assets/site.css"/>');
@@ -113,7 +113,7 @@ describe("renderPage", () => {
       makePage([]),
     );
     expect(html).toMatch(
-      /<header class="gf-header"><div><span>Holy Name<!-- --> at <!-- -->\/about<\/span><\/div><\/header><main/,
+      /<header class="gf-header"><div><span>St. Joseph<!-- --> at <!-- -->\/about<\/span><\/div><\/header><main/,
     );
     expect(html).toContain('<footer class="gf-footer"><div><h1>Bye</h1></div></footer>');
   });
@@ -187,7 +187,7 @@ describe("renderPage", () => {
       entry: { collection: "videos", slug: "easter" },
     });
 
-    expect(html).toContain("<title>Easter &lt;Vigil&gt; | Holy Name</title>");
+    expect(html).toContain("<title>Easter &lt;Vigil&gt; | St. Joseph</title>");
     expect(html).toContain('<meta name="description" content="Recorded April 4, 2026"/>');
     expect(html).toContain("<h1>Easter &lt;Vigil&gt; {unknown}</h1>");
     expect(html).toContain("<p>Watch Easter &lt;Vigil&gt;</p>");

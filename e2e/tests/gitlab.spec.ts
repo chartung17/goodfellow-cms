@@ -23,11 +23,11 @@ test("signs in with GitLab without a token, and publishes", async ({ page }) => 
   expect(page.url()).toBe(`${GITLAB_SITE}/admin/#/settings/general`);
   await expect(page.locator(".gfa-account")).toContainText("Maria");
 
-  await page.getByLabel("Site name").fill("Holy Name Parish");
+  await page.getByLabel("Site name").fill("St. Joseph Parish");
   await page.getByRole("button", { name: "Publish" }).click();
   await expect(page.getByText("Published.", { exact: true })).toBeVisible();
   expect(JSON.parse(String(fake.repo.files().get("content/site.json") ?? "{}"))).toMatchObject({
-    title: "Holy Name Parish",
+    title: "St. Joseph Parish",
   });
 });
 

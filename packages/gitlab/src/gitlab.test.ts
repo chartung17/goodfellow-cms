@@ -4,7 +4,7 @@ import { type BrowserLocation, gitlab, redirectUri } from "./index.js";
 import { fakeGitLab } from "./testing.js";
 
 const FILES = {
-  "content/site.json": '{"version":1,"title":"Holy Name"}',
+  "content/site.json": '{"version":1,"title":"St. Joseph"}',
   "content/pages/index.json": '{"version":1,"data":{"root":{"props":{"title":"Home"}},"content":[]}}',
   "content/pages/about.json": '{"version":1,"data":{"root":{"props":{"title":"About"}},"content":[]}}',
   "public/media/logo.svg": "<svg/>",

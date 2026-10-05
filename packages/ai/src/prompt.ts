@@ -11,6 +11,8 @@ export interface SiteSummary {
   collections: Array<{ id: string; name: string; fields: Array<{ name: string; label: string }> }>;
   /** Addresses of the site's uploaded images, such as `/media/photo.jpg`. */
   images?: string[];
+  /** The contact details in the site's settings, which the AI may use instead of placeholders. */
+  contact?: { address?: string; phone?: string; email?: string };
 }
 
 export type AiTask =
@@ -72,6 +74,14 @@ function siteContext(site: SiteSummary): string {
     lines.push(
       `Its collections, which a Collection list block can show by id: ${site.collections
         .map((collection) => `"${collection.id}" (${collection.name})`)
+        .join(", ")}.`,
+    );
+  }
+  const contact = Object.entries(site.contact ?? {}).filter(([, value]) => value?.trim());
+  if (contact.length > 0) {
+    lines.push(
+      `Its contact details, which a Contact details block shows: ${contact
+        .map(([key, value]) => `${key} ${JSON.stringify(value)}`)
         .join(", ")}.`,
     );
   }

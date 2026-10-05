@@ -1,0 +1,6 @@
+@import "tailwindcss";
+@import "@goodfellow/react/theme.css";
+@import "@goodfellow/blocks/styles.css";
+
+/* Lets Tailwind find class names typed into the editor. */
+@source "../content";

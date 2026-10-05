@@ -1,0 +1,157 @@
+{
+  "version": 1,
+  "entryName": "Event",
+  "fields": [
+    {
+      "type": "text",
+      "label": "Title",
+      "name": "title",
+      "required": true
+    },
+    {
+      "type": "date",
+      "label": "Date",
+      "name": "date",
+      "required": true
+    },
+    {
+      "type": "text",
+      "hint": "Such as 7:00 pm, or 11:00 am to 5:00 pm.",
+      "label": "Time",
+      "name": "time"
+    },
+    {
+      "type": "text",
+      "hint": "Such as the church or the parish hall.",
+      "label": "Place",
+      "name": "place"
+    },
+    {
+      "type": "textarea",
+      "hint": "One or two sentences, shown in lists of events.",
+      "label": "Summary",
+      "name": "summary"
+    },
+    {
+      "type": "image",
+      "label": "Picture",
+      "name": "image"
+    },
+    {
+      "type": "richtext",
+      "label": "Details",
+      "name": "text"
+    }
+  ],
+  "name": "Events",
+  "path": "/events/{slug}",
+  "sort": {
+    "field": "date",
+    "order": "asc"
+  },
+  "template": {
+    "content": [
+      {
+        "type": "Section",
+        "props": {
+          "id": "Section-event",
+          "background": "none",
+          "backgroundImage": "",
+          "className": "",
+          "content": [
+            {
+              "type": "EntryField",
+              "props": {
+                "id": "EntryField-date",
+                "className": "",
+                "field": "date",
+                "style": "small"
+              }
+            },
+            {
+              "type": "EntryField",
+              "props": {
+                "id": "EntryField-title",
+                "className": "mt-2",
+                "field": "title",
+                "style": "title"
+              }
+            },
+            {
+              "type": "Flex",
+              "props": {
+                "id": "Flex-event-when",
+                "align": "center",
+                "className": "mt-4 text-lg",
+                "direction": "row",
+                "gap": "lg",
+                "items": [
+                  {
+                    "type": "EntryField",
+                    "props": {
+                      "id": "EntryField-time",
+                      "className": "",
+                      "field": "time",
+                      "style": "text"
+                    }
+                  },
+                  {
+                    "type": "EntryField",
+                    "props": {
+                      "id": "EntryField-place",
+                      "className": "",
+                      "field": "place",
+                      "style": "text"
+                    }
+                  }
+                ],
+                "justify": "start",
+                "wrap": true
+              }
+            },
+            {
+              "type": "EntryField",
+              "props": {
+                "id": "EntryField-image",
+                "className": "mt-8",
+                "field": "image",
+                "style": "text"
+              }
+            },
+            {
+              "type": "EntryField",
+              "props": {
+                "id": "EntryField-text",
+                "className": "mt-8",
+                "field": "text",
+                "style": "text"
+              }
+            },
+            {
+              "type": "Button",
+              "props": {
+                "id": "Button-events",
+                "className": "mt-10",
+                "href": "/events",
+                "label": "All events",
+                "newTab": false,
+                "size": "md",
+                "variant": "outline"
+              }
+            }
+          ],
+          "padding": "lg",
+          "width": "narrow"
+        }
+      }
+    ],
+    "root": {
+      "props": {
+        "className": "",
+        "description": "{summary}",
+        "image": "{image}",
+        "title": "{title}"
+      }
+    }
+  }
+}

@@ -4,12 +4,13 @@ import { AiError, listModels, redact, runRequest } from "./providers.js";
 import { fakeAi } from "./testing.js";
 
 const site: SiteSummary = {
-  title: "Holy Name",
-  description: "A parish in Kansas City",
+  title: "St. Joseph",
+  description: "A parish in Anytown",
   language: "en",
   pages: [{ path: "/", title: "Home" }],
   collections: [],
   images: ["/media/church.jpg"],
+  contact: { phone: "(555) 010-0100", email: "" },
 };
 
 const config = {
@@ -26,10 +27,13 @@ const answer = { blocks: [{ type: "Heading", id: "b1", parent: null, slot: null,
 
 describe("buildRequest", () => {
   it("tells the AI about the site and the task", () => {
-    expect(request.prompt).toContain('The site is "Holy Name": A parish in Kansas City.');
+    expect(request.prompt).toContain('The site is "St. Joseph": A parish in Anytown.');
     expect(request.prompt).toContain('/ ("Home")');
     expect(request.prompt).toContain("A welcome heading");
     expect(request.prompt).toContain("Images in its media library, which image fields can use: /media/church.jpg.");
+    expect(request.prompt).toContain(
+      'Its contact details, which a Contact details block shows: phone "(555) 010-0100".',
+    );
     expect(request.system).toContain("Never invent facts");
   });
 
