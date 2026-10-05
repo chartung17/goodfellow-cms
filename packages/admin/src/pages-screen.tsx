@@ -1,4 +1,4 @@
-import type { Page } from "@goodfellow/core";
+import { allPages, type Page } from "@goodfellow/core";
 import { type FormEvent, useState } from "react";
 import { useAdmin, useSiteContent } from "./admin-context.js";
 import {
@@ -10,28 +10,16 @@ import {
   pageTitle,
   slugify,
 } from "./changes.js";
+import { type Failure, PublishFailure } from "./publish-failure.js";
 import { navigate, pageEditorHref } from "./router.js";
 import { type StringKey, useStrings } from "./strings.js";
-import { Button, Dialog, ErrorMessage, TextField } from "./ui.js";
+import { Button, Dialog, TextField } from "./ui.js";
 
 const addressErrors: Record<AddressProblem, StringKey> = {
   invalid: "address.invalid",
   reserved: "address.reserved",
   taken: "address.taken",
 };
-
-type Failure = { reason: "conflict" | "error"; error: unknown } | null;
-
-function PublishFailure({ failure }: { failure: Failure }) {
-  const t = useStrings();
-  if (!failure) return null;
-  return (
-    <ErrorMessage
-      message={t(failure.reason === "conflict" ? "publish.conflict" : "publish.error")}
-      error={failure.error}
-    />
-  );
-}
 
 function NewPageDialog({ onClose }: { onClose: () => void }) {
   const t = useStrings();
@@ -44,7 +32,8 @@ function NewPageDialog({ onClose }: { onClose: () => void }) {
   const [busy, setBusy] = useState(false);
   const [failure, setFailure] = useState<Failure>(null);
 
-  const check = checkPageAddress(address, content.pages);
+  // Entries' pages count too: a new page can't take an entry's address.
+  const check = checkPageAddress(address, allPages(content));
   const titleError = submitted && !title.trim() ? t("field.required") : undefined;
   const addressError = submitted && !check.ok ? t(addressErrors[check.problem]) : undefined;
 
@@ -112,7 +101,7 @@ function MovePageDialog({ page, onClose }: { page: Page; onClose: () => void }) 
   const [failure, setFailure] = useState<Failure>(null);
   const title = pageTitle(page);
 
-  const check = checkPageAddress(address, content.pages, page.path);
+  const check = checkPageAddress(address, allPages(content), page.path);
   const addressError = submitted && !check.ok ? t(addressErrors[check.problem]) : undefined;
 
   const onSubmit = async (event: FormEvent) => {

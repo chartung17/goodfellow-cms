@@ -1,10 +1,15 @@
 import type { z } from "zod";
 import { type ContentKind, migrateContent } from "../migrations/index.js";
+import { type Collection, type Entry, entryFieldProblems, sortCollectionEntries } from "./collections.js";
 import { ContentError, type ContentProblem } from "./errors.js";
 import {
+  COLLECTION_SETTINGS_FILE,
+  COLLECTIONS_DIR,
   CUSTOM_CSS_FILE,
+  entryAddress,
   FOOTER_FILE,
   HEADER_FILE,
+  isAddressSegment,
   isReservedPagePath,
   MENUS_FILE,
   PAGES_DIR,
@@ -12,6 +17,8 @@ import {
   SITE_FILE,
 } from "./paths.js";
 import {
+  collectionFileSchema,
+  entryFileSchema,
   type LayoutFile,
   layoutFileSchema,
   type Menus,
@@ -39,6 +46,11 @@ export interface Page {
   /** The content file it came from. */
   file: string;
   content: PageFile;
+  /**
+   * Set for an entry's page, whose `content` is its collection's template. The
+   * entry's values are filled into the template when the page is rendered.
+   */
+  entry?: { collection: string; slug: string };
 }
 
 export interface SiteContent {
@@ -46,8 +58,10 @@ export interface SiteContent {
   menus: Menus;
   header: LayoutFile;
   footer: LayoutFile;
-  /** Pages sorted by path. */
+  /** Pages sorted by path. Entries' pages aren't included; see `allPages`. */
   pages: Page[];
+  /** Collections sorted by id, each with its entries. */
+  collections: Collection[];
   /** Admin-written CSS, or `""`. */
   customCss: string;
 }
@@ -113,13 +127,14 @@ export async function loadSiteContent(source: ContentSource): Promise<SiteConten
     return fallback;
   }
 
-  const [settings, menusFile, header, footer, customCss, pageFiles] = await Promise.all([
+  const [settings, menusFile, header, footer, customCss, pageFiles, collectionFiles] = await Promise.all([
     loadOptional("site", siteSettingsSchema, SITE_FILE, siteSettingsSchema.parse({ version: 1 })),
     loadOptional("menus", menusFileSchema, MENUS_FILE, { version: 1, menus: {} }),
     loadOptional("layout", layoutFileSchema, HEADER_FILE, EMPTY_LAYOUT),
     loadOptional("layout", layoutFileSchema, FOOTER_FILE, EMPTY_LAYOUT),
     source.read(CUSTOM_CSS_FILE),
     source.list(PAGES_DIR),
+    source.list(COLLECTIONS_DIR),
   ]);
 
   const pages: Page[] = [];
@@ -161,11 +176,167 @@ export async function loadSiteContent(source: ContentSource): Promise<SiteConten
       }),
   );
 
+  const collections = await loadCollections(source, collectionFiles, problems);
+
+  // Entries' pages share addresses with ordinary pages, so they can't clash with them.
+  for (const collection of collections) {
+    for (const entry of collection.entries) {
+      if (!entry.path) continue;
+      if (isReservedPagePath(entry.path)) {
+        problems.push({
+          file: entry.file,
+          message: `can't be used: ${entry.path} is reserved for the admin panel. Rename the file.`,
+        });
+        continue;
+      }
+      const existing = filesByPath.get(entry.path);
+      if (existing) {
+        problems.push({
+          file: entry.file,
+          message: `has the same address (${entry.path}) as ${existing}. Rename one of them.`,
+        });
+        continue;
+      }
+      filesByPath.set(entry.path, entry.file);
+    }
+  }
+
   if (problems.length > 0) {
     problems.sort((a, b) => a.file.localeCompare(b.file));
     throw new ContentError(problems);
   }
 
   pages.sort((a, b) => a.path.localeCompare(b.path));
-  return { settings, menus: menusFile.menus, header, footer, pages, customCss: customCss ?? "" };
+  return { settings, menus: menusFile.menus, header, footer, pages, collections, customCss: customCss ?? "" };
+}
+
+/** Loads every collection's settings and entries, adding any problems found to `problems`. */
+async function loadCollections(
+  source: ContentSource,
+  files: string[],
+  problems: ContentProblem[],
+): Promise<Collection[]> {
+  const folders = new Map<string, { settings?: string; entries: string[] }>();
+  for (const file of files) {
+    if (!file.endsWith(".json")) continue;
+    const parts = file.slice(COLLECTIONS_DIR.length + 1).split("/");
+    const [id, name] = parts;
+    if (parts.length !== 2 || id === undefined || name === undefined) {
+      problems.push({
+        file,
+        message: "is in the wrong place. Collections are folders of entry files, with no folders inside.",
+      });
+      continue;
+    }
+    if (!isAddressSegment(id)) {
+      problems.push({
+        file,
+        message: `is in a folder named "${id}". Collection folders use lowercase letters, numbers and hyphens only.`,
+      });
+      continue;
+    }
+    const folder = folders.get(id) ?? { entries: [] };
+    folders.set(id, folder);
+    if (name === COLLECTION_SETTINGS_FILE) folder.settings = file;
+    else folder.entries.push(file);
+  }
+
+  const collections = await Promise.all(
+    [...folders].map(async ([id, folder]): Promise<Collection | undefined> => {
+      if (!folder.settings) {
+        for (const file of folder.entries) {
+          problems.push({
+            file,
+            message: `belongs to a collection with no ${COLLECTION_SETTINGS_FILE}. Add one, or move the file.`,
+          });
+        }
+        return undefined;
+      }
+      const text = await source.read(folder.settings);
+      if (text === undefined) return undefined;
+      const parsed = parseContentFile("collection", collectionFileSchema, folder.settings, text);
+      if (!parsed.ok) {
+        problems.push(parsed.problem);
+        return undefined;
+      }
+      const settings = parsed.value;
+
+      const entries = await Promise.all(
+        folder.entries.map(async (file): Promise<Entry | undefined> => {
+          const slug = file.slice(file.lastIndexOf("/") + 1, -".json".length);
+          if (!isAddressSegment(slug)) {
+            problems.push({
+              file,
+              message: `has a name that can't be used. Entry files are named with lowercase letters, numbers and hyphens only.`,
+            });
+            return undefined;
+          }
+          const entryText = await source.read(file);
+          if (entryText === undefined) return undefined;
+          const entry = parseContentFile("entry", entryFileSchema, file, entryText);
+          if (!entry.ok) {
+            problems.push(entry.problem);
+            return undefined;
+          }
+          const fieldProblems = entryFieldProblems(settings.fields, entry.value.fields);
+          if (fieldProblems.length > 0) {
+            problems.push({ file, message: fieldProblems.map((problem) => `fields.${problem}`).join("; ") });
+            return undefined;
+          }
+          return {
+            collection: id,
+            slug,
+            file,
+            ...(settings.path !== undefined && { path: entryAddress(settings.path, slug) }),
+            content: entry.value,
+          };
+        }),
+      );
+
+      return {
+        id,
+        file: folder.settings,
+        settings,
+        entries: sortCollectionEntries(
+          settings,
+          entries.filter((entry) => entry !== undefined),
+        ),
+      };
+    }),
+  );
+
+  return collections.filter((collection) => collection !== undefined).sort((a, b) => a.id.localeCompare(b.id));
+}
+
+/**
+ * Every page the site serves: its pages, plus a page for each entry in a
+ * collection that gives entries pages. Sorted by address.
+ */
+export function allPages(content: SiteContent): Page[] {
+  const entryPages = content.collections.flatMap((collection) =>
+    collection.entries.flatMap((entry): Page[] =>
+      entry.path
+        ? [
+            {
+              path: entry.path,
+              file: entry.file,
+              content: { version: 1, data: collection.settings.template },
+              entry: { collection: collection.id, slug: entry.slug },
+            },
+          ]
+        : [],
+    ),
+  );
+  return [...content.pages, ...entryPages].sort((a, b) => a.path.localeCompare(b.path));
+}
+
+/** Finds an entry and its collection. */
+export function findEntry(
+  content: Pick<SiteContent, "collections">,
+  collectionId: string,
+  slug: string,
+): { collection: Collection; entry: Entry } | undefined {
+  const collection = content.collections.find((candidate) => candidate.id === collectionId);
+  const entry = collection?.entries.find((candidate) => candidate.slug === slug);
+  return collection && entry ? { collection, entry } : undefined;
 }

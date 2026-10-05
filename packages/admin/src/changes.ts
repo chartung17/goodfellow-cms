@@ -1,7 +1,16 @@
 import {
+  type Collection,
+  type CollectionField,
+  type CollectionFile,
   CURRENT_VERSION,
   CUSTOM_CSS_FILE,
+  collectionSettingsFile,
+  type Entry,
+  entryAddress,
+  entryFile,
   type FileChange,
+  isAddressSegment,
+  isEmptyValue,
   isReservedPagePath,
   MENUS_FILE,
   type Menus,
@@ -10,7 +19,9 @@ import {
   pagePathToFile,
   SITE_FILE,
   type SiteSettings,
+  SLUG_PLACEHOLDER,
   serializeContent,
+  TITLE_FIELD,
 } from "@goodfellow/core";
 import type { Data } from "@puckeditor/core";
 
@@ -125,4 +136,160 @@ export function storedCss(css: string): string {
 export function customCssFileChange(css: string): FileChange {
   const stored = storedCss(css);
   return stored ? { path: CUSTOM_CSS_FILE, content: stored } : { path: CUSTOM_CSS_FILE, delete: true };
+}
+
+/** Writes a collection's settings file. */
+export function collectionFileChange(id: string, settings: CollectionFile): FileChange {
+  return {
+    path: collectionSettingsFile(id),
+    content: serializeContent({
+      ...settings,
+      version: CURRENT_VERSION.collection,
+      template: storedData(settings.template as Data),
+    }),
+  };
+}
+
+/** An entry's values as stored: fields left empty are left out of the file. */
+export function storedEntryFields(values: Record<string, unknown>): Record<string, unknown> {
+  return Object.fromEntries(Object.entries(values).filter(([, value]) => !isEmptyValue(value)));
+}
+
+export function entryFileChange(collection: string, slug: string, values: Record<string, unknown>): FileChange {
+  return {
+    path: entryFile(collection, slug),
+    content: serializeContent({ version: CURRENT_VERSION.entry, fields: storedEntryFields(values) }),
+  };
+}
+
+/** A new collection's settings: a title and some text, shown by a template that lists every field. */
+export function newCollectionSettings({
+  name,
+  entryName,
+  path,
+  withEntryFields,
+}: {
+  name: string;
+  entryName: string;
+  /** The address pattern, such as `/videos/{slug}`, or `undefined` if entries have no pages. */
+  path?: string;
+  /** Whether the site has the Entry field block, for the starting template. */
+  withEntryFields: boolean;
+}): CollectionFile {
+  const fields: CollectionField[] = [
+    { name: TITLE_FIELD, label: "Title", type: "text", required: true },
+    { name: "text", label: "Text", type: "richtext" },
+  ];
+  const content = withEntryFields
+    ? [
+        {
+          type: "EntryField",
+          props: {
+            id: "title",
+            field: TITLE_FIELD,
+            style: "title",
+            className: "mx-auto max-w-3xl px-4 pt-12 pb-4",
+          },
+        },
+        {
+          type: "EntryField",
+          props: { id: "text", field: "text", style: "text", className: "mx-auto max-w-3xl px-4 pb-12" },
+        },
+      ]
+    : [];
+  return {
+    version: 1,
+    name,
+    entryName,
+    ...(path !== undefined && { path }),
+    fields,
+    template: { root: { props: { title: `{${TITLE_FIELD}}` } }, content },
+  };
+}
+
+/** The address pattern for entries whose addresses start with `prefix`: `/videos` → `/videos/{slug}`. */
+export function addressPatternFor(prefix: string): string {
+  const trimmed = prefix.trim().replace(/\/+$/, "");
+  return `${trimmed.startsWith("/") ? "" : "/"}${trimmed}/${SLUG_PLACEHOLDER}`;
+}
+
+/** A name for a collection's folder, a field or an entry that isn't taken yet: `talk`, then `talk-2`, `talk-3`… */
+export function uniqueName(base: string, taken: Iterable<string>, fallback = "item"): string {
+  const used = new Set(taken);
+  const start = base || fallback;
+  if (!used.has(start)) return start;
+  for (let n = 2; ; n++) if (!used.has(`${start}-${n}`)) return `${start}-${n}`;
+}
+
+export type EntryNameProblem = "invalid" | "reserved" | "taken";
+
+/**
+ * Checks the name an entry's file and address use. `addresses` are the
+ * addresses already in use on the site; `current` is the entry's own name.
+ */
+export function checkEntrySlug(
+  input: string,
+  collection: Collection,
+  addresses: string[],
+  current?: Entry,
+): { ok: true; slug: string; path?: string } | { ok: false; problem: EntryNameProblem } {
+  const slug = input.trim();
+  if (!isAddressSegment(slug)) return { ok: false, problem: "invalid" };
+  if (slug !== current?.slug && collection.entries.some((entry) => entry.slug === slug)) {
+    return { ok: false, problem: "taken" };
+  }
+  if (collection.settings.path === undefined) return { ok: true, slug };
+  const path = entryAddress(collection.settings.path, slug);
+  if (isReservedPagePath(path)) return { ok: false, problem: "reserved" };
+  if (path !== current?.path && addresses.includes(path)) return { ok: false, problem: "taken" };
+  return { ok: true, slug, path };
+}
+
+/** Renames an entry, which changes its address, optionally updating menu links to it. */
+export function moveEntryChanges(
+  entry: Entry,
+  slug: string,
+  path: string | undefined,
+  menus: Menus,
+  updateLinks: boolean,
+): FileChange[] {
+  const changes: FileChange[] = [
+    { path: entry.file, delete: true },
+    {
+      path: entryFile(entry.collection, slug),
+      content: serializeContent({ ...entry.content, version: CURRENT_VERSION.entry }),
+    },
+  ];
+  const updatedMenus = updateLinks && entry.path && path ? updateMenuLinks(menus, entry.path, path) : undefined;
+  if (updatedMenus) changes.push(menusFileChange(updatedMenus));
+  return changes;
+}
+
+/** Whether a stored value still fits its collection's field: the field exists, and a choice is still offered. */
+function keepsValue(fields: Map<string, CollectionField>, name: string, value: unknown): boolean {
+  const field = fields.get(name);
+  if (!field) return false;
+  return field.type !== "select" || field.options?.some((option) => option.value === value) === true;
+}
+
+/**
+ * Saves a collection's new settings. Values of fields that were removed, and
+ * choices that are no longer offered, are removed from every entry in the
+ * same save, so a field added later with the same name starts empty.
+ */
+export function collectionSettingsChanges(collection: Collection, settings: CollectionFile): FileChange[] {
+  const fields = new Map(settings.fields.map((field) => [field.name, field]));
+  const changes = [collectionFileChange(collection.id, settings)];
+  for (const entry of collection.entries) {
+    const values = Object.entries(entry.content.fields);
+    const remaining = values.filter(([name, value]) => keepsValue(fields, name, value));
+    if (remaining.length === values.length) continue;
+    changes.push(entryFileChange(collection.id, entry.slug, Object.fromEntries(remaining)));
+  }
+  return changes;
+}
+
+/** Deletes a collection and all its entries. */
+export function deleteCollectionChanges(collection: Collection): FileChange[] {
+  return [collection.file, ...collection.entries.map((entry) => entry.file)].map((path) => ({ path, delete: true }));
 }

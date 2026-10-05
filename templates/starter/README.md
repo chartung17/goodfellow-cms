@@ -13,6 +13,8 @@ npm run preview  # serves dist/
 
 On your own computer, the admin panel saves straight to the files in `content/`.
 
+The News page and its stories are an example of a collection: a group of similar items that share one page design. Change it or delete it under **Collections** in the admin panel.
+
 ## Putting the site online
 
 Setup takes four steps. It's done once, usually by whoever set up the site.

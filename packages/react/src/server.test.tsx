@@ -1,8 +1,20 @@
-import { type GoodfellowConfig, type Page, type SiteContent, siteSettingsSchema } from "@goodfellow/core";
+import {
+  type Collection,
+  collectionFileSchema,
+  type GoodfellowConfig,
+  type Page,
+  type SiteContent,
+  siteSettingsSchema,
+} from "@goodfellow/core";
 import type { ComponentConfig } from "@puckeditor/core";
 import { describe, expect, it } from "vitest";
 import { createPageRenderer } from "./server.js";
 import { useSite } from "./site-context.js";
+
+function EntryDate() {
+  const { entry } = useSite();
+  return <time>{String(entry?.content.fields.date)}</time>;
+}
 
 function CurrentPath() {
   const { path, settings } = useSite();
@@ -30,6 +42,7 @@ const config: GoodfellowConfig = {
       render: ({ body }) => <div className="body">{body}</div>,
     },
     Where: { render: () => <CurrentPath /> },
+    EntryDate: { render: () => <EntryDate /> },
     Resolved: resolved,
   },
 };
@@ -50,6 +63,7 @@ function makeContent(overrides: Partial<SiteContent> = {}): SiteContent {
     header: { version: 1, data: { root: {}, content: [] } },
     footer: { version: 1, data: { root: {}, content: [] } },
     pages: [],
+    collections: [],
     customCss: "",
     ...overrides,
   };
@@ -131,5 +145,52 @@ describe("renderPage", () => {
     expect(html).toContain("Hello <strong>world</strong>");
     expect(html).toContain('href="/about"');
     expect(html).not.toMatch(/<script|onclick|onerror|javascript:/i);
+  });
+
+  it("renders an entry's page from its collection's template", async () => {
+    const videos: Collection = {
+      id: "videos",
+      file: "content/collections/videos/_collection.json",
+      settings: collectionFileSchema.parse({
+        version: 1,
+        name: "Videos",
+        entryName: "Video",
+        path: "/videos/{slug}",
+        fields: [
+          { name: "title", label: "Title", type: "text" },
+          { name: "date", label: "Date", type: "date" },
+          { name: "body", label: "Text", type: "richtext" },
+        ],
+        template: {
+          root: { props: { title: "{title}", description: "Recorded {date}" } },
+          content: [
+            { type: "Heading", props: { id: "h", text: "{title} {unknown}" } },
+            { type: "Body", props: { id: "b", body: "<p>Watch {title}</p>" } },
+            { type: "EntryDate", props: { id: "d" } },
+          ],
+        },
+      }),
+      entries: [
+        {
+          collection: "videos",
+          slug: "easter",
+          file: "content/collections/videos/easter.json",
+          path: "/videos/easter",
+          content: { version: 1, fields: { title: "Easter <Vigil>", date: "2026-04-04" } },
+        },
+      ],
+    };
+    const html = await renderPage(makeContent({ collections: [videos] }), {
+      path: "/videos/easter",
+      file: "content/collections/videos/easter.json",
+      content: { version: 1, data: videos.settings.template },
+      entry: { collection: "videos", slug: "easter" },
+    });
+
+    expect(html).toContain("<title>Easter &lt;Vigil&gt; | Holy Name</title>");
+    expect(html).toContain('<meta name="description" content="Recorded April 4, 2026"/>');
+    expect(html).toContain("<h1>Easter &lt;Vigil&gt; {unknown}</h1>");
+    expect(html).toContain("<p>Watch Easter &lt;Vigil&gt;</p>");
+    expect(html).toContain("<time>2026-04-04</time>");
   });
 });

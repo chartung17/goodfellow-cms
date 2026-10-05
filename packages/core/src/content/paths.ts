@@ -7,6 +7,9 @@ export const HEADER_FILE = "content/layout/header.json";
 export const FOOTER_FILE = "content/layout/footer.json";
 export const CUSTOM_CSS_FILE = "content/styles/custom.css";
 export const MEDIA_DIR = "public/media";
+export const COLLECTIONS_DIR = "content/collections";
+/** The file in each collection's folder that holds its fields, address pattern and template. */
+export const COLLECTION_SETTINGS_FILE = "_collection.json";
 
 /** A URL path segment: lowercase letters, digits and single hyphens. */
 const SEGMENT = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
@@ -29,6 +32,11 @@ export function pathSegments(path: string): string[] {
     }
   }
   return segments;
+}
+
+/** Whether text can be one part of an address, such as a page's last part or an entry's name in its file. */
+export function isAddressSegment(text: string): boolean {
+  return SEGMENT.test(text);
 }
 
 /** Addresses used by Goodfellow itself, which pages can't use. */
@@ -70,4 +78,37 @@ export function pageOutputFile(path: string): string {
   if (segments.length === 0) return "index.html";
   if (segments.length === 1 && segments[0] === "404") return "404.html";
   return `${segments.join("/")}/index.html`;
+}
+
+/** A collection's settings file: `"videos"` → `content/collections/videos/_collection.json`. */
+export function collectionSettingsFile(collection: string): string {
+  return `${COLLECTIONS_DIR}/${collection}/${COLLECTION_SETTINGS_FILE}`;
+}
+
+/** An entry's file: `("videos", "easter-vigil")` → `content/collections/videos/easter-vigil.json`. */
+export function entryFile(collection: string, slug: string): string {
+  return `${COLLECTIONS_DIR}/${collection}/${slug}.json`;
+}
+
+/** The placeholder an entry's address pattern must contain, such as `/videos/{slug}`. */
+export const SLUG_PLACEHOLDER = "{slug}";
+
+/**
+ * Checks a collection's address pattern, such as `/videos/{slug}` or
+ * `/events/{slug}/details`. It must contain `{slug}` exactly once, as a whole
+ * part of the address. Returns why it can't be used, or `undefined` if it can.
+ */
+export function addressPatternProblem(pattern: string): string | undefined {
+  if (!pattern.startsWith("/")) return 'must start with "/".';
+  const segments = pattern.split("/").filter((segment) => segment !== "");
+  const slugs = segments.filter((segment) => segment === SLUG_PLACEHOLDER).length;
+  if (slugs !== 1) return `must contain ${SLUG_PLACEHOLDER} exactly once, such as /videos/${SLUG_PLACEHOLDER}.`;
+  const bad = segments.find((segment) => segment !== SLUG_PLACEHOLDER && !SEGMENT.test(segment));
+  if (bad !== undefined) return `can't contain "${bad}". Use lowercase letters, numbers and hyphens only.`;
+  return undefined;
+}
+
+/** An entry's address: `("/videos/{slug}", "easter-vigil")` → `/videos/easter-vigil`. */
+export function entryAddress(pattern: string, slug: string): string {
+  return normalizePagePath(pattern.replace(SLUG_PLACEHOLDER, slug));
 }

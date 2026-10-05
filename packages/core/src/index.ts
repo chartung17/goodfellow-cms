@@ -1,18 +1,40 @@
 export { defineConfig, type GoodfellowConfig } from "./config.js";
+export {
+  type Collection,
+  type Entry,
+  entryFieldProblems,
+  entryTitle,
+  formatFieldValue,
+  isDateValue,
+  isEmptyValue,
+  richTextToPlainText,
+  type SortOrder,
+  sortCollectionEntries,
+  sortEntries,
+} from "./content/collections.js";
 export { ContentError, type ContentProblem } from "./content/errors.js";
 export {
+  allPages,
   type ContentSource,
+  findEntry,
   loadSiteContent,
   type Page,
   parseContentFile,
   type SiteContent,
 } from "./content/load.js";
 export {
+  addressPatternProblem,
+  COLLECTION_SETTINGS_FILE,
+  COLLECTIONS_DIR,
   CONTENT_DIR,
   CUSTOM_CSS_FILE,
+  collectionSettingsFile,
+  entryAddress,
+  entryFile,
   FOOTER_FILE,
   HEADER_FILE,
   InvalidPathError,
+  isAddressSegment,
   isReservedPagePath,
   MEDIA_DIR,
   MENUS_FILE,
@@ -23,8 +45,17 @@ export {
   pagePathToFile,
   RESERVED_PAGE_PATHS,
   SITE_FILE,
+  SLUG_PLACEHOLDER,
 } from "./content/paths.js";
 export {
+  type CollectionField,
+  type CollectionFile,
+  collectionFileSchema,
+  type EntryFile,
+  entryFileSchema,
+  FIELD_TYPES,
+  type FieldOption,
+  type FieldType,
   type LayoutFile,
   layoutFileSchema,
   type MenuItem,
@@ -38,6 +69,7 @@ export {
   THEME_COLORS,
   type Theme,
   type ThemeColor,
+  TITLE_FIELD,
 } from "./content/schemas.js";
 export { serializeContent } from "./content/serialize.js";
 export {

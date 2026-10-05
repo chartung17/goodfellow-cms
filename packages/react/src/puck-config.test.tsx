@@ -1,6 +1,6 @@
 import type { ComponentConfig } from "@puckeditor/core";
 import { describe, expect, it } from "vitest";
-import { classNameField, createPuckConfig, withClassName } from "./puck-config.js";
+import { classNameField, createPuckConfig, templateOnly, withClassName } from "./puck-config.js";
 
 const plain: ComponentConfig<{ text: string }> = {
   fields: { text: { type: "text" } },
@@ -38,5 +38,18 @@ describe("createPuckConfig", () => {
       "className",
     ]);
     expect(createPuckConfig(config, "layout").root?.fields).toEqual({});
+  });
+
+  it("offers template-only blocks in templates alone", () => {
+    const config = {
+      blocks: { Plain: plain, Field: templateOnly({ ...plain }) },
+      categories: { all: { title: "All", components: ["Plain", "Field"] } },
+    };
+    const page = createPuckConfig(config, "page");
+    const template = createPuckConfig(config, "template");
+    expect(Object.keys(page.components)).toEqual(["Plain"]);
+    expect(page.categories?.all?.components).toEqual(["Plain"]);
+    expect(Object.keys(template.components)).toEqual(["Plain", "Field"]);
+    expect(Object.keys(template.root?.fields ?? {})).toContain("title");
   });
 });

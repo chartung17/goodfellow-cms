@@ -236,8 +236,8 @@ export function SettingsScreen({ tab }: { tab: SettingsTab }) {
   // The preview shows unpublished changes as they're made.
   const previewSettings = validation.settings ?? content.settings;
   const previewSite = useMemo<SiteContextValue>(
-    () => ({ settings: previewSettings, menus, path: "/" }),
-    [previewSettings, menus],
+    () => ({ settings: previewSettings, menus, path: "/", collections: content.collections }),
+    [previewSettings, menus, content.collections],
   );
   const previewStyles = useMemo(() => ({ theme: previewSettings.theme, customCss: css }), [previewSettings, css]);
   const home = content.pages.find((page) => page.path === "/");

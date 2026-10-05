@@ -1,15 +1,30 @@
-import { type Page, siteSettingsSchema } from "@goodfellow/core";
+import {
+  type Collection,
+  type CollectionFile,
+  collectionFileSchema,
+  type Entry,
+  type Page,
+  siteSettingsSchema,
+} from "@goodfellow/core";
 import { describe, expect, it } from "vitest";
 import {
+  addressPatternFor,
+  checkEntrySlug,
   checkPageAddress,
+  collectionSettingsChanges,
   customCssFileChange,
+  deleteCollectionChanges,
+  entryFileChange,
+  moveEntryChanges,
   movePageChanges,
+  newCollectionSettings,
   pageFileChange,
   pageTitle,
   siteSettingsFileChange,
   slugify,
   storedCss,
   storedData,
+  uniqueName,
   updateMenuLinks,
 } from "./changes.js";
 
@@ -131,5 +146,120 @@ describe("settings and CSS changes", () => {
     expect(storedCss("  \n")).toBe("");
     expect(customCssFileChange("a{}")).toEqual({ path: "content/styles/custom.css", content: "a{}\n" });
     expect(customCssFileChange("")).toEqual({ path: "content/styles/custom.css", delete: true });
+  });
+});
+
+describe("collections", () => {
+  const settings = collectionFileSchema.parse({
+    version: 1,
+    name: "Videos",
+    entryName: "Video",
+    path: "/videos/{slug}",
+    fields: [
+      { name: "title", label: "Title", type: "text" },
+      {
+        name: "kind",
+        label: "Kind",
+        type: "select",
+        options: [
+          { value: "homily", label: "Homily" },
+          { value: "talk", label: "Talk" },
+        ],
+      },
+      { name: "speaker", label: "Speaker", type: "text" },
+    ],
+  });
+  const entry = (slug: string, fields: Record<string, unknown>): Entry => ({
+    collection: "videos",
+    slug,
+    file: `content/collections/videos/${slug}.json`,
+    path: `/videos/${slug}`,
+    content: { version: 1, fields },
+  });
+  const videos: Collection = {
+    id: "videos",
+    file: "content/collections/videos/_collection.json",
+    settings,
+    entries: [
+      entry("easter", { title: "Easter", kind: "homily", speaker: "Fr. Lee" }),
+      entry("advent", { title: "Advent", kind: "talk" }),
+    ],
+  };
+
+  it("leaves empty fields out of entry files", () => {
+    expect(entryFileChange("videos", "easter", { title: "Easter", speaker: "", text: "<p></p>", count: 0 })).toEqual({
+      path: "content/collections/videos/easter.json",
+      content: '{\n  "version": 1,\n  "fields": {\n    "count": 0,\n    "title": "Easter"\n  }\n}\n',
+    });
+  });
+
+  it("removes deleted fields and choices from every entry in the same save", () => {
+    const next = {
+      ...settings,
+      fields: [settings.fields[0], { ...settings.fields[1], options: [{ value: "homily", label: "Homily" }] }],
+    } as CollectionFile;
+    const changes = collectionSettingsChanges(videos, next);
+    expect(changes.map((change) => change.path)).toEqual([
+      "content/collections/videos/_collection.json",
+      "content/collections/videos/easter.json",
+      "content/collections/videos/advent.json",
+    ]);
+    expect(changes[1]).toMatchObject({ content: expect.not.stringContaining("speaker") });
+    expect(changes[2]).toMatchObject({ content: expect.not.stringContaining("talk") });
+  });
+
+  it("checks an entry's address against the whole site", () => {
+    const addresses = ["/", "/videos/easter", "/videos/advent", "/videos/live"];
+    expect(checkEntrySlug("lent", videos, addresses)).toEqual({ ok: true, slug: "lent", path: "/videos/lent" });
+    expect(checkEntrySlug("easter", videos, addresses)).toEqual({ ok: false, problem: "taken" });
+    expect(checkEntrySlug("live", videos, addresses)).toEqual({ ok: false, problem: "taken" });
+    expect(checkEntrySlug("Easter Vigil", videos, addresses)).toEqual({ ok: false, problem: "invalid" });
+    expect(checkEntrySlug("easter", videos, addresses, videos.entries[0])).toMatchObject({ ok: true });
+  });
+
+  it("moves an entry and the menu links to it", () => {
+    const easter = videos.entries[0] as Entry;
+    const changes = moveEntryChanges(
+      easter,
+      "easter-sunday",
+      "/videos/easter-sunday",
+      { main: [{ label: "Easter", href: "/videos/easter" }] },
+      true,
+    );
+    expect(changes.map((change) => change.path)).toEqual([
+      "content/collections/videos/easter.json",
+      "content/collections/videos/easter-sunday.json",
+      "content/menus.json",
+    ]);
+    expect(changes[2]).toMatchObject({ content: expect.stringContaining('"href": "/videos/easter-sunday"') });
+  });
+
+  it("starts new collections with a title, some text and a template showing them", () => {
+    const created = newCollectionSettings({
+      name: "Events",
+      entryName: "Event",
+      path: "/events/{slug}",
+      withEntryFields: true,
+    });
+    expect(collectionFileSchema.parse(created).fields.map((field) => field.name)).toEqual(["title", "text"]);
+    expect(created.template.content.map((block) => block.props.field)).toEqual(["title", "text"]);
+    expect(
+      newCollectionSettings({ name: "Staff", entryName: "Person", withEntryFields: false }).template.content,
+    ).toEqual([]);
+  });
+
+  it("names things uniquely", () => {
+    expect(uniqueName("talk", ["talk", "talk-2"])).toBe("talk-3");
+    expect(uniqueName("", [], "item")).toBe("item");
+    expect(addressPatternFor("/videos/")).toBe("/videos/{slug}");
+    expect(addressPatternFor("events")).toBe("/events/{slug}");
+  });
+
+  it("deletes a collection with its entries", () => {
+    expect(deleteCollectionChanges(videos)).toEqual([
+      { path: "content/collections/videos/_collection.json", delete: true },
+      { path: "content/collections/videos/easter.json", delete: true },
+      { path: "content/collections/videos/advent.json", delete: true },
+    ]);
   });
 });

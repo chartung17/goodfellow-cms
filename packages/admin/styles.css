@@ -384,6 +384,8 @@ body,
 
 .gfa-editor {
   position: relative;
+  display: flex;
+  flex-direction: column;
   height: 100%;
 }
 
@@ -622,4 +624,101 @@ body,
 
 .gfa-deploy a {
   color: inherit;
+}
+
+.gfa-tabs-title {
+  align-self: center;
+  margin: 0 8px 0 4px;
+  font-weight: 600;
+}
+
+.gfa-layout-body {
+  flex: 1;
+  min-height: 0;
+  overflow: auto;
+}
+
+.gfa-layout-body > .gfa-editor {
+  height: 100%;
+}
+
+.gfa-editor-puck {
+  flex: 1;
+  min-height: 0;
+}
+
+.gfa-editor-notice {
+  padding: 8px 16px;
+  background: var(--gfa-surface);
+  border-bottom: 1px solid var(--gfa-border);
+  font-size: 14px;
+}
+
+.gfa-template-help p {
+  display: inline;
+  margin: 0 8px 0 0;
+  color: var(--gfa-muted);
+}
+
+.gfa-template-help ul {
+  display: inline;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.gfa-template-help-item {
+  display: inline-block;
+  margin: 2px 12px 2px 0;
+}
+
+.gfa-template-help code {
+  padding: 1px 4px;
+  border-radius: 4px;
+  background: var(--gfa-bg);
+  border: 1px solid var(--gfa-border);
+}
+
+.gfa-field-editor {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.gfa-field-editor-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr auto;
+  gap: 8px;
+  align-items: start;
+}
+
+.gfa-choices {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin: 0;
+  padding: 0;
+  border: 0;
+}
+
+.gfa-choices > .gfa-button {
+  align-self: flex-start;
+}
+
+/* Inputs and help text inside Puck's sidebar, for entry fields Puck has no input of its own for. */
+.gfa-puck-input {
+  box-sizing: border-box;
+  width: 100%;
+  padding: 10px 12px;
+  border: 1px solid var(--puck-color-grey-09, #dcdcdc);
+  border-radius: 4px;
+  background: var(--puck-color-white, #fff);
+  font: inherit;
+  font-size: 14px;
+}
+
+.gfa-puck-hint {
+  margin: 6px 0 0;
+  color: var(--gfa-muted);
+  font-size: 13px;
 }

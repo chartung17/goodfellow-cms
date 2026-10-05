@@ -15,6 +15,10 @@
       {
         "href": "/about",
         "label": "About"
+      },
+      {
+        "href": "/news",
+        "label": "News"
       }
     ]
   }

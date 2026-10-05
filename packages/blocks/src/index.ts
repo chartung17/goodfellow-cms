@@ -1,8 +1,16 @@
 import type { Config } from "@puckeditor/core";
+import { CollectionList, EntryField } from "./collections.js";
 import { Button, Heading, Image, Text } from "./content.js";
 import { Flex, Grid, Section, Space } from "./layout.js";
 import { Menu, SiteBrand } from "./navigation.js";
 
+export {
+  CollectionList,
+  type CollectionListProps,
+  EntryField,
+  type EntryFieldProps,
+  listedEntries,
+} from "./collections.js";
 export {
   Button,
   type ButtonProps,
@@ -29,11 +37,25 @@ export { Menu, type MenuProps, SiteBrand, type SiteBrandProps } from "./navigati
  * Every built-in block, keyed by the name stored in content files. Never rename
  * a key: existing pages refer to blocks by these names.
  */
-export const blocks = { Section, Grid, Flex, Space, Heading, Text, Button, Image, Menu, SiteBrand };
+export const blocks = {
+  Section,
+  Grid,
+  Flex,
+  Space,
+  Heading,
+  Text,
+  Button,
+  Image,
+  Menu,
+  SiteBrand,
+  CollectionList,
+  EntryField,
+};
 
 /** Groups for the editor's block list. */
 export const categories = {
   layout: { title: "Layout", components: ["Section", "Grid", "Flex", "Space"] },
   content: { title: "Content", components: ["Heading", "Text", "Button", "Image"] },
   navigation: { title: "Navigation", components: ["Menu", "SiteBrand"] },
+  collections: { title: "Collections", components: ["CollectionList", "EntryField"] },
 } satisfies Config["categories"];
