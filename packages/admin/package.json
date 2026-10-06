@@ -26,7 +26,8 @@
   "scripts": {
     "build": "tsdown",
     "typecheck": "tsc -p tsconfig.json",
-    "test": "vitest run"
+    "test": "vitest run",
+    "update-fonts": "node scripts/google-fonts.mjs"
   },
   "dependencies": {
     "@goodfellow/ai": "workspace:*",

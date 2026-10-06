@@ -39,7 +39,7 @@ Planned for the first release:
 - **Deploy setups** for GitHub Pages, GitLab Pages and Vercel, including a nightly rebuild for time-based content.
 - **Works with or without a framework.** A standalone command-line tool builds the site with no framework at all, or the site can be part of a Next.js app.
 
-Planned for later: OAuth sign-in for GitHub via a small Cloudflare Worker, a Claude connector for editing the site from a chat, more component libraries (shadcn first), review workflows (pull/merge requests from the admin panel), per-user permissions, import/export, plugins and themes, and Bitbucket support.
+Planned for later: OAuth sign-in for GitHub via a small Cloudflare Worker, a Claude connector for editing the site from a chat, review workflows (pull/merge requests from the admin panel), per-user permissions, import/export, plugins and themes, and Bitbucket support.
 
 ## Requirements and limits
 
@@ -107,7 +107,7 @@ To put a site online, follow [the starter's README](templates/starter/README.md)
 - **Content is fixed HTML.** Content a block passes to a Client Component (`children`) arrives as HTML, so the component can show, hide or move it, but can't look inside it or change it with `React.Children` or `cloneElement`.
 - **Fewer kinds of props.** Props must be JSON: no dates, `Map`s, `Set`s or promises, which Next.js can pass.
 - **Every page is a full page load.** Moving to another page reloads it, so React and the page's components start again. Next.js moves between pages without reloading.
-- **Other packages' Client Components** need re-exporting from a `"use client"` file of the site's, unless they come from a block pack. Next.js uses them as they are.
+- **Other packages' Client Components** need re-exporting from a `"use client"` file of the site's, unless they come from a package of blocks. Next.js uses them as they are.
 
 Next.js suits developers who want any of these, client-side navigation, their own Next.js pages beside the site's, or Next.js's ecosystem. It costs more: each page loads Next.js's JavaScript and carries its own content again as data (plus the site's data when it has Client Components), builds take longer, and there are more dependencies to keep up to date. Most of Next.js's server features don't apply, because Goodfellow sites are static. For a content site, with a few interactive parts at most, `goodfellow build` is lighter and simpler.
 
@@ -130,7 +130,7 @@ The admin panel is at `/admin` on the live site, and while `goodfellow dev` is r
 - **Pages:** create pages, edit them in Puck, change a page's address (updating menu links to it), and delete pages. The editor shows the site's header and footer around the page, styled exactly like the live site.
 - **Collections:** groups of similar items, such as videos, events or staff. Create a collection, choose its fields (short or long text, formatted text, numbers, dates, links, images and choices from a list), and design the page every item shares in Puck. Then add items by filling in their fields, with a live preview of the item's page. A link field can point to an uploaded file, such as a PDF. Removing a field removes it from every item in the same publish.
 - **Header & footer:** edit them in Puck, like pages.
-- **Site settings:** the site's name, address, logo and icons; contact details; colors, fonts and corner rounding; menus; and custom CSS. A preview of the home page shows changes as you type.
+- **Site settings:** the site's name, address, logo and icons; contact details; colors, fonts and corner rounding; menus; and custom CSS. A preview of the home page shows changes as you type, and Undo and Redo work across every tab. Fonts are chosen from a searchable list of Google Fonts, each shown in its own typeface.
 - **Live styling:** CSS classes typed into a block, and custom CSS (including Tailwind's `@apply`), take effect in the editor immediately, before the site is rebuilt.
 - **Signing in:** on the live site, editors sign in with GitHub or GitLab. GitHub uses an access token, created from a link that fills in the right permissions. GitLab offers one-click sign-in once the site's OAuth application is registered, with an access token as the alternative. Editors choose whether to stay signed in on the device.
 - **Publishing:** each Publish saves every changed file in one commit to the site's main branch. If someone else published changes to other files in the meantime, publishing still goes ahead; if they changed the same files, it stops instead of overwriting their work.
@@ -213,7 +213,7 @@ They run in the browser however the site is built. With `goodfellow build` and `
 - **Props** must be plain values: text, numbers, `true` and `false`, and lists and objects of these. A block can't pass a function, such as an `onClick` handler, so handlers go inside the Client Component.
 - **Content** passed as `children` (or any prop holding JSX) is rendered by the block, and stays as it is in the browser. Client Components in it run on their own.
 - **`useSite()`** works in Client Components, so pages with them include the site's settings, menus and collections for the browser. Use `SiteLink` and `SiteImage` for links and images, as in any block.
-- **Packages:** Client Components from block packs (packages that use `@goodfellow/react`) become islands like the site's own. To use another package's Client Component in a block, re-export it from a `"use client"` file of the site's: `"use client"; export { Carousel } from "some-carousel";`.
+- **Packages:** Client Components from packages of blocks (packages that use `@goodfellow/react`) become islands like the site's own. To use another package's Client Component in a block, re-export it from a `"use client"` file of the site's: `"use client"; export { Carousel } from "some-carousel";`.
 
 Each page with a Client Component loads React, so use HTML and CSS where they're enough: `<details>` for something that opens and closes, `:hover` and `:focus-within` for menus. Islands also have [limits](#nextjs) that Next.js doesn't, such as not sharing React context with each other.
 
@@ -272,11 +272,12 @@ my-site/
 7. **Starters** (done). `create-goodfellow`, which creates a site and sets up its storage and host, and an example parish site with collections and custom blocks.
 8. **Next.js adapter** (done). Goodfellow pages and the admin panel in a Next.js app, exported as static files, with a Next.js starter. Links use `next/link` and images `next/image`, sites can be served from a subfolder, and blocks can use Client Components.
 9. **Interactive blocks everywhere** (done). Client Components in blocks (`"use client"`) run in the browser on sites built with `goodfellow build` too, not only with Next.js.
-10. **Demo mode.** A site whose config sets `demo: true` (it can only be turned on in the config, never from the admin panel) opens its admin panel to anyone, with no sign-in. Visitors can try everything they can, from editing pages and collections to the media library, settings and the AI assistant, but nothing can be published, and their changes stay in their own browser. The admin panel reads the site's content without signing in, so the repository must be public. The documentation site will link to a demo.
-11. **Documentation site.** Guides for site owners and editors, plus reference docs for developers. Includes each host's rules for commercial sites on its free plan, kept up to date.
-12. **Site setup without a developer.** A web page where anyone can create a site from a starter, store it on GitHub or GitLab, and put it online with GitHub Pages, GitLab Pages or Vercel. It asks what the site is for and recommends a host whose free plan allows it, such as GitLab Pages for a business. Builds work out which repository they're in, so nobody has to edit the config.
-13. **Custom domains.** Connect a domain from the admin panel. Goodfellow sets the domain on the host where it can, lists the records to add at the domain's registrar, with guides for popular registrars, and shows when the domain is working.
-14. **Running a site without a developer.**
+10. **shadcn blocks.** A registry of Goodfellow blocks built with [shadcn/ui](https://ui.shadcn.com), installed into the site without a developer. When creating a site, admins choose "Recommended" or "Built-in blocks only"; the admin panel lets them add and remove individual blocks. Others can publish registries of blocks built with other libraries, in a documented format.
+11. **Demo mode.** A site whose config sets `demo: true` (it can only be turned on in the config, never from the admin panel) opens its admin panel to anyone, with no sign-in. Visitors can try everything they can, from editing pages and collections to the media library, settings and the AI assistant, but nothing can be published, and their changes stay in their own browser. The admin panel reads the site's content without signing in, so the repository must be public. The documentation site will link to a demo.
+12. **Documentation site.** Guides for site owners and editors, plus reference docs for developers. Includes each host's rules for commercial sites on its free plan, kept up to date.
+13. **Site setup without a developer.** A web page where anyone can create a site from a starter, store it on GitHub or GitLab, and put it online with GitHub Pages, GitLab Pages or Vercel. It asks what the site is for and recommends a host whose free plan allows it, such as GitLab Pages for a business. Builds work out which repository they're in, so nobody has to edit the config.
+14. **Custom domains.** Connect a domain from the admin panel. Goodfellow sets the domain on the host where it can, lists the records to add at the domain's registrar, with guides for popular registrars, and shows when the domain is working.
+15. **Running a site without a developer.**
     - Invite and remove editors from the admin panel.
     - Version history, with a way to restore an earlier version of a page.
     - Automatic updates: a scheduled job updates Goodfellow and publishes the update only if the site still builds.

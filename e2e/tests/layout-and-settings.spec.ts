@@ -36,6 +36,78 @@ test("previews theme changes and custom CSS before publishing, then publishes th
   expect(readSiteFile("content/styles/custom.css")).toBe(".gf-main h2 { @apply italic; }\n");
 });
 
+test("undoes and redoes changes on every tab, with typing undone as one step", async ({ page }) => {
+  await page.goto("/admin#/settings/theme");
+  const undo = page.getByRole("button", { name: "Undo", exact: true });
+  const redo = page.getByRole("button", { name: "Redo", exact: true });
+  await expect(undo).toBeDisabled();
+  const color = page.getByRole("textbox", { name: "Main color", exact: true });
+  const colorBefore = await color.inputValue();
+  await color.fill("#7c2d12");
+
+  await page.getByRole("link", { name: "Custom CSS" }).click();
+  const css = page.getByRole("textbox", { name: "Custom CSS" });
+  const cssBefore = await css.inputValue();
+  await css.press("ControlOrMeta+End");
+  await css.pressSequentially("h1 { color: red; }");
+  await undo.click();
+  await expect(css).toHaveValue(cssBefore);
+
+  await page.getByRole("link", { name: "Colors & fonts" }).click();
+  await expect(color).toHaveValue("#7c2d12");
+  // Outside text fields, the keyboard works too.
+  await page.getByRole("heading", { name: "Site settings" }).click();
+  await page.keyboard.press("ControlOrMeta+z");
+  await expect(color).toHaveValue(colorBefore);
+  await expect(undo).toBeDisabled();
+  await redo.click();
+  await expect(color).toHaveValue("#7c2d12");
+
+  await page.getByRole("button", { name: "Publish" }).click();
+  await expect(page.getByText("Published.", { exact: true })).toBeVisible();
+  expect(readJson("content/site.json")).toMatchObject({ theme: { colors: { primary: "#7c2d12" } } });
+  expect(readSiteFile("content/styles/custom.css")).not.toContain("color: red");
+});
+
+test("chooses fonts from a searchable list of Google Fonts", async ({ page }) => {
+  await page.goto("/admin#/settings/theme");
+  const headings = page.getByRole("combobox", { name: "Headings" });
+  await expect(headings).toHaveValue("Fraunces");
+  await headings.click();
+  await headings.fill("playf");
+  await page
+    .getByRole("option", { name: /^Playfair Display/ })
+    .first()
+    .click();
+  await expect(headings).toHaveValue("Playfair Display");
+  await expect(page.frameLocator(".gfa-preview iframe").getByRole("heading", { name: "Welcome to my site" })).toHaveCSS(
+    "font-family",
+    /Playfair Display/,
+  );
+
+  // The keyboard works as well.
+  const text = page.getByRole("combobox", { name: "Text" });
+  await text.click();
+  await text.fill("Lora");
+  await page.keyboard.press("Enter");
+  await expect(text).toHaveValue("Lora");
+
+  await page.getByRole("button", { name: "Publish" }).click();
+  await expect(page.getByText("Published.", { exact: true })).toBeVisible();
+  expect(readJson("content/site.json")).toMatchObject({
+    theme: { fonts: { heading: "Playfair Display", body: "Lora" } },
+  });
+
+  // "Site default" takes a font back out.
+  await headings.click();
+  await page.getByRole("option", { name: /^Site default/ }).click();
+  await expect(headings).toHaveValue("Site default");
+  await page.getByRole("button", { name: "Publish" }).click();
+  await expect(page.getByText("Published.", { exact: true })).toBeVisible();
+  expect(readJson("content/site.json")).toMatchObject({ theme: { fonts: { body: "Lora" } } });
+  expect(readSiteFile("content/site.json")).not.toContain('"heading"');
+});
+
 test("won't publish invalid settings", async ({ page }) => {
   await page.goto("/admin#/settings/general");
   const before = readSiteFile("content/site.json");

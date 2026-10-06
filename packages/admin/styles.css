@@ -128,6 +128,12 @@ body,
   margin-bottom: 16px;
 }
 
+.gfa-header-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
 .gfa-screen-header h1,
 .gfa-screen > h1 {
   margin: 0;
@@ -893,4 +899,55 @@ body,
   min-height: 30px;
   padding: 0 10px;
   font-size: 13px;
+}
+
+.gfa-font-picker {
+  position: relative;
+}
+
+.gfa-font-list {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  right: 0;
+  z-index: 20;
+  max-height: 320px;
+  margin: 4px 0 0;
+  padding: 4px;
+  overflow-y: auto;
+  list-style: none;
+  border: 1px solid var(--gfa-border);
+  border-radius: var(--gfa-radius);
+  background: var(--gfa-surface);
+  box-shadow: 0 8px 24px rgb(15 23 42 / 0.12);
+}
+
+.gfa-font-option {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 8px 10px;
+  border-radius: 4px;
+  font-size: 17px;
+  cursor: pointer;
+}
+
+.gfa-font-option-active {
+  background: var(--gfa-bg);
+}
+
+.gfa-font-option[aria-selected="true"] {
+  font-weight: 600;
+}
+
+.gfa-font-category,
+.gfa-font-empty {
+  color: var(--gfa-muted);
+  font-size: 13px;
+  font-weight: 400;
+}
+
+.gfa-font-empty {
+  padding: 8px 10px;
 }
