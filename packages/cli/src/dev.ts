@@ -195,6 +195,10 @@ function devPlugin(root: string, styles: () => StylesEntries): Plugin {
               stylesheets: [`${devUrl(root, styles().site)}?direct`],
             });
             res.statusCode = match.status;
+            if (match.status === 404) {
+              // Says which address wasn't found, since the site's own "not found" page doesn't.
+              server.config.logger.warn(`Page not found: ${JSON.stringify(url.pathname)}`, { timestamp: true });
+            }
             const transformed = await server.transformIndexHtml(url.pathname, html);
             res.end(transformed.replace("</body>", `${RELOAD_ON_CONTENT_CHANGE}</body>`));
           } catch (error) {
