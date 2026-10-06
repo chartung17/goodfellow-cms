@@ -11,9 +11,11 @@ import {
 } from "@goodfellow/core";
 import { PageBody, type SiteContextValue } from "@goodfellow/react";
 import type { Data } from "@puckeditor/core";
-import { useMemo, useState } from "react";
+import { useCallback, useMemo, useState } from "react";
 import { useAdmin, useSiteContent } from "./admin-context.js";
 import { customCssFileChange, menusFileChange, siteSettingsFileChange, storedCss } from "./changes.js";
+import { FontPicker } from "./font-picker.js";
+import { useHistory } from "./history.js";
 import { MediaField } from "./media-library.js";
 import { MenusEditor } from "./menus-editor.js";
 import { PreviewFrame } from "./preview.js";
@@ -182,13 +184,13 @@ function ThemeTab({
 
       <h2 className="gfa-section-title">{t("theme.fonts")}</h2>
       <p className="gfa-hint">{t("theme.fontsHint")}</p>
-      <TextField
+      <FontPicker
         label={t("theme.headingFont")}
         value={theme.fonts.heading ?? ""}
         error={errors["theme.fonts.heading"]}
         onChange={(heading) => onChange({ ...draft, theme: { ...theme, fonts: { ...theme.fonts, heading } } })}
       />
-      <TextField
+      <FontPicker
         label={t("theme.bodyFont")}
         value={theme.fonts.body ?? ""}
         error={errors["theme.fonts.body"]}
@@ -231,9 +233,17 @@ export function SettingsScreen({ tab }: { tab: SettingsTab }) {
   const t = useStrings();
   const { pageConfig, layoutConfig, publish, reload } = useAdmin();
   const { content } = useSiteContent();
-  const [settings, setSettings] = useState<SiteSettings>(content.settings);
-  const [menus, setMenus] = useState<Menus>(content.menus);
-  const [css, setCss] = useState(content.customCss);
+  // One history for every tab, so undo takes back the last change wherever it was made.
+  const history = useHistory<{ settings: SiteSettings; menus: Menus; css: string }>({
+    settings: content.settings,
+    menus: content.menus,
+    css: content.customCss,
+  });
+  const { settings, menus, css } = history.present;
+  const { update } = history;
+  const setSettings = useCallback((settings: SiteSettings) => update((form) => ({ ...form, settings })), [update]);
+  const setMenus = useCallback((menus: Menus) => update((form) => ({ ...form, menus })), [update]);
+  const setCss = useCallback((css: string) => update((form) => ({ ...form, css })), [update]);
   const [showErrors, setShowErrors] = useState(false);
   const [status, setStatus] = useState<
     | { type: "idle" | "publishing" | "done" | "invalid" }
@@ -281,9 +291,21 @@ export function SettingsScreen({ tab }: { tab: SettingsTab }) {
       <div className="gfa-split-main">
         <div className="gfa-screen-header">
           <h1>{t("settings.title")}</h1>
-          <Button variant="primary" disabled={status.type === "publishing" || !dirty} onClick={() => void onPublish()}>
-            {status.type === "publishing" ? t("publish.publishing") : t("publish.button")}
-          </Button>
+          <div className="gfa-header-actions">
+            <Button variant="ghost" title={t("action.undoHint")} disabled={!history.canUndo} onClick={history.undo}>
+              {t("action.undo")}
+            </Button>
+            <Button variant="ghost" title={t("action.redoHint")} disabled={!history.canRedo} onClick={history.redo}>
+              {t("action.redo")}
+            </Button>
+            <Button
+              variant="primary"
+              disabled={status.type === "publishing" || !dirty}
+              onClick={() => void onPublish()}
+            >
+              {status.type === "publishing" ? t("publish.publishing") : t("publish.button")}
+            </Button>
+          </div>
         </div>
         {status.type === "done" && !dirty && (
           <p className="gfa-notice gfa-notice-success" role="status">

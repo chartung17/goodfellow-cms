@@ -71,6 +71,8 @@ Content files are the product's data format; treat changes to them like API chan
 - **Navigation:** link between screens with `AppLink`, which asks before leaving unpublished changes. Screens with unpublished changes call `useUnsavedChanges()`.
 - **Previews:** previews render in iframes styled by `usePreviewStyles()`: the site's CSS plus the theme and custom CSS being edited, with `@tailwindcss/browser` generating classes the compiled CSS doesn't have yet. It also keeps media showing (see Media).
 - **Testing Puck:** Puck renders hidden copies of its fields, so tests select visible ones (`:visible`) and click blocks through their `[data-puck-component]` handle.
+- **Fonts:** Site settings offers the families in `src/google-fonts.ts`, which `pnpm --filter @goodfellow/admin update-fonts` (`scripts/google-fonts.mjs`) writes from Google Fonts' list; commit what it writes. The list is loaded only when a font picker opens.
+- **Undo:** forms with their own history use `useHistory()` from `history.ts`, which joins typing in one field into one step and handles Ctrl+Z outside text fields.
 - **Dev server watching:** `content/` and `public/media/` are excluded from Vite's watcher, because Tailwind's Vite plugin reloads every open page when a file it scans changes. That would reload the admin panel on every publish. `content/` is watched separately, and `goodfellow dev` serves `/media/` from disk itself.
 
 ## Next.js
