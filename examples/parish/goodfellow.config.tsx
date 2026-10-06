@@ -2,15 +2,18 @@ import { blocks, categories } from "@goodfellow/blocks";
 import { defineConfig } from "@goodfellow/core";
 // import { github } from "@goodfellow/github";
 // import { gitlab } from "@goodfellow/gitlab";
+import { installedBlocks, installedCategories } from "./blocks/installed";
 import { MassTimes } from "./blocks/mass-times";
 import { Notice } from "./blocks/notice";
 import { Scripture } from "./blocks/scripture";
 
 export default defineConfig({
-  // The built-in blocks, plus this site's own. Never rename a key: pages refer to blocks by it.
-  blocks: { ...blocks, MassTimes, Scripture, Notice },
+  // The built-in blocks, those installed from the admin panel's Blocks screen, and this site's own.
+  // Never rename a key: pages refer to blocks by it.
+  blocks: { ...blocks, ...installedBlocks, MassTimes, Scripture, Notice },
   categories: {
     ...categories,
+    ...installedCategories,
     parish: { title: "Parish", components: ["MassTimes", "Scripture", "Notice"] },
   },
 
