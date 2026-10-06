@@ -371,7 +371,14 @@ export async function planInstall(options: InstallOptions): Promise<Plan & { ite
     queue.push(...item.registryDependencies);
   }
 
-  const allowed = new Set([...(options.packages ?? REGISTRY_PACKAGES), "react", "react-dom"]);
+  // Every site has React, Puck and Goodfellow's renderer too.
+  const allowed = new Set([
+    ...(options.packages ?? REGISTRY_PACKAGES),
+    "react",
+    "react-dom",
+    "@goodfellow/react",
+    "@puckeditor/core",
+  ]);
   const missing = [
     ...new Set(items.flatMap(({ item }) => item.dependencies.map(packageName)).filter((name) => !allowed.has(name))),
   ];

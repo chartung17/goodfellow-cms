@@ -32,6 +32,8 @@ The News page and its stories are an example of a collection: a group of similar
 
 Your own Next.js pages can go beside these, in `app/`, and import from the project root as `@/`, such as `@/lib/site`.
 
+More blocks, such as an FAQ, tabs and a pricing table, can be added on the admin panel's **Blocks** screen, which publishes their code into `blocks/installed/` and the shadcn components they use into `components/ui/`. See [Blocks from block registries](https://github.com/chartung17/goodfellow-cms#blocks-from-block-registries).
+
 Blocks are React components in `blocks/`, added to the editor in `goodfellow.config.tsx`. For links and images, use `SiteLink` and `SiteImage` from `@goodfellow/react` rather than `<a>` and `<img>`, so they follow the site's address and use `next/link` and `next/image`. Read the site's settings, menus and collections with `useSite()`.
 
 Interactive parts of a block go in a Client Component: a file starting with `"use client"`, which can use any React hooks and runs in the browser. Pass it plain values and content such as `children`, not functions. `useSite()` works there too.
