@@ -3,10 +3,21 @@ import { join } from "node:path";
 import { test as base, expect, type Page } from "@playwright/test";
 import { resetContent, site } from "../scripts/site.mjs";
 
+/**
+ * Waits for a dev server to load the site's code again after it changed on disk. Until its
+ * watcher has seen every change, it can mix old modules with new ones.
+ */
+export async function waitForCode(page: Page, url = "/"): Promise<void> {
+  await page.waitForTimeout(1_000);
+  await expect(async () => {
+    expect((await page.request.get(url)).status()).toBe(200);
+  }).toPass({ timeout: 30_000 });
+}
+
 /** Every test starts from the starter template's content. */
 export const test = base.extend({
   page: async ({ page }, use) => {
-    resetContent();
+    if (resetContent()) await waitForCode(page);
     await use(page);
   },
 });

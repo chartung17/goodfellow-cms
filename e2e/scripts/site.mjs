@@ -23,18 +23,26 @@ export const site = join(here, "../.site");
 /** Folders that installing blocks from the admin panel's Blocks screen writes to. */
 const INSTALLED_CODE = ["components", "lib", "hooks"];
 
-/** Resets a site's editable files to those of `from`: content, media and installed blocks. */
+/**
+ * Resets a site's editable files to those of `from`: content, media and installed blocks. Returns
+ * whether it reset blocks' code, which a running dev server takes a moment to notice.
+ */
 function resetEditable(root, from) {
-  for (const dir of ["content", "public", "blocks/installed", ...INSTALLED_CODE]) {
+  // Code is only reset when a test added blocks (or the site is new), so other tests don't make the dev
+  // server reload modules.
+  const hadBlocks = existsSync(join(root, "blocks/installed/installed.json"));
+  const resetCode = hadBlocks || !existsSync(join(root, "blocks/installed/index.ts"));
+  for (const dir of ["content", "public", ...(resetCode ? ["blocks/installed", ...INSTALLED_CODE] : [])]) {
     rmSync(join(root, dir), { recursive: true, force: true });
     // Some sites have files of their own there, such as the Next.js starter's lib/site.ts.
     if (existsSync(join(from, dir))) cpSync(join(from, dir), join(root, dir), { recursive: true });
   }
+  return hadBlocks;
 }
 
-/** Resets the test site's editable files to the starter's. */
+/** Resets the test site's editable files to the starter's. Returns whether it reset blocks' code. */
 export function resetContent() {
-  resetEditable(site, starter);
+  return resetEditable(site, starter);
 }
 
 /** Blocks with Client Components, which every test site has besides the starter's. */
@@ -126,9 +134,9 @@ export function starterFiles() {
 export const nextTemplate = join(here, "../../templates/next");
 export const nextSite = join(here, "../.site-next");
 
-/** Resets the Next.js test site's editable files to the template's. */
+/** Resets the Next.js test site's editable files to the template's. Returns whether it reset blocks' code. */
 export function resetNextContent() {
-  resetEditable(nextSite, nextTemplate);
+  return resetEditable(nextSite, nextTemplate);
 }
 
 /** Copies the Next.js template to `dir`, using the template's installed packages. */

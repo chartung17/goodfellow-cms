@@ -5,7 +5,7 @@ import { fakeGitHub } from "@goodfellow/github/testing";
 import { expect as baseExpect, test as baseTest, type Page } from "@playwright/test";
 import { nextSite, resetNextContent, site } from "../scripts/site.mjs";
 import { files, GITHUB_SITE, routeToFake } from "./backends.js";
-import { test, writeSiteFile } from "./helpers.js";
+import { test, waitForCode, writeSiteFile } from "./helpers.js";
 
 // Adding a block rebuilds the dev server's modules, so allow for that.
 const expect = baseExpect.configure({ timeout: 30_000 });
@@ -34,9 +34,11 @@ async function addFaq(page: Page) {
   await page.goto("/admin#/blocks");
   await expect(page.getByRole("heading", { name: "Interactive" })).toBeVisible();
   await expect(page.getByRole("listitem").filter({ hasText: "FAQ" }).getByText("Recommended")).toBeVisible();
+  // The dev server reloads the admin panel once the block's code is on disk, which clears this.
+  await page.evaluate(() => Object.assign(window, { beforeAdding: true }));
   await page.getByRole("button", { name: "Add FAQ" }).click();
-  // The dev server reloads the admin panel once the block's code is on disk.
   await expect.poll(() => onDisk("blocks/installed/installed.json")).toBe(true);
+  await expect.poll(() => page.evaluate(() => "beforeAdding" in window).catch(() => true)).toBe(false);
 }
 
 test("adds a block from Goodfellow's registry, which the editor then offers and the site runs", async ({ page }) => {
@@ -74,7 +76,8 @@ test("won't remove a block that's in use, and removes it once it isn't", async (
   await addFaq(page);
   writeSiteFile("content/pages/help.json", `${JSON.stringify(faqPage, null, 2)}\n`);
 
-  await page.goto("/admin#/blocks");
+  // Loads the site again, with the new page.
+  await page.reload();
   await page.getByRole("button", { name: "Remove FAQ" }).click();
   const dialog = page.getByRole("dialog");
   await expect(dialog).toContainText("FAQ is used in: Help (/help)");
@@ -153,6 +156,6 @@ baseTest("adds a block to a Next.js site, which then runs it", async ({ page }) 
       baseExpect(await answer.isVisible()).toBe(true);
     }).toPass({ timeout: 60_000 });
   } finally {
-    resetNextContent();
+    if (resetNextContent()) await waitForCode(page, "http://localhost:4403/about/");
   }
 });
