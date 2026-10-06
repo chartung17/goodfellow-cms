@@ -6,6 +6,8 @@ export default defineConfig([
     format: "esm",
     dts: true,
     platform: "neutral",
+    // One file per module, so bundles for the browser only include what they use, such as `withBase()` without the content schemas.
+    unbundle: true,
   },
   {
     // Node only: reads and writes the site's files on disk.

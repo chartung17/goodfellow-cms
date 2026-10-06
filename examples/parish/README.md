@@ -33,7 +33,7 @@ On your own computer, the admin panel saves straight to the files in `content/`.
   - **Scripture quote:** a short passage with its reference. The example uses the Douay-Rheims Bible (Challoner revision), a Catholic translation in the public domain; most modern translations need permission to quote.
   - **Notice:** an announcement that stands out from the text around it.
 
-  Each block is a React component plus the fields the editor shows for it. They're added to the editor in `goodfellow.config.tsx`. Never rename a block's key or its fields once pages use them, since content files refer to them by name.
+  Each block is a React component plus the fields the editor shows for it. They're added to the editor in `goodfellow.config.tsx`. Never rename a block's key or its fields once pages use them, since content files refer to them by name. Parts of a block that respond to visitors, such as a button that shows more, go in a file starting with `"use client"`, and only pages that use them load JavaScript: see [Interactive blocks](https://github.com/chartung17/goodfellow-cms#interactive-blocks).
 
 ## Making it yours
 

@@ -17,6 +17,14 @@
       "types": "./dist/server.d.ts",
       "import": "./dist/server.js"
     },
+    "./island": {
+      "types": "./dist/island.d.ts",
+      "import": "./dist/island.js"
+    },
+    "./hydrate": {
+      "types": "./dist/hydrate.d.ts",
+      "import": "./dist/hydrate.js"
+    },
     "./theme.css": "./theme.css",
     "./package.json": "./package.json"
   },

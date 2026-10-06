@@ -16,6 +16,7 @@ import { fileSystemSource, handleDevApi, localFileStore } from "@goodfellow/core
 import react from "@vitejs/plugin-react";
 import { createServer, type Plugin, type ViteDevServer } from "vite";
 import { ADMIN_ENTRY, adminEntryPlugin, adminHtml } from "./admin-entry.js";
+import { type ClientModules, ISLANDS_DEV_URL } from "./islands.js";
 import {
   baseViteConfig,
   devUrl,
@@ -193,6 +194,7 @@ function devPlugin(root: string, styles: () => StylesEntries): Plugin {
             const { renderPage } = await loadServerEntry(server);
             const html = await renderPage(content, match.page, {
               stylesheets: [`${devUrl(root, styles().site)}?direct`],
+              islands: { script: ISLANDS_DEV_URL },
             });
             res.statusCode = match.status;
             if (match.status === 404) {
@@ -232,7 +234,8 @@ export async function dev(options: DevOptions = {}): Promise<ViteDevServer> {
     return styles;
   };
 
-  const base = baseViteConfig(root, configFile);
+  const modules: ClientModules = new Map();
+  const base = baseViteConfig(root, configFile, modules);
   const server = await createServer({
     ...base,
     appType: "custom",
@@ -245,6 +248,9 @@ export async function dev(options: DevOptions = {}): Promise<ViteDevServer> {
       // which would reload the admin panel in the middle of publishing.
       watch: { ignored: [`${join(root, CONTENT_DIR)}/**`, `${join(root, MEDIA_DIR)}/**`] },
     },
+    // Finds the packages the site's blocks use in the browser when the server starts, rather than when a page with
+    // Client Components first loads them, which reloads the page.
+    optimizeDeps: { entries: [configFile], include: ["react-dom/client"] },
     plugins: [
       react(),
       ...(base.plugins ?? []),

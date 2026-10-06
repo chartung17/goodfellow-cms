@@ -4,6 +4,7 @@ import { absoluteUrl, allPages, applyBasePath, loadSiteContent, normalizeBase, p
 import { fileSystemSource } from "@goodfellow/core/node";
 import { createServer, build as viteBuild } from "vite";
 import { ADMIN_ENTRY, adminEntryPlugin, adminHtml } from "./admin-entry.js";
+import { type ClientModules, ISLANDS_ENTRY } from "./islands.js";
 import { baseViteConfig, findConfigFile, loadServerEntry, writeStylesEntries } from "./site.js";
 
 export interface BuildOptions {
@@ -27,6 +28,7 @@ interface ManifestChunk {
   src?: string;
   isEntry?: boolean;
   css?: string[];
+  imports?: string[];
 }
 
 type Manifest = Record<string, ManifestChunk>;
@@ -47,15 +49,49 @@ function escapeXml(text: string): string {
   return text.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
 }
 
-/** Builds a static site: one HTML file per page, the site's CSS, the public folder, and a sitemap if the site's address is set. */
+/** The files a build input's JavaScript imports, and the files they import, to fetch along with it. */
+function importedFiles(manifest: Manifest, name: string): string[] {
+  const files = new Set<string>();
+  const visit = (keys: string[] | undefined) => {
+    for (const key of keys ?? []) {
+      const chunk = manifest[key];
+      if (!chunk || files.has(chunk.file)) continue;
+      files.add(chunk.file);
+      visit(chunk.imports);
+    }
+  };
+  visit(findEntry(manifest, name)?.imports);
+  return [...files];
+}
+
+/**
+ * Builds a static site: one HTML file per page, the site's CSS, the public
+ * folder, a sitemap if the site's address is set, and the JavaScript that runs
+ * Client Components on the pages that use them.
+ */
 export async function build(options: BuildOptions = {}): Promise<BuildResult> {
+  // Vite builds for production when NODE_ENV says so, and otherwise sets it to "development" for the server that
+  // renders pages, which would give the browser React's development build. Only an explicit "development" is kept.
+  const nodeEnv = process.env.NODE_ENV;
+  if (nodeEnv !== "development") process.env.NODE_ENV = "production";
+  try {
+    return await buildSite(options);
+  } finally {
+    if (nodeEnv === undefined) delete process.env.NODE_ENV;
+    else process.env.NODE_ENV = nodeEnv;
+  }
+}
+
+async function buildSite(options: BuildOptions): Promise<BuildResult> {
   const root = resolve(options.root ?? ".");
   const outDir = resolve(root, options.outDir ?? "dist");
   const configFile = findConfigFile(root);
 
   // Pages are rendered by modules loaded through Vite, so the site's config can use TSX and shares one copy of React.
+  // Loading the site's config finds its Client Components, which the browser build then bundles.
+  const modules: ClientModules = new Map();
   const server = await createServer({
-    ...baseViteConfig(root, configFile),
+    ...baseViteConfig(root, configFile, modules),
     appType: "custom",
     server: { middlewareMode: true, hmr: false, ws: false, watch: null },
   });
@@ -68,12 +104,14 @@ export async function build(options: BuildOptions = {}): Promise<BuildResult> {
     const withAdmin = Boolean(config.backend);
 
     // Build the CSS (Tailwind scans content/ for class names), the admin panel if the
-    // site has a backend, and copy public/ into the output.
+    // site has a backend, the Client Components if it has any, and copy public/ into the output.
     const input: Record<string, string> = { styles: styles.site };
     if (withAdmin) Object.assign(input, { preview: styles.preview, admin: ADMIN_ENTRY });
+    if (modules.size > 0) input.islands = ISLANDS_ENTRY;
+    const viteConfig = baseViteConfig(root, configFile, modules);
     await viteBuild({
-      ...baseViteConfig(root, configFile),
-      plugins: [...(baseViteConfig(root, configFile).plugins ?? []), adminEntryPlugin(configFile, { mode: "build" })],
+      ...viteConfig,
+      plugins: [...(viteConfig.plugins ?? []), adminEntryPlugin(configFile, { mode: "build" })],
       base,
       build: {
         outDir,
@@ -96,6 +134,13 @@ export async function build(options: BuildOptions = {}): Promise<BuildResult> {
     const manifest = JSON.parse(await readFile(manifestPath, "utf8")) as Manifest;
     await rm(manifestPath);
     const stylesheets = cssFiles(manifest, "styles").map((file) => `/${file}`);
+    const islandsEntry = findEntry(manifest, "islands");
+    // Root-relative like the stylesheets: applyBasePath() adds the base path to the finished pages.
+    const islands = islandsEntry && {
+      script: `/${islandsEntry.file}`,
+      preload: importedFiles(manifest, "islands").map((file) => `/${file}`),
+      ...(base !== "/" && { base }),
+    };
 
     if (withAdmin) {
       const admin = findEntry(manifest, "admin");
@@ -112,7 +157,7 @@ export async function build(options: BuildOptions = {}): Promise<BuildResult> {
     const pages = allPages(content);
     const written: string[] = [];
     for (const page of pages) {
-      const html = applyBasePath(await renderPage(content, page, { stylesheets }), base);
+      const html = applyBasePath(await renderPage(content, page, { stylesheets, ...(islands && { islands }) }), base);
       const file = join(outDir, pageOutputFile(page.path));
       await mkdir(dirname(file), { recursive: true });
       await writeFile(file, html);
