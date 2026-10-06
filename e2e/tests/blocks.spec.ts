@@ -1,9 +1,9 @@
-import { existsSync, readFileSync, rmSync } from "node:fs";
+import { existsSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { fakeGitHub } from "@goodfellow/github/testing";
 import { expect as baseExpect, test as baseTest, type Page } from "@playwright/test";
-import { site } from "../scripts/site.mjs";
+import { nextSite, resetNextContent, site } from "../scripts/site.mjs";
 import { files, GITHUB_SITE, routeToFake } from "./backends.js";
 import { test, writeSiteFile } from "./helpers.js";
 
@@ -129,4 +129,30 @@ baseTest("adds a block to a site on GitHub in one publish", async ({ page }) => 
     baseExpect(repoFiles.has(path), path).toBe(true);
   }
   await baseExpect(page.locator(".gfa-block-list")).toContainText("Tabs");
+});
+
+baseTest("adds a block to a Next.js site, which then runs it", async ({ page }) => {
+  baseTest.setTimeout(180_000);
+  const root = nextSite as string;
+  resetNextContent();
+  try {
+    await page.goto("http://localhost:4403/admin/#/blocks");
+    await page.getByRole("button", { name: "Add FAQ" }).click({ timeout: 60_000 });
+    await expect.poll(() => existsSync(join(root, "blocks/installed/installed.json")), { timeout: 60_000 }).toBe(true);
+
+    writeFileSync(join(root, "content/pages/help.json"), `${JSON.stringify(faqPage, null, 2)}\n`);
+    // `next dev` recompiles once the block is on disk; a page asked for meanwhile may not have it yet.
+    await expect(async () => {
+      await page.goto("http://localhost:4403/help/");
+      await baseExpect(page.getByRole("button", { name: "When are you open?" })).toBeVisible({ timeout: 5_000 });
+    }).toPass({ timeout: 90_000 });
+    const answer = page.getByText("Every day but Monday.");
+    await expect(answer).toBeHidden();
+    await expect(async () => {
+      if (!(await answer.isVisible())) await page.getByRole("button", { name: "When are you open?" }).click();
+      baseExpect(await answer.isVisible()).toBe(true);
+    }).toPass({ timeout: 60_000 });
+  } finally {
+    resetNextContent();
+  }
 });
