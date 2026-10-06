@@ -110,7 +110,7 @@ How `goodfellow build` and `goodfellow dev` run Client Components in the browser
 
 ## Component libraries
 
-shadcn support is on hold until `puckeditor/puck-configs` has a license. Don't copy or adapt any code from that repository until it does.
+Component libraries get block packs of their own (rule 7), starting with Mantine. Don't copy or adapt any code from `puckeditor/puck-configs` until that repository has a license.
 
 ## Security
 
