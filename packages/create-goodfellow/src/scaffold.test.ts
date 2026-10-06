@@ -50,6 +50,12 @@ describe("scaffold", () => {
     expect(existsSync(join(target, "content/pages/index.json"))).toBe(true);
     expect(existsSync(join(target, "public/media/logo.svg"))).toBe(true);
     expect(existsSync(join(target, ".gitignore"))).toBe(true);
+    // The README's note about working in the Goodfellow repository doesn't apply to a site of its own.
+    const readme = await readFile(join(target, "README.md"), "utf8");
+    expect(await readFile(join(starter, "README.md"), "utf8")).toContain("goodfellow-repository");
+    expect(readme).not.toContain("goodfellow-repository");
+    expect(readme).not.toContain("pnpm");
+    expect(readme).toContain("## Working on the site\n\n```sh\nnpm install");
     // Every host's setup is kept until one is chosen.
     expect(existsSync(join(target, ".github/workflows/deploy.yml"))).toBe(true);
     expect(existsSync(join(target, ".gitlab-ci.yml"))).toBe(true);

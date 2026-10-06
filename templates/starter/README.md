@@ -4,6 +4,10 @@ A website built with [Goodfellow](https://github.com/chartung17/goodfellow-cms).
 
 ## Working on the site
 
+<!-- goodfellow-repository -->
+> **In the Goodfellow repository**, this folder is part of a pnpm workspace, so `npm install` doesn't work here. From the repository's root, run `pnpm install` and `pnpm build` (get pnpm with `corepack enable`, or `npm install -g pnpm`), then `pnpm dev` in this folder. The `npm` commands below are for a site of your own, created with `npm create goodfellow`, which leaves this note out.
+<!-- /goodfellow-repository -->
+
 ```sh
 npm install
 npm run dev      # site at http://localhost:4321, admin panel at http://localhost:4321/admin
