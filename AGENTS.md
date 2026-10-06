@@ -14,7 +14,7 @@ These hold across the whole codebase. A change that breaks one needs an explicit
 4. **The admin panel is built with the site's config.** `@goodfellow/admin` exports a component, not a prebuilt app, so the editor always includes the site's own blocks. The site and its `/admin` page import the same `goodfellow.config.tsx`.
 5. **Blocks are configured in code; content is edited in the admin panel.** Block definitions live in code. Everything an admin can change lives under `content/` or `public/media/`, including collection schemas and templates, and must be editable without a developer or a rebuild of the editor.
 6. **Site data is separate from layout.** Menus, logo, contact details and similar site-wide data live in `content/site.json` and `content/menus.json`. Header and footer blocks read that data rather than storing their own copies, so a design change never loses links.
-7. **No library-specific code in shared packages.** `@goodfellow/blocks` must work with Tailwind alone. Component-library support goes in separate block packs.
+7. **No library-specific code in shared packages.** `@goodfellow/blocks` must work with Tailwind alone. Blocks built with a component library come from block registries (see Component libraries).
 8. **No code loaded at runtime from outside the build.** Third-party code runs in the admin panel with the editor's git token, so it is only ever included at build time.
 
 ## Content files
@@ -89,7 +89,7 @@ Content files are the product's data format; treat changes to them like API chan
 
 How `goodfellow build` and `goodfellow dev` run Client Components in the browser. Next.js does this itself and uses none of it.
 
-- **Finding them:** `islandsPlugin()` in `packages/cli/src/islands.ts` works where the server loads pages' modules. Where a module that isn't `"use client"` imports one that is, it gets an island module instead, with each export wrapped in `island()` from `@goodfellow/react/island`. Client Components importing each other get the real module, as in the browser, so hooks, contexts and helpers they share keep working. The modules found feed the browser's entry, `virtual:goodfellow/islands`, which loads each one only on pages that use it. Modules of the packages that render pages (`@goodfellow/react`, Puck, React) are never islands. Block packs (the site's packages that use `@goodfellow/react`) are `ssr.noExternal`, so Vite loads them and their Client Components are found too.
+- **Finding them:** `islandsPlugin()` in `packages/cli/src/islands.ts` works where the server loads pages' modules. Where a module that isn't `"use client"` imports one that is, it gets an island module instead, with each export wrapped in `island()` from `@goodfellow/react/island`. Client Components importing each other get the real module, as in the browser, so hooks, contexts and helpers they share keep working. The modules found feed the browser's entry, `virtual:goodfellow/islands`, which loads each one only on pages that use it. Modules of the packages that render pages (`@goodfellow/react`, Puck, React) are never islands. Packages of blocks (the site's packages that use `@goodfellow/react`) are `ssr.noExternal`, so Vite loads them and their Client Components are found too.
 - **On the server**, `island()` renders the component as its own React root with an `identifierPrefix`, as `hydrateIslands()` in `hydrate.tsx` does in the browser, so `useId()` matches. Inside another island, a Client Component renders as it is. Props go into the page as JSON, and anything else is refused with a plain error, as Next.js does. Content props (`children` and other JSX) are rendered by the page in `<template>`s, which `fillSlots()` moves into the island's `<gf-slot>`s; the browser keeps that HTML as it is and starts islands inside it on their own.
 - **Pages:** `createPageRenderer` adds the site's data (`useSite()`, with `base` for `goodfellow build`) and the script only to pages with an island; other pages need neither.
 - **Production builds:** Vite takes production mode from `NODE_ENV`, which its server for rendering pages sets to `"development"`, so `build()` sets it to `"production"` for the build.
@@ -110,7 +110,16 @@ How `goodfellow build` and `goodfellow dev` run Client Components in the browser
 
 ## Component libraries
 
-Component libraries get block packs of their own (rule 7), starting with Mantine. Don't copy or adapt any code from `puckeditor/puck-configs` until that repository has a license.
+Blocks built with a component library come from block registries: shadcn registries whose items are Goodfellow blocks. Goodfellow publishes one for shadcn/ui (roadmap step 10) and builds no other library's blocks. Others can publish registries for other libraries in the same documented format. The design:
+
+- **Installing** copies an item's files, and those of its `registryDependencies`, into the site in one commit, as the shadcn CLI would. The admin panel does this itself, so no developer is needed. Installed blocks are picked up from a folder with no config change, and appear in the editor once the site has rebuilt.
+- **A record** of installed blocks (where each came from, its version and a hash of its files) lets the admin panel list them, and updates replace only files nobody has changed.
+- **Removing** a block that any page, template, header or footer uses is refused, since content refers to blocks by name.
+- **Trust:** installed code runs in the admin panel with the editor's git token (rule 8), so the admin panel installs only from Goodfellow's registry and registries the site's config lists.
+- **Packages:** the admin panel can't update a lockfile, so sites include every npm package Goodfellow's registry uses, and its blocks use nothing else.
+- **Stable names:** a registry item's name is its block's key in content, so it never changes.
+
+Don't copy or adapt any code from `puckeditor/puck-configs` until that repository has a license.
 
 ## Security
 
@@ -184,7 +193,7 @@ Use these terms consistently in code, UI and docs.
 | Site | One website, stored in its own git repository |
 | Page | A single URL whose content is Puck data in `content/pages/` |
 | Block | A component that can be placed in the editor (a Puck component) |
-| Block pack | A package of blocks for one component library |
+| Block registry | A shadcn registry whose items are Goodfellow blocks, which sites install blocks from |
 | Layout | The header and footer, edited in Puck |
 | Site settings | Title, favicon, metadata, theme colors, fonts (`content/site.json`) |
 | Menu | A named list of navigation links (`content/menus.json`) |
