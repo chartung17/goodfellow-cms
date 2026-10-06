@@ -40,6 +40,8 @@ export function goodfellowRegistryUrl(version: string): string {
 export const REGISTRY_PACKAGES = [
   "class-variance-authority",
   "clsx",
+  "cn",
+  "embla-carousel-react",
   "lucide-react",
   "radix-ui",
   "tailwind-merge",

@@ -7,7 +7,15 @@
   },
   "files": {
     "ignoreUnknown": true,
-    "includes": ["**", "!**/dist", "!**/.turbo", "!**/public", "!pnpm-lock.yaml"]
+    "includes": [
+      "**",
+      "!**/dist",
+      "!**/.turbo",
+      "!**/public",
+      "!pnpm-lock.yaml",
+      "!packages/registry/site/components",
+      "!packages/registry/shadcn.json"
+    ]
   },
   "formatter": {
     "enabled": true,

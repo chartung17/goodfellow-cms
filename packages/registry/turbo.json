@@ -1,0 +1,13 @@
+{
+  "$schema": "https://turbo.build/schema.json",
+  "extends": ["//"],
+  "tasks": {
+    "build": {
+      "outputs": ["r/**"]
+    },
+    "test": {
+      // The tests install blocks from the built registry.
+      "dependsOn": ["^build", "build"]
+    }
+  }
+}

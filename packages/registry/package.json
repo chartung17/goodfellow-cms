@@ -1,0 +1,34 @@
+{
+  "name": "@goodfellow/registry",
+  "version": "0.0.0",
+  "description": "Goodfellow's block registry: blocks built with shadcn/ui, which sites install from the admin panel.",
+  "license": "MIT",
+  "type": "module",
+  "files": [
+    "r",
+    "LICENSE-shadcn.md"
+  ],
+  "exports": {
+    "./package.json": "./package.json"
+  },
+  "scripts": {
+    "build": "node scripts/build.mjs",
+    "typecheck": "tsc -p tsconfig.json",
+    "test": "vitest run",
+    "update-shadcn": "node scripts/snapshot.mjs"
+  },
+  "devDependencies": {
+    "@goodfellow/core": "workspace:*",
+    "@goodfellow/react": "workspace:*",
+    "@puckeditor/core": "0.23.0",
+    "@types/react": "^19.2.0",
+    "@types/react-dom": "^19.2.0",
+    "class-variance-authority": "0.7.1",
+    "cn": "0.4.0",
+    "embla-carousel-react": "8.6.0",
+    "lucide-react": "1.52.0",
+    "radix-ui": "1.7.0",
+    "react": "19.3.0",
+    "react-dom": "19.3.0"
+  }
+}
