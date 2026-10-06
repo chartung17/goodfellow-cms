@@ -60,7 +60,22 @@ describe("localFileStore", () => {
     expect(results.map((result) => result.status)).toEqual(["fulfilled", "rejected"]);
   });
 
-  it("only touches files under content/ and public/media/", async () => {
+  it("writes the code of installed blocks, and counts it in the revision", async () => {
+    const start = await store.revision();
+    const { revision } = await store.write(
+      [
+        { path: "blocks/installed/shadcn-faq/block.tsx", content: "export default {};\n" },
+        { path: "components/ui/accordion.tsx", content: "accordion\n" },
+      ],
+      { message: "Add the FAQ block", expectedRevision: start },
+    );
+    expect(revision).not.toBe(start);
+    expect(await readFile(join(root, "components/ui/accordion.tsx"), "utf8")).toBe("accordion\n");
+    await writeFile(join(root, "components/ui/accordion.tsx"), "changed\n");
+    expect(await store.revision()).not.toBe(revision);
+  });
+
+  it("only touches content, media and installed blocks' code", async () => {
     const start = await store.revision();
     await expect(
       store.write([{ path: "goodfellow.config.tsx", content: "x" }], { message: "Bad", expectedRevision: start }),

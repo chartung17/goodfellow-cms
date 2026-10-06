@@ -99,7 +99,7 @@ const items: Record<string, unknown> = {
 
 const fetchJson: FetchJson = async (url) => {
   if (!(url in items)) throw new Error(`404 ${url}`);
-  return structuredClone(items[url]);
+  return JSON.parse(JSON.stringify(items[url]));
 };
 
 /** A site's files, which installing reads and the plan's changes are applied to. */
@@ -127,12 +127,12 @@ async function problem(promise: Promise<unknown>): Promise<RegistryProblem> {
 }
 
 function content(pages: Array<{ path: string; blocks: unknown[] }> = []): SiteContent {
-  const empty = { version: 1, data: { root: {}, content: [] } };
+  const empty = { version: 1 as const, data: { root: {}, content: [] } };
   return {
     settings: {} as SiteContent["settings"],
     menus: {},
     header: empty,
-    footer: { version: 1, data: { root: {}, content: [{ type: "shadcn-tabs", props: { id: "t" } }] } },
+    footer: { version: 1 as const, data: { root: {}, content: [{ type: "shadcn-tabs", props: { id: "t" } }] } },
     pages: pages.map(({ path, blocks }) => ({
       path,
       file: `content/pages${path}.json`,
@@ -284,7 +284,10 @@ describe("planRemove", () => {
     const site = siteFiles();
     const faq = await install(site, "@goodfellow/shadcn-faq");
     const used = content([
-      { path: "/help", blocks: [{ type: "Section", props: { id: "s", content: [{ type: "shadcn-faq", props: {} }] } }] },
+      {
+        path: "/help",
+        blocks: [{ type: "Section", props: { id: "s", content: [{ type: "shadcn-faq", props: {} }] } }],
+      },
     ]);
     expect(
       await problem(planRemove({ name: "shadcn-faq", record: faq.record, readFile: site.readFile, content: used })),
@@ -315,9 +318,7 @@ describe("installedIndex", () => {
     });
     expect(index).toContain('import block0 from "./alert/block";');
     expect(index).toContain('  "faq": block1,');
-    expect(index).toContain(
-      '  "installed-sections": { title: "Sections", components: ["faq","tabs"] },',
-    );
+    expect(index).toContain('  "installed-sections": { title: "Sections", components: ["faq","tabs"] },');
     expect(index).toContain('"installed-notices-alerts": { title: "Notices & alerts"');
   });
 });

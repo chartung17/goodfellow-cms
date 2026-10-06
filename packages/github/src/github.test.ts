@@ -151,6 +151,23 @@ describe("publishing", () => {
     expect(await backend.read("content/pages/news.json")).toBe('{"title":"Nouvelles ✝"}');
   });
 
+  it("reads and writes the code of installed blocks", async () => {
+    const { backend } = await signedIn({
+      files: { ...FILES, "components/ui/button.tsx": "export function Button() {}\n" },
+    });
+    expect(await backend.read("components/ui/button.tsx")).toBe("export function Button() {}\n");
+    await backend.write(
+      [
+        { path: "blocks/installed/shadcn-faq/block.tsx", content: "export default {};\n" },
+        { path: "lib/utils.ts", content: "export {};\n" },
+      ],
+      { message: "Add the FAQ block", expectedRevision: await backend.revision() },
+    );
+    await backend.revision();
+    expect(await backend.read("blocks/installed/shadcn-faq/block.tsx")).toBe("export default {};\n");
+    expect(await backend.read("lib/utils.ts")).toBe("export {};\n");
+  });
+
   it("uploads files that aren't text, such as images, and reads them back", async () => {
     const { fake, backend } = await signedIn();
     const image = new Uint8Array([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a, 0xff, 0x00, 0x80]);
