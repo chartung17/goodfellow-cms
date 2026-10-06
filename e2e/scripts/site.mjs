@@ -18,13 +18,42 @@ export function resetContent() {
   }
 }
 
+/** Blocks with Client Components, which every test site has besides the starter's. */
+const testBlocks = join(here, "../fixtures/blocks");
+
+/** A test site's config: the starter's blocks, the test blocks, and optionally a backend. */
+function testConfig({ blocksFrom = "./blocks/counter", importLine = "", backend = "" } = {}) {
+  return [
+    'import { blocks, categories } from "@goodfellow/blocks";',
+    'import { defineConfig } from "@goodfellow/core";',
+    ...(importLine ? [importLine] : []),
+    `import { Counter, Disclosure } from ${JSON.stringify(blocksFrom)};`,
+    "",
+    `export default defineConfig({ blocks: { ...blocks, Counter, Disclosure }, categories${backend ? `, backend: ${backend}` : ""} });`,
+    "",
+  ].join("\n");
+}
+
+/** A page with the test blocks, for tests to add to a site's content. */
+export const islandsPage = {
+  version: 1,
+  data: {
+    content: [
+      { type: "Counter", props: { id: "Counter-1", className: "", label: "Clicked" } },
+      { type: "Disclosure", props: { id: "Disclosure-1", className: "", title: "More", open: false } },
+      { type: "Disclosure", props: { id: "Disclosure-2", className: "", title: "Shown", open: true } },
+    ],
+    root: { props: { className: "", description: "", image: "", title: "Islands" } },
+  },
+};
+
 /** Creates the test site from the starter. */
 export function createSite() {
   rmSync(site, { recursive: true, force: true });
   mkdirSync(site, { recursive: true });
-  for (const entry of ["goodfellow.config.tsx", "src"]) {
-    cpSync(join(starter, entry), join(site, entry), { recursive: true });
-  }
+  cpSync(join(starter, "src"), join(site, "src"), { recursive: true });
+  cpSync(testBlocks, join(site, "blocks"), { recursive: true });
+  writeFileSync(join(site, "goodfellow.config.tsx"), testConfig());
   resetContent();
 }
 
@@ -49,17 +78,9 @@ export function createBuiltSite(name) {
   rmSync(dir, { recursive: true, force: true });
   mkdirSync(dir, { recursive: true });
   for (const entry of ["content", "public", "src"]) cpSync(join(starter, entry), join(dir, entry), { recursive: true });
-  writeFileSync(
-    join(dir, "goodfellow.config.tsx"),
-    [
-      'import { blocks, categories } from "@goodfellow/blocks";',
-      'import { defineConfig } from "@goodfellow/core";',
-      importLine,
-      "",
-      `export default defineConfig({ blocks, categories, backend: ${backend} });`,
-      "",
-    ].join("\n"),
-  );
+  cpSync(testBlocks, join(dir, "blocks"), { recursive: true });
+  writeFileSync(join(dir, "content/pages/islands.json"), `${JSON.stringify(islandsPage, null, 2)}\n`);
+  writeFileSync(join(dir, "goodfellow.config.tsx"), testConfig({ importLine, backend }));
   return dir;
 }
 
@@ -87,14 +108,6 @@ export function resetNextContent() {
   }
 }
 
-/** The Next.js test site's config: the template's blocks, plus one with a Client Component. */
-const NEXT_CONFIG = `import { blocks, categories } from "@goodfellow/blocks";
-import { defineConfig } from "@goodfellow/core";
-import { Counter } from "@/blocks/counter";
-
-export default defineConfig({ blocks: { ...blocks, Counter }, categories });
-`;
-
 /** Copies the Next.js template to `dir`, using the template's installed packages. */
 function copyNextTemplate(dir) {
   rmSync(dir, { recursive: true, force: true });
@@ -109,8 +122,8 @@ function copyNextTemplate(dir) {
 /** Creates the Next.js test site, with an extra block whose component runs in the browser. */
 export function createNextSite() {
   copyNextTemplate(nextSite);
-  cpSync(join(here, "../fixtures/next-blocks"), join(nextSite, "blocks"), { recursive: true });
-  writeFileSync(join(nextSite, "goodfellow.config.tsx"), NEXT_CONFIG);
+  cpSync(testBlocks, join(nextSite, "blocks"), { recursive: true });
+  writeFileSync(join(nextSite, "goodfellow.config.tsx"), testConfig({ blocksFrom: "@/blocks/counter" }));
   resetNextContent();
 }
 

@@ -34,7 +34,7 @@ Your own Next.js pages can go beside these, in `app/`, and import from the proje
 
 Blocks are React components in `blocks/`, added to the editor in `goodfellow.config.tsx`. For links and images, use `SiteLink` and `SiteImage` from `@goodfellow/react` rather than `<a>` and `<img>`, so they follow the site's address and use `next/link` and `next/image`. Read the site's settings, menus and collections with `useSite()`.
 
-Interactive parts of a block go in a Client Component: a file starting with `"use client"`, which can use any React hooks and runs in the browser. Pass it plain values, not functions. `useSite()` works there too.
+Interactive parts of a block go in a Client Component: a file starting with `"use client"`, which can use any React hooks and runs in the browser. Pass it plain values and content such as `children`, not functions. `useSite()` works there too.
 
 Images are served as they are. To resize them and convert them to modern formats, set a [custom image loader](https://nextjs.org/docs/app/api-reference/components/image#loader) for a service such as Cloudinary under `images` in `withGoodfellow({ ... })`.
 

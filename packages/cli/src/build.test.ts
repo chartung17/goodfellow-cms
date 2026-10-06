@@ -48,13 +48,37 @@ describe("build", () => {
   });
 
   it("builds CSS that includes classes from the content and config, plus custom CSS", async () => {
-    const [cssFile] = await readdir(join(outDir, "assets"));
+    const [cssFile] = (await readdir(join(outDir, "assets"))).filter((file) => file.endsWith(".css"));
     const css = await read(`assets/${cssFile}`);
     expect(css).toContain(".bg-rose-200");
     expect(css).toContain(".text-teal-600");
     expect(css).toContain(".custom-rule");
     // Theme colors resolve to the CSS variables written from site.json.
     expect(css).toMatch(/\.bg-primary\{background-color:var\(--primary\)\}/);
+  });
+
+  it("runs Client Components in the browser, only on pages that use them", async () => {
+    const news = await read("news/index.html");
+    expect(news).toMatch(
+      /<gf-island data-gf-island="blocks\/counter.tsx" data-gf-export="Counter" [^>]*><div class="counter"><button type="button">Clicked!<!-- --> <!-- -->0<!-- --> times on <!-- -->\/news<\/button><gf-slot data-gf-slot="[\w-]+\.0" style="display:contents"><p>From the server<\/p><\/gf-slot><a href="\/from-config\/news">News<\/a><\/div><\/gf-island>/,
+    );
+    expect(news).toContain('"base":"/from-config/"');
+    const script = news.match(
+      /<script type="module" src="\/from-config\/(assets\/islands-[\w-]+\.js)"><\/script>/,
+    )?.[1];
+    expect(script).toBeDefined();
+    const entry = await read(script ?? "");
+    expect(entry).toContain('"blocks/counter.tsx"');
+    // Only Client Components that server-rendered blocks use are islands, not those they use themselves.
+    expect(entry).not.toContain("blocks/shout.tsx");
+    // The component is a chunk of its own, loaded only by pages that use it.
+    expect(entry).not.toContain("times on");
+    // React's production build, not its development build.
+    expect(entry).not.toContain("Hydration failed because");
+
+    for (const file of ["index.html", "404.html", "talks/hope/index.html"]) {
+      expect(await read(file), file).not.toContain("<script");
+    }
   });
 
   it("copies the public folder", async () => {

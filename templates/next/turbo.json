@@ -4,6 +4,10 @@
   "tasks": {
     "build": {
       "outputs": ["out/**"]
+    },
+    "typecheck": {
+      // `next build` rewrites the route types in .next/types that the typecheck reads.
+      "dependsOn": ["^build", "build"]
     }
   }
 }

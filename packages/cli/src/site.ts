@@ -5,6 +5,7 @@ import { CUSTOM_CSS_FILE, type GoodfellowConfig } from "@goodfellow/core";
 import type { PageRenderer } from "@goodfellow/react/server";
 import tailwindcss from "@tailwindcss/vite";
 import type { InlineConfig, Plugin, ViteDevServer } from "vite";
+import { blockPackages, type ClientModules, islandsPlugin } from "./islands.js";
 
 const CONFIG_FILES = ["goodfellow.config.tsx", "goodfellow.config.ts", "goodfellow.config.jsx", "goodfellow.config.js"];
 const SERVER_ENTRY = "virtual:goodfellow/server";
@@ -48,8 +49,11 @@ export function loadServerEntry(server: ViteDevServer): Promise<ServerEntry> {
   return server.ssrLoadModule(SERVER_ENTRY) as Promise<ServerEntry>;
 }
 
-/** Vite settings shared by every command. */
-export function baseViteConfig(root: string, configFile: string): InlineConfig {
+/**
+ * Vite settings shared by every command. `modules` collects the site's Client
+ * Components as pages' modules load, for the browser's islands entry.
+ */
+export function baseViteConfig(root: string, configFile: string, modules: ClientModules): InlineConfig {
   return {
     root,
     configFile: false,
@@ -57,7 +61,9 @@ export function baseViteConfig(root: string, configFile: string): InlineConfig {
     // One cache per site, even when sites share a node_modules folder (such as in a monorepo).
     cacheDir: join(root, "node_modules/.vite"),
     logLevel: "warn",
-    plugins: [tailwindcss(), serverEntryPlugin(configFile)],
+    plugins: [tailwindcss(), serverEntryPlugin(configFile), islandsPlugin(root, modules)],
+    // Block packs go through Vite, so their Client Components become islands too.
+    ssr: { noExternal: blockPackages(root) },
   };
 }
 

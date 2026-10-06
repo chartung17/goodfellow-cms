@@ -32,6 +32,7 @@ Planned for the first release:
 - **AI assistant.** Describe what you want and AI writes it into the page, rewrites a block, or fills in an item's fields. Editors choose the AI service: Claude, OpenAI, a free service, or any chat app by copy and paste.
 - **Class names and custom CSS.** Any block can take Tailwind classes, and admins can write site-wide CSS. Classes appear in the editor preview immediately, before the site is rebuilt.
 - **Custom blocks** for developers: any React component can become a block.
+- **Interactive blocks.** Blocks can use React Client Components, which run in the browser with or without Next.js. Pages without them load no JavaScript at all.
 - **Sign-in without a server:**
   - **GitHub:** a "Sign in" button opens GitHub's token page with the right permissions already filled in.
   - **GitLab:** one-click OAuth sign-in (PKCE), after the site owner registers an OAuth application once.
@@ -100,14 +101,14 @@ To put a site online, follow [the starter's README](templates/starter/README.md)
 - Pages render as Server Components. Blocks' links to the site's pages use `next/link`, so moving between pages doesn't reload, and the site's images use `next/image` with their sizes filled in. Images are served as they are unless the site sets a [custom image loader](https://nextjs.org/docs/app/api-reference/components/image#loader), since a static export can't resize them on request.
 - Blocks can render Client Components (`"use client"`) with any React hooks, and they run in the browser. They can read the site with `useSite()`.
 
-**Compared with `goodfellow build`:** Next.js suits developers who want interactive components, client-side navigation, their own Next.js pages beside the site's, or Next.js's ecosystem. It costs more: each page loads Next.js's JavaScript and carries its own content again as data (plus the site's data when it has Client Components), builds take longer, and there are more dependencies to keep up to date. Most of Next.js's server features don't apply, because Goodfellow sites are static. For a content site, `goodfellow build` is lighter and simpler.
+**Compared with `goodfellow build`:** interactive blocks work with both. Next.js suits developers who want client-side navigation, their own Next.js pages beside the site's, or Next.js's ecosystem. It costs more: each page loads Next.js's JavaScript and carries its own content again as data (plus the site's data when it has Client Components), builds take longer, and there are more dependencies to keep up to date. Most of Next.js's server features don't apply, because Goodfellow sites are static. For a content site, `goodfellow build` is lighter and simpler.
 
 ### Commands
 
 | Command | What it does |
 |---|---|
 | `goodfellow dev` | Serves the site, rendering each page from the files on disk and reloading it when content changes, plus the admin panel at `/admin`, which saves to those files |
-| `goodfellow build` | Writes one HTML file per page to `dist/`, builds the CSS and copies `public/`. Also writes `sitemap.xml` and `robots.txt` if the site's address is set, and the admin panel at `/admin/` if the config has a `backend`. |
+| `goodfellow build` | Writes one HTML file per page to `dist/`, builds the CSS and copies `public/`. Also writes `sitemap.xml` and `robots.txt` if the site's address is set, the admin panel at `/admin/` if the config has a `backend`, and the JavaScript for [Client Components](#interactive-blocks) if blocks use any. |
 | `goodfellow preview` | Serves `dist/`, including the 404 page |
 
 Options: `--root <dir>`, `--out <dir>`, `--port <port>`, and `--base <path>` for sites served from a subfolder, such as `/my-repo/` on GitHub Pages.
@@ -171,6 +172,41 @@ In a collection's page design, any text can also show an item's field by naming 
 
 Blocks use the site's theme colors, fonts and corner radius. Every block accepts extra CSS classes, which override the block's own styles: `py-4` on a Section replaces its default padding.
 
+### Interactive blocks
+
+A block can render Client Components: files that start with `"use client"`, where any React hooks and event handlers work.
+
+```tsx
+// blocks/like-button.tsx
+"use client";
+
+import { useState } from "react";
+
+export function LikeButton({ label }: { label: string }) {
+  const [likes, setLikes] = useState(0);
+  return <button type="button" onClick={() => setLikes(likes + 1)}>{label} ({likes})</button>;
+}
+```
+
+```tsx
+// goodfellow.config.tsx
+import { LikeButton } from "./blocks/like-button";
+
+export default defineConfig({
+  blocks: {
+    ...blocks,
+    Like: { fields: { label: { type: "text" } }, render: ({ label }) => <LikeButton label={label} /> },
+  },
+});
+```
+
+They run in the browser however the site is built. With `goodfellow build` and `goodfellow dev`, each one a block uses becomes an island: its HTML is in the page as usual, and the page loads React and that component's code to bring it to life. Pages without Client Components load no JavaScript. With Next.js, Next.js runs them.
+
+- **Props** must be plain values: text, numbers, `true` and `false`, and lists and objects of these. A block can't pass a function, such as an `onClick` handler, so handlers go inside the Client Component.
+- **Content** passed as `children` (or any prop holding JSX) is rendered by the block, and stays as it is in the browser. Client Components in it run on their own.
+- **`useSite()`** works in Client Components, so pages with them include the site's settings, menus and collections for the browser. Use `SiteLink` and `SiteImage` for links and images, as in any block.
+- **Packages:** Client Components from block packs (packages that use `@goodfellow/react`) become islands like the site's own. To use another package's Client Component in a block, re-export it from a `"use client"` file of the site's: `"use client"; export { Carousel } from "some-carousel";`.
+
 ## Repository layout
 
 This is a pnpm workspace managed with Turborepo.
@@ -225,7 +261,7 @@ my-site/
 6. **Media library** (done). Upload, browse and replace images and files from the admin panel, and choose them for blocks and settings.
 7. **Starters** (done). `create-goodfellow`, which creates a site and sets up its storage and host, and an example parish site with collections and custom blocks.
 8. **Next.js adapter** (done). Goodfellow pages and the admin panel in a Next.js app, exported as static files, with a Next.js starter. Links use `next/link` and images `next/image`, sites can be served from a subfolder, and blocks can use Client Components.
-9. **Interactive blocks everywhere.** Client Components in blocks (`"use client"`) run in the browser on sites built with `goodfellow build` too, not only with Next.js, while pages without them still load no JavaScript.
+9. **Interactive blocks everywhere** (done). Client Components in blocks (`"use client"`) run in the browser on sites built with `goodfellow build` too, not only with Next.js, while pages without them still load no JavaScript.
 10. **Demo mode.** A site whose config sets `demo: true` (it can only be turned on in the config, never from the admin panel) opens its admin panel to anyone, with no sign-in. Visitors can try everything they can, from editing pages and collections to the media library, settings and the AI assistant, but nothing can be published, and their changes stay in their own browser. The admin panel reads the site's content without signing in, so the repository must be public. The documentation site will link to a demo.
 11. **Documentation site.** Guides for site owners and editors, plus reference docs for developers. Includes each host's rules for commercial sites on its free plan, kept up to date.
 12. **Site setup without a developer.** A web page where anyone can create a site from a starter, store it on GitHub or GitLab, and put it online with GitHub Pages, GitLab Pages or Vercel. It asks what the site is for and recommends a host whose free plan allows it, such as GitLab Pages for a business. Builds work out which repository they're in, so nobody has to edit the config.

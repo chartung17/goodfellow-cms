@@ -8,6 +8,8 @@ import {
   themeToCss,
 } from "@goodfellow/core";
 import { prerender } from "react-dom/static";
+import { fillSlots } from "./island.js";
+import { ISLAND_TAG, SITE_DATA_ID } from "./island-shared.js";
 import { PageBody } from "./page-body.js";
 import { createPuckConfigs, preparePage } from "./prepare.js";
 
@@ -16,6 +18,32 @@ export interface PageAssets {
   stylesheets?: string[];
   /** Module script URLs, in order. */
   scripts?: string[];
+  /** What pages with Client Components load to run them in the browser. Pages without any load nothing. */
+  islands?: IslandAssets;
+}
+
+export interface IslandAssets {
+  /** The module script that finds the page's islands and runs them. */
+  script: string;
+  /** Modules the script imports, to fetch at the same time. */
+  preload?: string[];
+  /** The path the site is served from, for `useSite().base` in the browser, when the HTML is rewritten afterwards. */
+  base?: string;
+}
+
+function escapeAttribute(text: string): string {
+  return text.replace(/&/g, "&amp;").replace(/"/g, "&quot;").replace(/</g, "&lt;");
+}
+
+/** The site data and scripts a page with islands needs, for the end of its body. */
+function islandScripts(site: object, islands: IslandAssets): string {
+  // JSON with "<" escaped can't close the script element.
+  const data = JSON.stringify({ ...site, ...(islands.base && { base: islands.base }) }).replace(/</g, "\\u003c");
+  return [
+    `<script type="application/json" id="${SITE_DATA_ID}">${data}</script>`,
+    ...(islands.preload ?? []).map((href) => `<link rel="modulepreload" href="${escapeAttribute(href)}"/>`),
+    `<script type="module" src="${escapeAttribute(islands.script)}"></script>`,
+  ].join("");
 }
 
 function toAbsolute(siteUrl: string | undefined, url: string | undefined): string | undefined {
@@ -26,7 +54,8 @@ function toAbsolute(siteUrl: string | undefined, url: string | undefined): strin
 /**
  * Creates a function that renders pages of a site to complete HTML documents.
  * Rendering waits for everything (including lazily loaded rich text), so the
- * output is final static HTML with no client-side JavaScript required.
+ * output is final static HTML. Only pages whose blocks use Client Components
+ * load JavaScript, given `assets.islands`, to run those components.
  */
 export function createPageRenderer(config: GoodfellowConfig) {
   const configs = createPuckConfigs(config);
@@ -86,7 +115,12 @@ export function createPageRenderer(config: GoodfellowConfig) {
 
     const { prelude } = await prerender(document);
     // React writes the doctype itself when the root element is <html>.
-    return new Response(prelude).text();
+    let html = fillSlots(await new Response(prelude).text());
+    if (assets.islands && html.includes(`<${ISLAND_TAG} `)) {
+      const end = html.lastIndexOf("</body>");
+      html = `${html.slice(0, end)}${islandScripts(prepared.site, assets.islands)}${html.slice(end)}`;
+    }
+    return html;
   };
 }
 
