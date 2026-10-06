@@ -77,10 +77,10 @@ It asks which site to start from, where the site will be stored (GitHub or GitLa
 
 To skip the questions, give the answers as options: `npm create goodfellow@latest my-site -- --template parish --github your-name/your-site --host github-pages`. Run it with `--help` for the full list.
 
-Until Goodfellow is published to npm, try the sites in this repository instead (pnpm required):
+Until Goodfellow is published to npm, `npm create goodfellow` doesn't work yet, so try the sites in this repository instead. The repository is a pnpm workspace: its sites use the repository's own packages (`workspace:*` in their `package.json`), so `npm install` fails inside them. Get pnpm with `corepack enable` (or `npm install -g pnpm`), then run:
 
 ```sh
-pnpm install
+pnpm install    # from the repository's root
 pnpm build
 cd templates/starter   # or examples/parish; templates/next has its own commands
 pnpm dev        # site at http://localhost:4321, admin panel at http://localhost:4321/admin

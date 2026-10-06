@@ -14,4 +14,5 @@ export {
   sitePackageJson,
   TEMPLATES,
   type TemplateName,
+  withoutRepositoryNotes,
 } from "./scaffold.js";

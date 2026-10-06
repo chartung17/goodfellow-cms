@@ -144,6 +144,14 @@ export function configureBackend(config: string, backend: Backend): string {
   return config.replace(importLine, importLine.slice(3)).replace(backendLine, `$1backend: ${call},`);
 }
 
+/** Notes in a site's README for people reading it in the Goodfellow repository, which new sites don't need. */
+const REPOSITORY_NOTE = /<!-- goodfellow-repository -->[\s\S]*?<!-- \/goodfellow-repository -->\n*/g;
+
+/** A site's README without the notes for people reading it in the Goodfellow repository. */
+export function withoutRepositoryNotes(readme: string): string {
+  return readme.replace(REPOSITORY_NOTE, "");
+}
+
 export interface ScaffoldOptions {
   /** The template's folder. */
   template: string;
@@ -175,6 +183,10 @@ export async function scaffold({ template, target, versions, backend, host }: Sc
 
   const pkgPath = join(target, "package.json");
   await writeFile(pkgPath, sitePackageJson(await readFile(pkgPath, "utf8"), packageName(target), versions));
+
+  const readmePath = join(target, "README.md");
+  const readme = await readFile(readmePath, "utf8").catch(() => undefined);
+  if (readme !== undefined) await writeFile(readmePath, withoutRepositoryNotes(readme));
 
   if (backend) {
     const configPath = join(target, "goodfellow.config.tsx");
