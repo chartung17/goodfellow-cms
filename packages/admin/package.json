@@ -32,7 +32,8 @@
   "dependencies": {
     "@goodfellow/ai": "workspace:*",
     "@goodfellow/core": "workspace:*",
-    "@goodfellow/react": "workspace:*"
+    "@goodfellow/react": "workspace:*",
+    "@goodfellow/registry": "workspace:*"
   },
   "peerDependencies": {
     "@puckeditor/core": "0.23.0",

@@ -82,7 +82,7 @@ export function GoodfellowAdmin({ config, siteUrl = `${BASE_PATH}/`, strings }: 
   return (
     <Admin
       config={config}
-      {...(setup.store && { store: setup.store })}
+      {...(setup.store && { store: setup.store, registry: `${BASE_PATH}/__goodfellow/api/registry/{name}.json` })}
       preview={{ stylesheets: setup.stylesheets, themeCss, tailwindBrowserUrl: setup.tailwindBrowserUrl }}
       siteUrl={siteUrl}
       {...(strings && { strings })}

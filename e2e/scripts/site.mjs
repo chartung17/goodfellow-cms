@@ -1,4 +1,14 @@
-import { cpSync, mkdirSync, readdirSync, readFileSync, rmSync, statSync, symlinkSync, writeFileSync } from "node:fs";
+import {
+  cpSync,
+  existsSync,
+  mkdirSync,
+  readdirSync,
+  readFileSync,
+  rmSync,
+  statSync,
+  symlinkSync,
+  writeFileSync,
+} from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 
@@ -10,26 +20,40 @@ export const starter = join(here, "../../templates/starter");
 /** A copy of the starter that tests edit freely. Inside e2e/ so it resolves this package's dependencies. */
 export const site = join(here, "../.site");
 
+/** Folders that installing blocks from the admin panel's Blocks screen writes to. */
+const INSTALLED_CODE = ["components", "lib", "hooks"];
+
+/** Resets a site's editable files to those of `from`: content, media and installed blocks. */
+function resetEditable(root, from) {
+  for (const dir of ["content", "public", "blocks/installed", ...INSTALLED_CODE]) {
+    rmSync(join(root, dir), { recursive: true, force: true });
+    // Some sites have files of their own there, such as the Next.js starter's lib/site.ts.
+    if (existsSync(join(from, dir))) cpSync(join(from, dir), join(root, dir), { recursive: true });
+  }
+}
+
 /** Resets the test site's editable files to the starter's. */
 export function resetContent() {
-  for (const dir of ["content", "public"]) {
-    rmSync(join(site, dir), { recursive: true, force: true });
-    cpSync(join(starter, dir), join(site, dir), { recursive: true });
-  }
+  resetEditable(site, starter);
 }
 
 /** Blocks with Client Components, which every test site has besides the starter's. */
 const testBlocks = join(here, "../fixtures/blocks");
 
 /** A test site's config: the starter's blocks, the test blocks, and optionally a backend. */
-function testConfig({ blocksFrom = "./blocks/counter", importLine = "", backend = "" } = {}) {
+function testConfig({ from = "./blocks", importLine = "", backend = "" } = {}) {
   return [
     'import { blocks, categories } from "@goodfellow/blocks";',
     'import { defineConfig } from "@goodfellow/core";',
     ...(importLine ? [importLine] : []),
-    `import { Counter, Disclosure } from ${JSON.stringify(blocksFrom)};`,
+    `import { Counter, Disclosure } from ${JSON.stringify(`${from}/counter`)};`,
+    `import { installedBlocks, installedCategories } from ${JSON.stringify(`${from}/installed`)};`,
     "",
-    `export default defineConfig({ blocks: { ...blocks, Counter, Disclosure }, categories${backend ? `, backend: ${backend}` : ""} });`,
+    "export default defineConfig({",
+    "  blocks: { ...blocks, ...installedBlocks, Counter, Disclosure },",
+    "  categories: { ...categories, ...installedCategories },",
+    ...(backend ? [`  backend: ${backend},`] : []),
+    "});",
     "",
   ].join("\n");
 }
@@ -77,7 +101,9 @@ export function createBuiltSite(name) {
   const dir = join(here, `../.site-${name}`);
   rmSync(dir, { recursive: true, force: true });
   mkdirSync(dir, { recursive: true });
-  for (const entry of ["content", "public", "src"]) cpSync(join(starter, entry), join(dir, entry), { recursive: true });
+  for (const entry of ["content", "public", "src", "blocks"]) {
+    cpSync(join(starter, entry), join(dir, entry), { recursive: true });
+  }
   cpSync(testBlocks, join(dir, "blocks"), { recursive: true });
   writeFileSync(join(dir, "content/pages/islands.json"), `${JSON.stringify(islandsPage, null, 2)}\n`);
   writeFileSync(join(dir, "goodfellow.config.tsx"), testConfig({ importLine, backend }));
@@ -102,10 +128,7 @@ export const nextSite = join(here, "../.site-next");
 
 /** Resets the Next.js test site's editable files to the template's. */
 export function resetNextContent() {
-  for (const dir of ["content", "public"]) {
-    rmSync(join(nextSite, dir), { recursive: true, force: true });
-    cpSync(join(nextTemplate, dir), join(nextSite, dir), { recursive: true });
-  }
+  resetEditable(nextSite, nextTemplate);
 }
 
 /** Copies the Next.js template to `dir`, using the template's installed packages. */
@@ -123,7 +146,7 @@ function copyNextTemplate(dir) {
 export function createNextSite() {
   copyNextTemplate(nextSite);
   cpSync(testBlocks, join(nextSite, "blocks"), { recursive: true });
-  writeFileSync(join(nextSite, "goodfellow.config.tsx"), testConfig({ blocksFrom: "@/blocks/counter" }));
+  writeFileSync(join(nextSite, "goodfellow.config.tsx"), testConfig({ from: "@/blocks" }));
   resetNextContent();
 }
 

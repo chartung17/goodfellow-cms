@@ -28,6 +28,13 @@ export interface GoodfellowConfig {
    * AI service each editor chooses. On by default; `false` removes it.
    */
   ai?: false | AiConfig;
+  /**
+   * Block registries the admin panel's Blocks screen offers blocks from,
+   * besides Goodfellow's own, by namespace:
+   * `{ "@acme": "https://acme.example/r/{name}.json" }`. List only registries
+   * you trust: installed blocks' code runs in the admin panel.
+   */
+  registries?: Record<string, string>;
 }
 
 export interface AiConfig {

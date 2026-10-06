@@ -2,6 +2,7 @@ import { ContentError, type ContentStore, type GitHost, type GoodfellowConfig } 
 import { createRoot } from "react-dom/client";
 import { AdminProvider, type PreviewOptions, useAdmin, useSiteContent } from "./admin-context.js";
 import { forgetAiKeys } from "./ai-settings.js";
+import { BlocksScreen } from "./blocks-screen.js";
 import { EntriesScreen, TemplateScreen } from "./collection-screen.js";
 import { CollectionSettingsScreen } from "./collection-settings.js";
 import { CollectionsScreen } from "./collections-screen.js";
@@ -31,6 +32,11 @@ export interface AdminProps {
   siteUrl?: string;
   /** Replaces any of the admin panel's text, for rewording or translation. */
   strings?: Partial<Strings>;
+  /**
+   * Where Goodfellow's block registry is, as `https://…/{name}.json`. Defaults to the
+   * release this admin panel was built with; the development servers serve their own copy.
+   */
+  registry?: string;
 }
 
 function LoadError({ error }: { error: unknown }) {
@@ -73,6 +79,7 @@ function Screen() {
   const [section, sub, tab] = segments;
 
   if (section === "media") return <MediaScreen />;
+  if (section === "blocks") return <BlocksScreen />;
   if (section === "collections") {
     return sub ? <CollectionRoute id={sub} sub={tab} slug={params.get("slug") ?? ""} /> : <CollectionsScreen />;
   }
@@ -126,7 +133,11 @@ function Shell() {
   const { state, siteUrl } = useAdmin();
   const [section] = useRoute().segments;
   const current =
-    section === "layout" || section === "settings" || section === "collections" || section === "media"
+    section === "layout" ||
+    section === "settings" ||
+    section === "collections" ||
+    section === "media" ||
+    section === "blocks"
       ? section
       : "pages";
 
@@ -146,6 +157,9 @@ function Shell() {
           </AppLink>
           <AppLink href="#/layout/header" aria-current={current === "layout" ? "page" : undefined}>
             {t("nav.layout")}
+          </AppLink>
+          <AppLink href="#/blocks" aria-current={current === "blocks" ? "page" : undefined}>
+            {t("nav.blocks")}
           </AppLink>
           <AppLink href="#/settings/general" aria-current={current === "settings" ? "page" : undefined}>
             {t("nav.settings")}
@@ -176,9 +190,9 @@ function MissingBackend() {
 }
 
 /** The admin panel. Render it on its own page, such as `/admin`. */
-export function Admin({ config, store, host = config.backend, preview, siteUrl = "/", strings }: AdminProps) {
+export function Admin({ config, store, host = config.backend, preview, siteUrl = "/", strings, registry }: AdminProps) {
   const body = store ? (
-    <AdminProvider config={config} store={store} preview={preview} siteUrl={siteUrl}>
+    <AdminProvider config={config} store={store} preview={preview} siteUrl={siteUrl} registry={registry}>
       <Shell />
     </AdminProvider>
   ) : host ? (
@@ -198,6 +212,7 @@ export function Admin({ config, store, host = config.backend, preview, siteUrl =
           }}
           preview={preview}
           siteUrl={siteUrl}
+          registry={registry}
           onSignInError={(error) => signOut(error)}
         >
           <Shell />

@@ -5,9 +5,12 @@ import {
   type FileChange,
   type GitBackend,
   type GitUser,
+  GOODFELLOW_REGISTRY,
   type GoodfellowConfig,
+  goodfellowRegistryUrl,
   loadSiteContent,
   MEDIA_DIR,
+  type RegistrySources,
   SignInError,
   type SiteContent,
   writeChanges,
@@ -16,6 +19,7 @@ import { createPuckConfig } from "@goodfellow/react";
 import type { Config } from "@puckeditor/core";
 import { createContext, type ReactNode, useCallback, useContext, useEffect, useMemo, useState } from "react";
 import { createMediaPreviews, type MediaPreviews } from "./media-previews.js";
+import { REGISTRY_VERSION } from "./registry-version.js";
 
 /** How previews load the site's styles. Provided by the dev server or build that serves the admin panel. */
 export interface PreviewOptions {
@@ -59,6 +63,10 @@ interface AdminContextValue {
   reload(): Promise<void>;
   /** Saves changes as one commit, then reloads the site's content. */
   publish(changes: FileChange[], message: string): Promise<PublishResult>;
+  /** Reads one of the site's files at the loaded revision, or `undefined` if it doesn't exist. */
+  readFile(path: string): Promise<string | undefined>;
+  /** The block registries the Blocks screen offers blocks from: Goodfellow's, and those the config lists. */
+  registries: RegistrySources;
 }
 
 const AdminContext = createContext<AdminContextValue | null>(null);
@@ -87,6 +95,7 @@ export function AdminProvider({
   account,
   preview,
   siteUrl,
+  registry,
   onSignInError,
   children,
 }: {
@@ -95,6 +104,8 @@ export function AdminProvider({
   account?: Account;
   preview: PreviewOptions;
   siteUrl: string;
+  /** Where Goodfellow's block registry is, as `https://…/{name}.json`. Defaults to its release on jsDelivr. */
+  registry?: string;
   /** Called when the git host stops accepting the sign-in, such as when a token expires. */
   onSignInError?: (error: SignInError) => void;
   children: ReactNode;
@@ -105,6 +116,11 @@ export function AdminProvider({
   const layoutConfig = useMemo(() => createPuckConfig(config, "layout"), [config]);
   const templateConfig = useMemo(() => createPuckConfig(config, "template"), [config]);
   const mediaPreviews = useMemo(() => createMediaPreviews(store, siteUrl), [store, siteUrl]);
+  const registries = useMemo(
+    () => ({ [GOODFELLOW_REGISTRY]: registry ?? goodfellowRegistryUrl(REGISTRY_VERSION), ...config.registries }),
+    [registry, config.registries],
+  );
+  const readFile = useCallback((path: string) => store.read(path), [store]);
 
   const loadAndHandle = useCallback(async () => {
     const next = await load(store);
@@ -173,6 +189,8 @@ export function AdminProvider({
       mediaPreviews,
       reload,
       publish,
+      readFile,
+      registries,
     }),
     [
       config,
@@ -187,6 +205,8 @@ export function AdminProvider({
       mediaPreviews,
       reload,
       publish,
+      readFile,
+      registries,
     ],
   );
 

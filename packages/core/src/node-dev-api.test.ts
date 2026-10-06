@@ -1,4 +1,4 @@
-import { mkdtemp, readFile, rm } from "node:fs/promises";
+import { mkdir, mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
 import { createServer, type Server } from "node:http";
 import type { AddressInfo } from "node:net";
 import { tmpdir } from "node:os";
@@ -15,8 +15,11 @@ describe("handleDevApi", () => {
   beforeAll(async () => {
     root = await mkdtemp(join(tmpdir(), "goodfellow-api-"));
     const store = localFileStore(root);
+    const registryDir = join(root, "registry");
+    await mkdir(registryDir);
+    await writeFile(join(registryDir, "shadcn-faq.json"), '{"name":"shadcn-faq"}');
     server = createServer(async (req, res) => {
-      if (!(await handleDevApi(store, req, res))) res.writeHead(418).end();
+      if (!(await handleDevApi(store, req, res, { registryDir }))) res.writeHead(418).end();
     });
     await new Promise<void>((done) => server.listen(0, done));
     base = `http://localhost:${(server.address() as AddressInfo).port}${DEV_API_PREFIX}`;
@@ -29,6 +32,14 @@ describe("handleDevApi", () => {
 
   const headers = { "x-goodfellow-request": "1" };
   const json = { ...headers, "content-type": "application/json" };
+
+  it("serves the block registry, and nothing else from its folder's surroundings", async () => {
+    const response = await fetch(`${base}/registry/shadcn-faq.json`);
+    expect(response.status).toBe(200);
+    expect(await response.json()).toEqual({ name: "shadcn-faq" });
+    expect((await fetch(`${base}/registry/missing.json`)).status).toBe(404);
+    expect((await fetch(`${base}/registry/..%2Fpackage.json`)).status).toBe(404);
+  });
 
   it("ignores other URLs", async () => {
     expect((await fetch(base.replace(DEV_API_PREFIX, "/about"))).status).toBe(418);
