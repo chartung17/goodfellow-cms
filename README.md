@@ -101,7 +101,15 @@ To put a site online, follow [the starter's README](templates/starter/README.md)
 - Pages render as Server Components. Blocks' links to the site's pages use `next/link`, so moving between pages doesn't reload, and the site's images use `next/image` with their sizes filled in. Images are served as they are unless the site sets a [custom image loader](https://nextjs.org/docs/app/api-reference/components/image#loader), since a static export can't resize them on request.
 - Blocks can render Client Components (`"use client"`) with any React hooks, and they run in the browser. They can read the site with `useSite()`.
 
-**Compared with `goodfellow build`:** interactive blocks work with both. Next.js suits developers who want client-side navigation, their own Next.js pages beside the site's, or Next.js's ecosystem. It costs more: each page loads Next.js's JavaScript and carries its own content again as data (plus the site's data when it has Client Components), builds take longer, and there are more dependencies to keep up to date. Most of Next.js's server features don't apply, because Goodfellow sites are static. For a content site, `goodfellow build` is lighter and simpler.
+**Compared with `goodfellow build`:** interactive blocks work with both, but `goodfellow build` runs each Client Component as a separate [island](#interactive-blocks), which has limits that more interactive sites run into:
+
+- **No shared context.** Each island is its own React app, so a Client Component that provides a context (a theme, a cart, a signed-in user) can't pass it to Client Components in the content it wraps. Islands that need to share state have to do it outside React, such as through a module-level store or browser events. In Next.js, the provider's context reaches every Client Component inside it.
+- **Content is fixed HTML.** Content a block passes to a Client Component (`children`) arrives as HTML, so the component can show, hide or move it, but can't look inside it or change it with `React.Children` or `cloneElement`.
+- **Fewer kinds of props.** Props must be JSON: no dates, `Map`s, `Set`s or promises, which Next.js can pass.
+- **Every page is a full page load.** Moving to another page reloads it, so React and the page's components start again. Next.js moves between pages without reloading.
+- **Other packages' Client Components** need re-exporting from a `"use client"` file of the site's, unless they come from a block pack. Next.js uses them as they are.
+
+Next.js suits developers who want any of these, client-side navigation, their own Next.js pages beside the site's, or Next.js's ecosystem. It costs more: each page loads Next.js's JavaScript and carries its own content again as data (plus the site's data when it has Client Components), builds take longer, and there are more dependencies to keep up to date. Most of Next.js's server features don't apply, because Goodfellow sites are static. For a content site, with a few interactive parts at most, `goodfellow build` is lighter and simpler.
 
 ### Commands
 
@@ -206,6 +214,8 @@ They run in the browser however the site is built. With `goodfellow build` and `
 - **Content** passed as `children` (or any prop holding JSX) is rendered by the block, and stays as it is in the browser. Client Components in it run on their own.
 - **`useSite()`** works in Client Components, so pages with them include the site's settings, menus and collections for the browser. Use `SiteLink` and `SiteImage` for links and images, as in any block.
 - **Packages:** Client Components from block packs (packages that use `@goodfellow/react`) become islands like the site's own. To use another package's Client Component in a block, re-export it from a `"use client"` file of the site's: `"use client"; export { Carousel } from "some-carousel";`.
+
+Each page with a Client Component loads React, so use HTML and CSS where they're enough: `<details>` for something that opens and closes, `:hover` and `:focus-within` for menus. Islands also have [limits](#nextjs) that Next.js doesn't, such as not sharing React context with each other.
 
 ## Repository layout
 

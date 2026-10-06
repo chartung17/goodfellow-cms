@@ -59,7 +59,7 @@ Content files are the product's data format; treat changes to them like API chan
 - **Theme tokens:** style with theme classes (`bg-primary`, `text-muted-foreground`, `font-heading`, `rounded-lg`) rather than fixed colors, so blocks follow the site's theme.
 - **Site data:** read menus, settings and collections with `useSite()`. Never copy them into a block's props.
 - **Links and images:** render them with `SiteLink` and `SiteImage` from `@goodfellow/react`, never `<a>` and `<img>`, so they follow the site's base path and use the renderer's components (`next/link`, `next/image`). Any other root-relative address, such as a CSS background, goes through `withBase(url, useSite().base)`.
-- **Interactive parts** go in a Client Component, a file starting with `"use client"`, which may use any hooks; pass it plain values and content (`children`) only. They run in the browser with Next.js and `goodfellow build` alike (see Islands). A page with one loads React, so built-in blocks still prefer HTML and CSS (`<details>`, `:hover`, `:focus-within`) where that's enough.
+- **Interactive parts** go in a Client Component, a file starting with `"use client"`, which may use any hooks; pass it plain values and content (`children`) only. They run in the browser with Next.js and `goodfellow build` alike (see Islands). A page with one loads React, so avoid Client Components in built-in blocks and examples where HTML and CSS will work (`<details>`, `:hover`, `:focus-within`).
 - **No hooks in `render` itself**, other than `useSite()`: blocks render as Server Components in Next.js, where hooks such as `useState` fail.
 - **Labels:** field labels and option names are for non-technical users ("Space above and below", not "padding-y").
 
