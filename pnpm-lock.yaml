@@ -178,6 +178,9 @@ importers:
       '@goodfellow/react':
         specifier: workspace:*
         version: link:../react
+      '@goodfellow/registry':
+        specifier: workspace:*
+        version: link:../registry
     devDependencies:
       '@puckeditor/core':
         specifier: 0.23.0
@@ -302,10 +305,17 @@ importers:
         version: 19.3.0
 
   packages/create-goodfellow:
+    dependencies:
+      '@goodfellow/core':
+        specifier: workspace:*
+        version: link:../core
     devDependencies:
       '@goodfellow/example-parish':
         specifier: workspace:*
         version: link:../../examples/parish
+      '@goodfellow/registry':
+        specifier: workspace:*
+        version: link:../registry
       '@goodfellow/template-next':
         specifier: workspace:*
         version: link:../../templates/next

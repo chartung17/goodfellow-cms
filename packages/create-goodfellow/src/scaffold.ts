@@ -1,5 +1,13 @@
 import { cp, mkdir, readdir, readFile, rename, rm, rmdir, writeFile } from "node:fs/promises";
-import { basename, join, relative, resolve, sep } from "node:path";
+import { basename, dirname, join, relative, resolve, sep } from "node:path";
+import {
+  availableBlocks,
+  EMPTY_RECORD,
+  GOODFELLOW_REGISTRY,
+  type InstalledRecord,
+  planInstall,
+  type RegistrySources,
+} from "@goodfellow/core";
 
 /** The sites a new site can start from. The keys are what `--template` takes. */
 export const TEMPLATES = {
@@ -152,6 +160,57 @@ export function withoutRepositoryNotes(readme: string): string {
   return readme.replace(REPOSITORY_NOTE, "");
 }
 
+/** Which blocks a new site starts with, besides the built-in ones. */
+export const BLOCK_CHOICES = {
+  recommended: {
+    label: "Recommended",
+    description: "Adds the recommended blocks, such as Hero, Cards and FAQ. Others can be added in the admin panel.",
+  },
+  "built-in": {
+    label: "Built-in blocks only",
+    description: "Starts with Goodfellow's own blocks. More can be added in the admin panel.",
+  },
+} as const;
+
+export type BlockChoice = keyof typeof BLOCK_CHOICES;
+
+/** Reads a built registry from disk, as the admin panel would read it from its address. */
+function localRegistry(dir: string): { registries: RegistrySources; fetchJson: (url: string) => Promise<unknown> } {
+  const base = "https://registry.invalid/r/";
+  return {
+    registries: { [GOODFELLOW_REGISTRY]: `${base}{name}.json` },
+    fetchJson: async (url) => JSON.parse(await readFile(join(dir, url.slice(base.length)), "utf8")),
+  };
+}
+
+/**
+ * Installs the registry's recommended blocks into a new site, as the admin
+ * panel's Blocks screen would, so the site can add and remove them there later.
+ */
+export async function installRecommendedBlocks(target: string, registryDir: string): Promise<string[]> {
+  const { registries, fetchJson } = localRegistry(registryDir);
+  const recommended = (await availableBlocks(registries, fetchJson)).filter((block) => block.recommended);
+  const readSiteFile = (path: string) => readFile(join(target, path), "utf8").catch(() => undefined);
+  let record: InstalledRecord = EMPTY_RECORD;
+  for (const block of recommended) {
+    const plan = await planInstall({
+      ref: block.ref,
+      registries,
+      fetchJson,
+      readFile: readSiteFile,
+      record,
+      blocks: [],
+    });
+    for (const change of plan.changes) {
+      if (!("content" in change)) continue;
+      await mkdir(dirname(join(target, change.path)), { recursive: true });
+      await writeFile(join(target, change.path), change.content);
+    }
+    record = plan.record;
+  }
+  return recommended.map((block) => block.title);
+}
+
 export interface ScaffoldOptions {
   /** The template's folder. */
   template: string;
@@ -162,6 +221,8 @@ export interface ScaffoldOptions {
   backend?: Backend;
   /** Keeps only this host's setup file. All are kept if it isn't set. */
   host?: Host;
+  /** The built block registry to install recommended blocks from. Without it, the site has the built-in blocks only. */
+  registryDir?: string;
 }
 
 async function isEmptyFolder(path: string): Promise<boolean> {
@@ -174,7 +235,14 @@ async function isEmptyFolder(path: string): Promise<boolean> {
 }
 
 /** Creates a new site in `target` from a template. */
-export async function scaffold({ template, target, versions, backend, host }: ScaffoldOptions): Promise<void> {
+export async function scaffold({
+  template,
+  target,
+  versions,
+  backend,
+  host,
+  registryDir,
+}: ScaffoldOptions): Promise<void> {
   if (!(await isEmptyFolder(target))) {
     throw new ScaffoldError(`The folder ${target} already has files in it. Choose a new folder for the site.`);
   }
@@ -187,6 +255,8 @@ export async function scaffold({ template, target, versions, backend, host }: Sc
   const readmePath = join(target, "README.md");
   const readme = await readFile(readmePath, "utf8").catch(() => undefined);
   if (readme !== undefined) await writeFile(readmePath, withoutRepositoryNotes(readme));
+
+  if (registryDir) await installRecommendedBlocks(target, registryDir);
 
   if (backend) {
     const configPath = join(target, "goodfellow.config.tsx");
