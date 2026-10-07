@@ -11,6 +11,7 @@ interface Result {
 }
 
 interface Pagefind {
+  options(options: { baseUrl: string }): Promise<void>;
   debouncedSearch(query: string): Promise<{ results: Array<{ data(): Promise<PagefindData> }> } | null>;
 }
 
@@ -29,9 +30,15 @@ let loaded: Promise<Pagefind> | undefined;
 
 /** Loads Pagefind from the site's own index, which the build wrote. */
 function loadPagefind(base: string | undefined): Promise<Pagefind> {
-  loaded ??= import(
-    /* @vite-ignore */ /* webpackIgnore: true */ withBase(`/${SEARCH_INDEX_DIR}/pagefind.js`, base)
-  ) as Promise<Pagefind>;
+  loaded ??= (
+    import(
+      /* @vite-ignore */ /* webpackIgnore: true */ withBase(`/${SEARCH_INDEX_DIR}/pagefind.js`, base)
+    ) as Promise<Pagefind>
+  ).then(async (pagefind) => {
+    // Results' addresses without the site's base path, which SiteLink adds, as for any link.
+    await pagefind.options({ baseUrl: "/" });
+    return pagefind;
+  });
   loaded.catch(() => {
     loaded = undefined;
   });
@@ -54,6 +61,16 @@ export function SearchBox({ label, placeholder, noResults, unavailable }: Search
   const [failed, setFailed] = useState(false);
   const [open, setOpen] = useState(false);
   const box = useRef<HTMLElement>(null);
+  const input = useRef<HTMLInputElement>(null);
+
+  // Keeps what a visitor typed before the page's scripts loaded.
+  useEffect(() => {
+    const typed = input.current?.value;
+    if (typed) {
+      setQuery(typed);
+      setOpen(true);
+    }
+  }, []);
 
   useEffect(() => {
     const text = query.trim();
@@ -104,6 +121,7 @@ export function SearchBox({ label, placeholder, noResults, unavailable }: Search
         {label}
       </label>
       <input
+        ref={input}
         id={id}
         type="search"
         autoComplete="off"

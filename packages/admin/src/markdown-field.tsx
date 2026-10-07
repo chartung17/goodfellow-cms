@@ -69,7 +69,8 @@ export function MarkdownField({
   const current = formattable ? tab : "markdown";
 
   return (
-    <FieldLabel label={label}>
+    // A div, not Puck's usual label: clicking anywhere in a label would focus its first button, the tabs.
+    <FieldLabel label={label} el="div">
       <div className="gfa-markdown-tabs" role="tablist" aria-label={label}>
         {(["formatted", "markdown"] as const).map((name) => (
           <button
@@ -100,6 +101,7 @@ export function MarkdownField({
         <>
           <textarea
             id={id}
+            aria-label={label}
             className="gfa-puck-input gfa-markdown-source"
             value={value}
             spellCheck

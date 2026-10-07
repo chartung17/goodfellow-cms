@@ -41,6 +41,13 @@ export default defineConfig({
       reuseExistingServer: false,
       timeout: 240_000,
     },
+    // The documentation site, built and served from a subfolder, with its search index.
+    {
+      command: "node scripts/start-docs-site.mjs 4406",
+      url: "http://localhost:4406/goodfellow-cms/",
+      reuseExistingServer: false,
+      timeout: 120_000,
+    },
     // Production builds of the starter with each git backend, and as a demo, served like a static host.
     ...(["github", "gitlab", "demo"] as const).map((name) => ({
       command: `node scripts/start-built-site.mjs ${name}`,
