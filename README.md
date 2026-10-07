@@ -4,7 +4,7 @@ A git-based website builder built on the [Puck](https://puckeditor.com) visual e
 
 Goodfellow gives non-technical site owners a drag-and-drop editor at `/admin` with no server, database or monthly hosting bill. Pages are stored as files in the site's own GitHub or GitLab repository. Every save is a commit, and a free static host (GitHub Pages, GitLab Pages or Vercel) rebuilds the site.
 
-> **Status: early development.** Static rendering, the admin panel, collections, the AI assistant, the media library, blocks from Goodfellow's shadcn/ui block registry, publishing to GitHub or GitLab, `create-goodfellow` and the Next.js adapter work, with deploy setups for GitHub Pages, GitLab Pages and Vercel. Nothing is published to npm yet. This README describes what Goodfellow is meant to become; the [roadmap](#roadmap) shows what exists.
+> **Status: early development.** Static rendering, the admin panel, collections, the AI assistant, the media library, blocks from Goodfellow's shadcn/ui block registry, demo mode, publishing to GitHub or GitLab, `create-goodfellow` and the Next.js adapter work, with deploy setups for GitHub Pages, GitLab Pages and Vercel. Nothing is published to npm yet. This README describes what Goodfellow is meant to become; the [roadmap](#roadmap) shows what exists.
 
 ## How it works
 
@@ -97,7 +97,7 @@ To put a site online, follow [the starter's README](templates/starter/README.md)
 `@goodfellow/next` puts a Goodfellow site in a Next.js app (App Router, Next.js 16), exported as static files so the same free hosts serve it. [The Next.js starter](templates/next/README.md) has it all set up:
 
 - `withGoodfellow()` in `next.config.ts` exports static files with a folder per page, serves the site from `basePath` (or the `GOODFELLOW_BASE` environment variable, as `goodfellow build` does), and in `next dev` runs the admin panel's local backend, which saves to the files on disk. The local backend is never part of a build.
-- `goodfellowPages(config)` gives the routes their parts: `Page`, `generateStaticParams` and `generateMetadata` for `app/[[...path]]/page.tsx`, `NotFound` for `app/not-found.tsx`, and `sitemap` and `robots`.
+- `goodfellowPages(config)` gives the routes their parts: `Page`, `generateStaticParams` and `generateMetadata` for `app/[[...path]]/page.tsx`, `NotFound` for `app/not-found.tsx`, `sitemap` and `robots`, and `demoContent` for `app/admin/demo-content.json/route.ts`, which serves a [demo's](#demo-mode) copy of the content (an empty file on other sites, since a static export can't leave a route out).
 - `<GoodfellowAdmin config={config} />` from `@goodfellow/next/admin` is the admin panel, in a Client Component at `app/admin/page.tsx`.
 - Pages render as Server Components. Blocks' links to the site's pages use `next/link`, so moving between pages doesn't reload, and the site's images use `next/image` with their sizes filled in. Images are served as they are unless the site sets a [custom image loader](https://nextjs.org/docs/app/api-reference/components/image#loader), since a static export can't resize them on request.
 - Blocks can render Client Components (`"use client"`) with any React hooks, and they run in the browser. They can read the site with `useSite()`.
@@ -117,7 +117,7 @@ Next.js suits developers who want any of these, client-side navigation, their ow
 | Command | What it does |
 |---|---|
 | `goodfellow dev` | Serves the site, rendering each page from the files on disk and reloading it when content changes, plus the admin panel at `/admin`, which saves to those files |
-| `goodfellow build` | Writes one HTML file per page to `dist/`, builds the CSS and copies `public/`. Also writes `sitemap.xml` and `robots.txt` if the site's address is set, the admin panel at `/admin/` if the config has a `backend`, and the JavaScript for [Client Components](#interactive-blocks) if blocks use any. |
+| `goodfellow build` | Writes one HTML file per page to `dist/`, builds the CSS and copies `public/`. Also writes `sitemap.xml` and `robots.txt` if the site's address is set, the admin panel at `/admin/` if the config has a `backend` or is a [demo](#demo-mode), and the JavaScript for [Client Components](#interactive-blocks) if blocks use any. |
 | `goodfellow preview` | Serves `dist/`, including the 404 page |
 
 Options: `--root <dir>`, `--out <dir>`, `--port <port>`, and `--base <path>` for sites served from a subfolder, such as `/my-repo/` on GitHub Pages.
@@ -245,6 +245,22 @@ Developers can publish registries of Goodfellow blocks built with other componen
 registries: { "@acme": "https://acme.example/r/{name}.json" },
 ```
 
+### Demo mode
+
+To let anyone try the admin panel without signing in, for example from a product page or in a training session, set `demo: true` in `goodfellow.config.tsx`:
+
+```tsx
+export default defineConfig({ blocks, demo: true });
+```
+
+The site's `/admin` then opens straight away, with a banner saying it's a demo. Visitors can try everything editors can: pages, collections, the header and footer, the media library, site settings and the AI assistant (with their own key or a free service).
+
+- **Nothing is published.** Publish saves the changes, uploads included, in the visitor's own browser, so they're still there after reloading. **Start over** in the banner undoes them all. The live site and the repository never change.
+- **It starts from the site as last built.** `goodfellow build`, and `next build` for Next.js sites, put a copy of the content at `/admin/demo-content.json`. The repository can stay private, and `backend` is ignored.
+- **Blocks** can be browsed but not added or removed, since adding one changes the site's code.
+- **Only the config turns it on.** The admin panel never changes `goodfellow.config.tsx`, so editors can't turn a real site into a demo or back.
+- **In development**, `goodfellow dev` and `next dev` start the demo from the files on disk, and changes stay in the browser there too. To edit the demo's own content in the admin panel, turn demo mode off while you do.
+
 ## Repository layout
 
 This is a pnpm workspace managed with Turborepo.
@@ -305,7 +321,7 @@ my-site/
 8. **Next.js adapter** (done). Goodfellow pages and the admin panel in a Next.js app, exported as static files, with a Next.js starter. Links use `next/link` and images `next/image`, sites can be served from a subfolder, and blocks can use Client Components.
 9. **Interactive blocks everywhere** (done). Client Components in blocks (`"use client"`) run in the browser on sites built with `goodfellow build` too, not only with Next.js.
 10. **shadcn blocks** (done). A registry of Goodfellow blocks built with [shadcn/ui](https://ui.shadcn.com), installed into the site without a developer. When creating a site, admins choose "Recommended" or "Built-in blocks only"; the admin panel lets them add and remove individual blocks. Others can publish registries of blocks built with other libraries, in a documented format. Updating installed blocks comes with step 15's automatic updates.
-11. **Demo mode.** A site whose config sets `demo: true` (it can only be turned on in the config, never from the admin panel) opens its admin panel to anyone, with no sign-in. Visitors can try everything they can, from editing pages and collections to the media library, settings and the AI assistant, but nothing can be published, and their changes stay in their own browser. The admin panel reads the site's content without signing in, so the repository must be public. The documentation site will link to a demo.
+11. **Demo mode** (done). A site whose config sets `demo: true` (it can only be turned on in the config, never from the admin panel) opens its admin panel to anyone, with no sign-in. Visitors can try everything, from editing pages and collections to the media library, settings and the AI assistant, but nothing is published: their changes stay in their own browser until they start over. The demo starts from a copy of the site's content that the build includes, so the repository can stay private. The documentation site will link to a demo.
 12. **Documentation site.** Guides for site owners and editors, plus reference docs for developers. Includes each host's rules for commercial sites on its free plan, kept up to date.
 13. **Site setup without a developer.** A web page where anyone can create a site from a starter, store it on GitHub or GitLab, and put it online with GitHub Pages, GitLab Pages or Vercel. It asks what the site is for and recommends a host whose free plan allows it, such as GitLab Pages for a business. Builds work out which repository they're in, so nobody has to edit the config.
 14. **Custom domains.** Connect a domain from the admin panel. Goodfellow sets the domain on the host where it can, lists the records to add at the domain's registrar, with guides for popular registrars, and shows when the domain is working.

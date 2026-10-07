@@ -1,5 +1,5 @@
 import { resolve } from "node:path";
-import { allPages, loadSiteContent } from "@goodfellow/core";
+import { allPages, loadSiteContent, parseDemoContent } from "@goodfellow/core";
 import { fileSystemSource } from "@goodfellow/core/node";
 import { describe, expect, it } from "vitest";
 import { goodfellowPages, pageMetadata } from "./index.js";
@@ -23,6 +23,22 @@ describe("goodfellowPages", () => {
   it("only writes a sitemap once the site's address is known", async () => {
     expect(await site.sitemap()).toEqual([]);
     expect(await site.robots()).toEqual({ rules: { userAgent: "*", allow: "/" } });
+  });
+});
+
+describe("demoContent", () => {
+  it("copies the site's content for a demo's admin panel", async () => {
+    const response = await goodfellowPages({ blocks: {}, demo: true }, { root }).demoContent();
+    expect(response.status).toBe(200);
+    const content = parseDemoContent(await response.text());
+    expect(content.files["content/pages/about.json"]).toContain('"About us"');
+    expect(content.media).toContain("public/media/logo.svg");
+  });
+
+  it("is empty for other sites", async () => {
+    const response = await site.demoContent();
+    expect(response.status).toBe(404);
+    expect(await response.text()).toBe("");
   });
 });
 

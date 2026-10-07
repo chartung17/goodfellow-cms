@@ -221,6 +221,15 @@ export const defaultStrings = {
   "fields.type.image": "Image (URL)",
   "fields.type.select": "Choice from a list",
 
+  "demo.banner":
+    "This is a demo. Try anything you like: changes are saved in this browser only, and the live site never changes.",
+  "demo.published": "Saved in this browser.",
+  "demo.startOver": "Start over",
+  "demo.startOverTitle": "Start over?",
+  "demo.startOverBody": "Everything you've changed in this demo, including uploads, will be undone.",
+  "blocks.demo":
+    "In this demo you can see which blocks there are, but not add or remove them: a block is added to a real site by updating its code.",
+
   "blocks.title": "Blocks",
   "blocks.intro":
     "Add blocks to the editor, or remove ones you don't use. A change shows in the editor once the site has been updated, usually within a few minutes.",

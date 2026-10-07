@@ -1,6 +1,15 @@
 import { mkdir, readFile, rm, writeFile } from "node:fs/promises";
 import { dirname, join, relative, resolve } from "node:path";
-import { absoluteUrl, allPages, applyBasePath, loadSiteContent, normalizeBase, pageOutputFile } from "@goodfellow/core";
+import {
+  absoluteUrl,
+  allPages,
+  applyBasePath,
+  DEMO_CONTENT_PATH,
+  demoContent,
+  loadSiteContent,
+  normalizeBase,
+  pageOutputFile,
+} from "@goodfellow/core";
 import { fileSystemSource } from "@goodfellow/core/node";
 import { createServer, build as viteBuild } from "vite";
 import { ADMIN_ENTRY, adminEntryPlugin, adminHtml } from "./admin-entry.js";
@@ -101,10 +110,10 @@ async function buildSite(options: BuildOptions): Promise<BuildResult> {
     const base = normalizeBase(options.base ?? config.base);
     const content = await loadSiteContent(fileSystemSource(root));
     const styles = await writeStylesEntries(root, config);
-    const withAdmin = Boolean(config.backend);
+    const withAdmin = Boolean(config.backend || config.demo);
 
-    // Build the CSS (Tailwind scans content/ for class names), the admin panel if the
-    // site has a backend, the Client Components if it has any, and copy public/ into the output.
+    // Build the CSS (Tailwind scans content/ for class names), the admin panel if the site has
+    // a backend or is a demo, the Client Components if it has any, and copy public/ into the output.
     const input: Record<string, string> = { styles: styles.site };
     if (withAdmin) Object.assign(input, { preview: styles.preview, admin: ADMIN_ENTRY });
     if (modules.size > 0) input.islands = ISLANDS_ENTRY;
@@ -152,6 +161,8 @@ async function buildSite(options: BuildOptions): Promise<BuildResult> {
       });
       await mkdir(join(outDir, "admin"), { recursive: true });
       await writeFile(join(outDir, "admin/index.html"), html);
+      // A demo's admin panel starts from a copy of the site's content, since visitors don't sign in.
+      if (config.demo) await writeFile(join(outDir, DEMO_CONTENT_PATH), await demoContent(fileSystemSource(root)));
     }
 
     const pages = allPages(content);

@@ -49,7 +49,7 @@ export function resetContent() {
 const testBlocks = join(here, "../fixtures/blocks");
 
 /** A test site's config: the starter's blocks, the test blocks, and optionally a backend. */
-function testConfig({ from = "./blocks", importLine = "", backend = "" } = {}) {
+function testConfig({ from = "./blocks", importLine = "", backend = "", demo = false } = {}) {
   return [
     'import { blocks, categories } from "@goodfellow/blocks";',
     'import { defineConfig } from "@goodfellow/core";',
@@ -61,6 +61,7 @@ function testConfig({ from = "./blocks", importLine = "", backend = "" } = {}) {
     "  blocks: { ...blocks, ...installedBlocks, Counter, Disclosure },",
     "  categories: { ...categories, ...installedCategories },",
     ...(backend ? [`  backend: ${backend},`] : []),
+    ...(demo ? ["  demo: true,"] : []),
     "});",
     "",
   ].join("\n");
@@ -101,11 +102,13 @@ export const builtSites = {
     importLine: 'import { gitlab } from "@goodfellow/gitlab";',
     backend: 'gitlab({ project: "parish/site", clientId: "test-client" })',
   },
+  // A demo, which anyone can try without signing in.
+  demo: { port: 4405, demo: true },
 };
 
-/** Creates a copy of the starter configured with a git backend, ready for `goodfellow build`. */
+/** Creates a copy of the starter configured with a git backend or as a demo, ready for `goodfellow build`. */
 export function createBuiltSite(name) {
-  const { importLine, backend } = builtSites[name];
+  const { importLine, backend, demo } = builtSites[name];
   const dir = join(here, `../.site-${name}`);
   rmSync(dir, { recursive: true, force: true });
   mkdirSync(dir, { recursive: true });
@@ -114,7 +117,7 @@ export function createBuiltSite(name) {
   }
   cpSync(testBlocks, join(dir, "blocks"), { recursive: true });
   writeFileSync(join(dir, "content/pages/islands.json"), `${JSON.stringify(islandsPage, null, 2)}\n`);
-  writeFileSync(join(dir, "goodfellow.config.tsx"), testConfig({ importLine, backend }));
+  writeFileSync(join(dir, "goodfellow.config.tsx"), testConfig({ importLine, backend, demo }));
   return dir;
 }
 

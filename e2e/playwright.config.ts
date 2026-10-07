@@ -1,4 +1,5 @@
 import { defineConfig, devices } from "@playwright/test";
+import { builtSites } from "./scripts/site.mjs";
 
 const PORT = 4400;
 
@@ -40,10 +41,10 @@ export default defineConfig({
       reuseExistingServer: false,
       timeout: 240_000,
     },
-    // Production builds of the starter with each git backend, served like a static host.
-    ...(["github", "gitlab"] as const).map((name, index) => ({
+    // Production builds of the starter with each git backend, and as a demo, served like a static host.
+    ...(["github", "gitlab", "demo"] as const).map((name) => ({
       command: `node scripts/start-built-site.mjs ${name}`,
-      url: `http://localhost:${4401 + index}/admin/`,
+      url: `http://localhost:${builtSites[name].port}/admin/`,
       reuseExistingServer: false,
       timeout: 120_000,
     })),
