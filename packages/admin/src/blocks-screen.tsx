@@ -140,7 +140,7 @@ function BlockCard({
  */
 export function BlocksScreen() {
   const t = useStrings();
-  const { config, registries, readFile, publish } = useAdmin();
+  const { config, registries, readFile, publish, demo } = useAdmin();
   const { revision } = useSiteContent();
   const [record, setRecord] = useState<InstalledRecord>();
   const [available, setAvailable] = useState<AvailableBlock[]>();
@@ -216,6 +216,11 @@ export function BlocksScreen() {
         <h1>{t("blocks.title")}</h1>
       </div>
       <p className="gfa-hint">{t("blocks.intro")}</p>
+      {demo && (
+        <p className="gfa-notice" role="note">
+          {t("blocks.demo")}
+        </p>
+      )}
 
       {notice?.type === "added" && (
         <p className="gfa-notice gfa-notice-success" role="status">
@@ -241,6 +246,7 @@ export function BlocksScreen() {
               </span>
               <Button
                 variant="ghost"
+                disabled={Boolean(demo)}
                 aria-label={t("blocks.removeLabel", { name: block.title })}
                 onClick={() => setRemoving({ name, title: block.title })}
               >
@@ -271,7 +277,7 @@ export function BlocksScreen() {
                 key={block.ref}
                 block={block}
                 installed={Boolean(record?.blocks[block.name])}
-                busy={busy !== undefined || !record}
+                busy={busy !== undefined || !record || Boolean(demo)}
                 onAdd={() => void onAdd(block)}
               />
             ))}

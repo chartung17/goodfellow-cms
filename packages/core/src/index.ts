@@ -89,6 +89,19 @@ export {
   writeChanges,
 } from "./content/store.js";
 export {
+  DEMO_CONTENT_PATH,
+  type DemoChanges,
+  type DemoContent,
+  type DemoStorage,
+  type DemoStore,
+  demoContent,
+  demoContentStore,
+  demoStore,
+  isDemoStore,
+  memoryDemoStorage,
+  parseDemoContent,
+} from "./demo.js";
+export {
   credentialStorage,
   type DeployState,
   type DeployStatus,

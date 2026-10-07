@@ -26,6 +26,7 @@ The News page and its stories are an example of a collection: a group of similar
 | `app/[[...path]]/page.tsx` | Every page in `content/`, rendered as Server Components. Links between pages use `next/link`, and images `next/image`. |
 | `app/not-found.tsx` | The site's "Page not found" page, `content/pages/404.json` |
 | `app/admin/page.tsx` | The admin panel |
+| `app/admin/demo-content.json/route.ts` | For a [demo](https://github.com/chartung17/goodfellow-cms#demo-mode) (`demo: true` in the config), the copy of the content its admin panel starts from |
 | `app/site.css` | The site's styles: Tailwind, the theme, and the custom CSS from the admin panel |
 | `app/layout.tsx`, `app/sitemap.ts`, `app/robots.ts` | The page around everything, and files for search engines |
 | `next.config.ts` | `withGoodfellow()` builds static files, serves the site from a subfolder when the host needs it, and runs the admin panel's local backend in `next dev` |

@@ -1,6 +1,7 @@
 import {
   absoluteUrl,
   allPages,
+  demoContent,
   type GoodfellowConfig,
   getPageHead,
   googleFontsUrl,
@@ -177,6 +178,18 @@ export function goodfellowPages(config: GoodfellowConfig, options: GoodfellowPag
       return allPages(content)
         .filter((page) => page.path !== "/404")
         .map((page) => ({ url: absoluteUrl(url, page.path) }));
+    },
+
+    /**
+     * For `app/admin/demo-content.json/route.ts`: in a demo (the config's `demo`), the copy of
+     * the site's content its admin panel starts from. A static export can't leave a route out,
+     * so other sites get an empty file.
+     */
+    async demoContent(): Promise<Response> {
+      if (!config.demo) return new Response(null, { status: 404 });
+      return new Response(await demoContent(fileSystemSource(root)), {
+        headers: { "content-type": "application/json" },
+      });
     },
 
     /** For `app/robots.ts`: lets search engines in, and points them at the sitemap once the site's address is set. */

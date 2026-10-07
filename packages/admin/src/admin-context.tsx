@@ -1,6 +1,7 @@
 import {
   ConflictError,
   type ContentStore,
+  type DemoStore,
   type DeployStatus,
   type FileChange,
   type GitBackend,
@@ -8,6 +9,7 @@ import {
   GOODFELLOW_REGISTRY,
   type GoodfellowConfig,
   goodfellowRegistryUrl,
+  isDemoStore,
   loadSiteContent,
   MEDIA_DIR,
   type RegistrySources,
@@ -18,6 +20,7 @@ import {
 import { createPuckConfig } from "@goodfellow/react";
 import type { Config } from "@puckeditor/core";
 import { createContext, type ReactNode, useCallback, useContext, useEffect, useMemo, useState } from "react";
+import { mediaUrl } from "./media.js";
 import { createMediaPreviews, type MediaPreviews } from "./media-previews.js";
 import { REGISTRY_VERSION } from "./registry-version.js";
 
@@ -67,6 +70,8 @@ interface AdminContextValue {
   readFile(path: string): Promise<string | undefined>;
   /** The block registries the Blocks screen offers blocks from: Goodfellow's, and those the config lists. */
   registries: RegistrySources;
+  /** In a demo, the store keeping the visitor's changes in their browser. */
+  demo?: DemoStore;
 }
 
 const AdminContext = createContext<AdminContextValue | null>(null);
@@ -121,6 +126,20 @@ export function AdminProvider({
     [registry, config.registries],
   );
   const readFile = useCallback((path: string) => store.read(path), [store]);
+  const demo = isDemoStore(store) ? store : undefined;
+
+  // A demo visitor's uploads aren't on the live site, and their replacements of its files would show the
+  // live site's version, so previews show what the visitor saved instead.
+  useEffect(() => {
+    if (!demo) return;
+    void demo.changes().then((changes) => {
+      for (const change of changes) {
+        if ("bytes" in change && change.path.startsWith(`${MEDIA_DIR}/`)) {
+          mediaPreviews.remember(mediaUrl(change.path), change.bytes);
+        }
+      }
+    });
+  }, [demo, mediaPreviews]);
 
   const loadAndHandle = useCallback(async () => {
     const next = await load(store);
@@ -191,6 +210,7 @@ export function AdminProvider({
       publish,
       readFile,
       registries,
+      demo,
     }),
     [
       config,
@@ -207,6 +227,7 @@ export function AdminProvider({
       publish,
       readFile,
       registries,
+      demo,
     ],
   );
 

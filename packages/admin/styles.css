@@ -61,6 +61,19 @@ body,
   border-bottom: 1px solid var(--gfa-border);
 }
 
+.gfa-demo-banner {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  flex-shrink: 0;
+  padding: 6px 16px;
+  background: #fef9c3;
+  border-bottom: 1px solid #fde68a;
+  color: #713f12;
+  font-size: 14px;
+}
+
 .gfa-brand {
   font-weight: 700;
   white-space: nowrap;

@@ -81,6 +81,10 @@ describe("build", () => {
     }
   });
 
+  it("leaves out the admin panel, and a demo's copy of the content, without a backend or demo", () => {
+    expect(existsSync(join(outDir, "admin"))).toBe(false);
+  });
+
   it("copies the public folder", async () => {
     expect(await read("media/note.txt")).toBe("hello\n");
   });

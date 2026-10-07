@@ -20,9 +20,16 @@ export interface GoodfellowConfig {
   base?: string;
   /**
    * Where the site's repository lives, such as `github({ repo: "owner/name" })`.
-   * Builds include the admin panel at `/admin` only when this is set.
+   * Builds include the admin panel at `/admin` only when this or `demo` is set.
    */
   backend?: GitHost;
+  /**
+   * Turns the admin panel into a demo anyone can try without signing in. It
+   * starts from the site's content as last built, and keeps each visitor's
+   * changes in their own browser: nothing is ever published, and `backend` is
+   * ignored. Builds include a copy of the site's content for it to read.
+   */
+  demo?: boolean;
   /**
    * The AI assistant in the editor, which drafts and rewrites content with an
    * AI service each editor chooses. On by default; `false` removes it.

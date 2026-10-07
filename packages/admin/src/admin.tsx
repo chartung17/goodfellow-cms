@@ -1,4 +1,5 @@
 import { ContentError, type ContentStore, type GitHost, type GoodfellowConfig } from "@goodfellow/core";
+import { useMemo, useState } from "react";
 import { createRoot } from "react-dom/client";
 import { AdminProvider, type PreviewOptions, useAdmin, useSiteContent } from "./admin-context.js";
 import { forgetAiKeys } from "./ai-settings.js";
@@ -6,6 +7,7 @@ import { BlocksScreen } from "./blocks-screen.js";
 import { EntriesScreen, TemplateScreen } from "./collection-screen.js";
 import { CollectionSettingsScreen } from "./collection-settings.js";
 import { CollectionsScreen } from "./collections-screen.js";
+import { createDemoStore } from "./demo.js";
 import { LayoutEditorScreen, PageEditorScreen } from "./editor-screens.js";
 import { EntryEditorScreen } from "./entry-editor.js";
 import { MediaScreen } from "./media-library.js";
@@ -13,8 +15,8 @@ import { PagesScreen } from "./pages-screen.js";
 import { useRoute } from "./router.js";
 import { SETTINGS_TABS, SettingsScreen, type SettingsTab } from "./settings-screen.js";
 import { SignInGate } from "./sign-in.js";
-import { type Strings, StringsProvider, useStrings } from "./strings.js";
-import { Button, ErrorMessage } from "./ui.js";
+import { defaultStrings, type Strings, StringsProvider, useStrings } from "./strings.js";
+import { Button, Dialog, ErrorMessage } from "./ui.js";
 import { AppLink } from "./use-link.js";
 
 export interface AdminProps {
@@ -22,7 +24,8 @@ export interface AdminProps {
   config: GoodfellowConfig;
   /**
    * Where the site's files are read from and published to, without signing in.
-   * Used by `goodfellow dev`. Otherwise the admin panel signs in to `host`.
+   * Used by `goodfellow dev`. Otherwise the admin panel signs in to `host`. In a
+   * demo (the config's `demo`), it's only read from, and changes stay in the browser.
    */
   store?: ContentStore;
   /** The git host the site is stored on. Defaults to the config's `backend`. */
@@ -112,6 +115,40 @@ function DeployIndicator() {
   );
 }
 
+/** Says the admin panel is a demo, and lets the visitor undo everything they've changed. */
+function DemoBanner() {
+  const t = useStrings();
+  const { demo } = useAdmin();
+  const [confirming, setConfirming] = useState(false);
+  const [busy, setBusy] = useState(false);
+  if (!demo) return null;
+  const startOver = async () => {
+    setBusy(true);
+    await demo.reset();
+    // Every screen starts again from the site's content, including forms that copied what they loaded.
+    location.reload();
+  };
+  return (
+    <div className="gfa-demo-banner" role="note">
+      <span>{t("demo.banner")}</span>
+      <Button variant="ghost" onClick={() => setConfirming(true)}>
+        {t("demo.startOver")}
+      </Button>
+      {confirming && (
+        <Dialog title={t("demo.startOverTitle")} onClose={() => setConfirming(false)}>
+          <p>{t("demo.startOverBody")}</p>
+          <div className="gfa-dialog-actions">
+            <Button onClick={() => setConfirming(false)}>{t("action.cancel")}</Button>
+            <Button variant="danger" disabled={busy} onClick={() => void startOver()}>
+              {t("demo.startOver")}
+            </Button>
+          </div>
+        </Dialog>
+      )}
+    </div>
+  );
+}
+
 function AccountMenu() {
   const t = useStrings();
   const { account } = useAdmin();
@@ -171,6 +208,7 @@ function Shell() {
         </a>
         <AccountMenu />
       </header>
+      <DemoBanner />
       <main className="gfa-content">
         {state.status === "loading" && <p className="gfa-screen">{t("loading")}</p>}
         {state.status === "error" && <LoadError error={state.error} />}
@@ -191,7 +229,21 @@ function MissingBackend() {
 
 /** The admin panel. Render it on its own page, such as `/admin`. */
 export function Admin({ config, store, host = config.backend, preview, siteUrl = "/", strings, registry }: AdminProps) {
-  const body = store ? (
+  const demo = useMemo(
+    () => (config.demo ? createDemoStore(siteUrl, store) : undefined),
+    [config.demo, siteUrl, store],
+  );
+  // In a demo, "Published." would mislead: the changes are only saved in the browser.
+  const text = useMemo(
+    () =>
+      demo ? { ...strings, "publish.done": strings?.["demo.published"] ?? defaultStrings["demo.published"] } : strings,
+    [demo, strings],
+  );
+  const body = demo ? (
+    <AdminProvider config={config} store={demo} preview={preview} siteUrl={siteUrl} registry={registry}>
+      <Shell />
+    </AdminProvider>
+  ) : store ? (
     <AdminProvider config={config} store={store} preview={preview} siteUrl={siteUrl} registry={registry}>
       <Shell />
     </AdminProvider>
@@ -222,7 +274,7 @@ export function Admin({ config, store, host = config.backend, preview, siteUrl =
   ) : (
     <MissingBackend />
   );
-  return <StringsProvider strings={strings}>{body}</StringsProvider>;
+  return <StringsProvider strings={text}>{body}</StringsProvider>;
 }
 
 /** Renders the admin panel into an element. */
