@@ -1,10 +1,12 @@
 import type { Config } from "@puckeditor/core";
+import { Code } from "./code.js";
 import { CollectionList, EntryField } from "./collections.js";
 import { ContactDetails } from "./contact.js";
 import { Button, Heading, Image, Text } from "./content.js";
 import { Flex, Grid, Section, Space } from "./layout.js";
 import { Menu, SiteBrand } from "./navigation.js";
 
+export { Code, type CodeProps, CodeView } from "./code.js";
 export {
   CollectionList,
   type CollectionListProps,
@@ -23,6 +25,14 @@ export {
   Text,
   type TextProps,
 } from "./content.js";
+export {
+  CODE_LANGUAGES,
+  type CodeColors,
+  type CodeLanguage,
+  codeLanguage,
+  highlightCode,
+  loadHighlighter,
+} from "./highlight.js";
 export {
   Flex,
   type FlexProps,
@@ -48,6 +58,7 @@ export const blocks = {
   Text,
   Button,
   Image,
+  Code,
   ContactDetails,
   Menu,
   SiteBrand,
@@ -58,7 +69,7 @@ export const blocks = {
 /** Groups for the editor's block list. */
 export const categories = {
   layout: { title: "Layout", components: ["Section", "Grid", "Flex", "Space"] },
-  content: { title: "Content", components: ["Heading", "Text", "Button", "Image", "ContactDetails"] },
+  content: { title: "Content", components: ["Heading", "Text", "Button", "Image", "Code", "ContactDetails"] },
   navigation: { title: "Navigation", components: ["Menu", "SiteBrand"] },
   collections: { title: "Collections", components: ["CollectionList", "EntryField"] },
 } satisfies Config["categories"];

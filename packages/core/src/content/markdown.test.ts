@@ -4,6 +4,8 @@ import {
   headingSlug,
   isSafeUrl,
   markdownHeadings,
+  markdownParts,
+  markdownText,
   markdownToHtml,
   parseMarkdownEntry,
   serializeMarkdownEntry,
@@ -105,5 +107,23 @@ describe("canFormatMarkdown", () => {
     for (const markdown of ["| a |\n|---|\n| 1 |", "![p](/p.png)", "<div>x</div>", "- [ ] task", "[a][1]\n\n[1]: /x"]) {
       expect(canFormatMarkdown(markdown), markdown).toBe(false);
     }
+  });
+});
+
+describe("markdownParts", () => {
+  it("splits out code blocks, keeping heading ids counted across the parts", () => {
+    const parts = markdownParts("# Use\n\n```sh\nnpm i\n```\n\n# Use\n\n- a\n\n  ```\n  nested\n  ```", {
+      highlight: (code) => (code === "npm i" ? "<pre>highlighted</pre>" : undefined),
+    });
+    expect(parts).toEqual([
+      { kind: "html", html: '<h1 id="use">Use</h1>\n' },
+      { kind: "code", code: "npm i", language: "sh", html: "<pre>highlighted</pre>" },
+      { kind: "html", html: expect.stringContaining('<h1 id="use-1">Use</h1>') },
+    ]);
+    expect(parts[2]?.kind === "html" && parts[2].html).toContain("<pre><code>nested\n</code></pre>");
+  });
+
+  it("gives plain text for summaries", () => {
+    expect(markdownText("# Hi\n\nSome **bold** & <i>more</i>.")).toBe("Hi Some bold & <i>more</i>.");
   });
 });

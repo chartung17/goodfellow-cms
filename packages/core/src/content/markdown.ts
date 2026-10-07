@@ -1,4 +1,4 @@
-import { Marked, type Tokens } from "marked";
+import { Marked, type Token, type Tokens } from "marked";
 import { parse as parseYaml, stringify as stringifyYaml } from "yaml";
 import { CURRENT_VERSION } from "../migrations/index.js";
 import type { CollectionFile } from "./schemas.js";
@@ -172,15 +172,19 @@ export interface MarkdownOptions {
   highlight?(code: string, language: string): string | undefined;
 }
 
-/**
- * Turns Markdown, including GitHub's tables and strikethrough, into HTML that's
- * safe to put in a page: HTML in the Markdown is shown as text, and links and
- * images may only use addresses that can't run code. Headings get ids, as
- * `markdownHeadings` lists them, so they can be linked to.
- */
-export function markdownToHtml(markdown: string, options: MarkdownOptions = {}): string {
+/** A part of rendered Markdown: HTML, or a code block that isn't inside anything else. */
+export type MarkdownPart = { kind: "html"; html: string } | { kind: "code"; code: string; language: string; html: string };
+
+function markdownRenderer(options: MarkdownOptions) {
   const slug = slugger();
   const marked = new Marked({ gfm: true, async: false });
+  const renderCode = (text: string, lang: string | undefined) => {
+    const language = (lang ?? "").trim().split(/\s+/)[0] ?? "";
+    const highlighted = options.highlight?.(text, language);
+    if (highlighted !== undefined) return { language, html: highlighted };
+    const className = language ? ` class="language-${escapeHtml(language)}"` : "";
+    return { language, html: `<pre><code${className}>${escapeHtml(text)}\n</code></pre>` };
+  };
   marked.use({
     renderer: {
       html({ text }) {
@@ -200,13 +204,60 @@ export function markdownToHtml(markdown: string, options: MarkdownOptions = {}):
         return `<img src="${escapeHtml(href)}" alt="${escapeHtml(text)}"${title ? ` title="${escapeHtml(title)}"` : ""}>`;
       },
       code({ text, lang }) {
-        const language = (lang ?? "").trim().split(/\s+/)[0] ?? "";
-        const highlighted = options.highlight?.(text, language);
-        if (highlighted !== undefined) return `${highlighted}\n`;
-        const className = language ? ` class="language-${escapeHtml(language)}"` : "";
-        return `<pre><code${className}>${escapeHtml(text)}\n</code></pre>\n`;
+        return `${renderCode(text, lang).html}\n`;
       },
     },
   });
-  return marked.parse(markdown) as string;
+  return { marked, renderCode };
+}
+
+/**
+ * Renders Markdown as `markdownToHtml` does, but with each code block that isn't
+ * inside a list or quote as a part of its own, so it can be shown with a copy button.
+ */
+export function markdownParts(markdown: string, options: MarkdownOptions = {}): MarkdownPart[] {
+  const { marked, renderCode } = markdownRenderer(options);
+  const tokens = marked.lexer(markdown);
+  const parts: MarkdownPart[] = [];
+  let pending: Token[] = [];
+  const flush = () => {
+    if (pending.length === 0) return;
+    const html = marked.parser(Object.assign(pending, { links: tokens.links }));
+    if (html.trim()) parts.push({ kind: "html", html });
+    pending = [];
+  };
+  for (const token of tokens) {
+    if (token.type !== "code") {
+      pending.push(token);
+      continue;
+    }
+    flush();
+    const { text, lang } = token as Tokens.Code;
+    parts.push({ kind: "code", code: text, ...renderCode(text, lang) });
+  }
+  flush();
+  return parts;
+}
+
+/**
+ * Turns Markdown, including GitHub's tables and strikethrough, into HTML that's
+ * safe to put in a page: HTML in the Markdown is shown as text, and links and
+ * images may only use addresses that can't run code. Headings get ids, as
+ * `markdownHeadings` lists them, so they can be linked to.
+ */
+export function markdownToHtml(markdown: string, options: MarkdownOptions = {}): string {
+  return markdownRenderer(options).marked.parse(markdown) as string;
+}
+
+/** The text of Markdown without its formatting, such as for a summary. */
+export function markdownText(markdown: string): string {
+  return markdownToHtml(markdown)
+    .replace(/<[^>]+>/g, " ")
+    .replace(/&lt;/g, "<")
+    .replace(/&gt;/g, ">")
+    .replace(/&quot;/g, '"')
+    .replace(/&#39;/g, "'")
+    .replace(/&amp;/g, "&")
+    .replace(/\s+/g, " ")
+    .trim();
 }

@@ -287,6 +287,82 @@ describe("built-in blocks", () => {
     expect(main).toContain('<img src="/media/picnic.jpg" alt="Parish picnic" class="w-full rounded-lg"/>');
   });
 
+  it("highlights code when the page is built, escaping it", async () => {
+    const html = await render([
+      {
+        type: "Code",
+        props: {
+          id: "c",
+          code: '<b class="x">Hi</b>',
+          language: "html",
+          title: "index.html",
+          colors: "dark",
+          copyLabel: "Copy code",
+          className: "",
+        },
+      },
+    ]);
+    expect(html).toContain('<pre class="shiki github-dark"');
+    expect(html).toContain("&#x3C;");
+    expect(html).not.toContain('<b class="x">');
+    expect(html).toContain(">index.html</figcaption>");
+    expect(html).toContain('aria-label="Copy code"');
+  });
+
+  it("renders a Markdown file's body: tables, heading ids and highlighted code, with HTML shown as text", async () => {
+    const docs: Collection = {
+      id: "docs",
+      file: "content/collections/docs/_collection.json",
+      settings: collectionFileSchema.parse({
+        version: 1,
+        name: "Docs",
+        entryName: "Page",
+        path: "/docs/{slug}",
+        fields: [
+          { name: "title", label: "Title", type: "text" },
+          { name: "body", label: "Text", type: "richtext" },
+        ],
+        markdown: { body: "body" },
+        template: {
+          root: { props: { title: "{title}" } },
+          content: [
+            { type: "EntryField", props: { id: "b", field: "body", style: "text", copyLabel: "Copy", className: "" } },
+          ],
+        },
+      }),
+      entries: [
+        {
+          collection: "docs",
+          slug: "install",
+          file: "content/collections/docs/install.md",
+          path: "/docs/install",
+          content: {
+            version: 1,
+            fields: {
+              title: "Install",
+              body: "## Install it\n\n```sh\nnpm i goodfellow\n```\n\n| Host | Free |\n|---|---|\n| GitLab | Yes |\n\n<script>alert(1)</script> [x](javascript:alert(1))",
+            },
+          },
+        },
+      ],
+    };
+    const html = await renderPage(
+      { ...content, collections: [docs] },
+      {
+        path: "/docs/install",
+        file: "content/collections/docs/install.md",
+        content: { version: 1, data: docs.settings.template },
+        entry: { collection: "docs", slug: "install" },
+      },
+    );
+    const main = html.slice(html.indexOf("<main"), html.indexOf("</main>"));
+    expect(main).toContain('<h2 id="install-it">Install it</h2>');
+    expect(main).toContain("<td>GitLab</td>");
+    expect(main).toContain('<pre class="shiki github-light"');
+    expect(main).toContain('aria-label="Copy"');
+    expect(main).not.toMatch(/<script|href="javascript/);
+  });
+
   it("leaves entry fields out of the page editor", () => {
     expect(Object.keys(createPuckConfig({ blocks, categories }, "page").components)).not.toContain("EntryField");
   });

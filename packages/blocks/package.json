@@ -26,7 +26,8 @@
   },
   "dependencies": {
     "@goodfellow/core": "workspace:*",
-    "@goodfellow/react": "workspace:*"
+    "@goodfellow/react": "workspace:*",
+    "shiki": "4.5.0"
   },
   "peerDependencies": {
     "@puckeditor/core": "0.23.0",

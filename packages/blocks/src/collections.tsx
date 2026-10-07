@@ -7,12 +7,17 @@ import {
   formatFieldValue,
   isDateValue,
   isEmptyValue,
+  type MarkdownPart,
+  markdownParts,
+  markdownText,
   sortCollectionEntries,
   sortEntries,
 } from "@goodfellow/core";
 import { classNameField, cx, SiteImage, SiteLink, templateOnly, useSite } from "@goodfellow/react";
 import type { ComponentConfig, Fields, RichText } from "@puckeditor/core";
 import type { ReactNode } from "react";
+import { CodeView } from "./code.js";
+import { highlightCode, loadHighlighter } from "./highlight.js";
 import { options } from "./options.js";
 
 type FieldChoice = { label: string; value: string };
@@ -39,10 +44,39 @@ export interface EntryFieldProps {
   style: Style;
   /** The field's rich text, filled in when an entry's page is built. */
   value?: RichText;
+  /** In a collection of Markdown files, the body rendered from its Markdown, filled in when the page is built. */
+  markdown?: MarkdownPart[];
+  /** The label of code blocks' copy buttons in Markdown, or empty for none. */
+  copyLabel: string;
   className: string;
 }
 
-function EntryFieldView({ field, style, value, className }: EntryFieldProps) {
+/** Markdown rendered by `markdownParts()`, which escapes HTML and leaves out unsafe addresses. */
+function MarkdownBody({
+  parts,
+  copyLabel,
+  className,
+}: {
+  parts: MarkdownPart[];
+  copyLabel: string;
+  className: string;
+}) {
+  return (
+    <div className={cx("gf-prose", className)}>
+      {parts.map((part, index) =>
+        part.kind === "code" ? (
+          // biome-ignore lint/suspicious/noArrayIndexKey: parts have no ids, and only change all together
+          <CodeView key={index} code={part.code} html={part.html} copyLabel={copyLabel || undefined} />
+        ) : (
+          // biome-ignore lint/suspicious/noArrayIndexKey: as above
+          <div key={index} className="contents" dangerouslySetInnerHTML={{ __html: part.html }} />
+        ),
+      )}
+    </div>
+  );
+}
+
+function EntryFieldView({ field, style, value, markdown, copyLabel, className }: EntryFieldProps) {
   const { collection, entry, settings } = useSite();
   const definition: CollectionField | undefined = collection?.settings.fields.find(
     (candidate) => candidate.name === field,
@@ -65,6 +99,8 @@ function EntryFieldView({ field, style, value, className }: EntryFieldProps) {
 
   const raw = entry.content.fields[field];
   if (!definition || isEmptyValue(raw)) return null;
+
+  if (markdown) return <MarkdownBody parts={markdown} copyLabel={copyLabel} className={className} />;
 
   switch (definition.type) {
     case "richtext":
@@ -101,19 +137,35 @@ const entryField: ComponentConfig<EntryFieldProps> = {
     },
     // Filled in from the entry, so Puck renders it like any rich text: sanitized.
     value: { type: "richtext", visible: false },
+    copyLabel: { type: "text", label: "Copy button's label, for code in Markdown (leave empty for none)" },
     className: classNameField,
   },
-  defaultProps: { field: "title", style: "text", className: "" },
+  defaultProps: { field: "title", style: "text", copyLabel: "Copy code", className: "" },
   resolveFields: (_data, { fields, metadata }) => {
     const choices = fieldChoices(metadata.collection as Collection | undefined);
     return { ...fields, field: { type: "select", label: "Field", options: choices } };
   },
-  resolveData: ({ props }, { metadata }) => {
+  resolveData: async ({ props }, { metadata }) => {
     const collection = metadata.collection as Collection | undefined;
     const entry = metadata.entry as Entry | undefined;
     const definition = collection?.settings.fields.find((candidate) => candidate.name === props.field);
     const raw = entry?.content.fields[props.field];
-    return { props: { ...props, value: definition?.type === "richtext" && typeof raw === "string" ? raw : undefined } };
+    // A Markdown file's body isn't HTML, so it's rendered here, with its code highlighted, rather than by Puck.
+    if (collection?.settings.markdown?.body === props.field && typeof raw === "string") {
+      const shiki = /^ {0,3}(```|~~~)/m.test(raw) ? await loadHighlighter() : undefined;
+      const markdown = markdownParts(
+        raw,
+        shiki && { highlight: (code, language) => highlightCode(shiki, code, language) },
+      );
+      return { props: { ...props, value: undefined, markdown } };
+    }
+    return {
+      props: {
+        ...props,
+        value: definition?.type === "richtext" && typeof raw === "string" ? raw : undefined,
+        markdown: undefined,
+      },
+    };
   },
   render: (props) => <EntryFieldView {...props} />,
 };
@@ -215,9 +267,12 @@ function CollectionListView({
         const values = entry.content.fields;
         const image = imageField && !isEmptyValue(values[imageField]) ? String(values[imageField]) : undefined;
         const date = dateField && isDateValue(values[dateField]) ? String(values[dateField]) : undefined;
-        const summary = summaryField
-          ? formatFieldValue(fieldOf(summaryField), values[summaryField], settings.language)
-          : "";
+        const summaryValue = summaryField ? values[summaryField] : undefined;
+        const summary = !summaryField
+          ? ""
+          : collection.settings.markdown?.body === summaryField && typeof summaryValue === "string"
+            ? markdownText(summaryValue)
+            : formatFieldValue(fieldOf(summaryField), summaryValue, settings.language);
         const title = entryTitle(entry);
 
         return (
