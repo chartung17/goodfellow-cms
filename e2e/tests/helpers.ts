@@ -5,13 +5,18 @@ import { resetContent, site } from "../scripts/site.mjs";
 
 /**
  * Waits for a dev server to load the site's code again after it changed on disk. Until its
- * watcher has seen every change, it can mix old modules with new ones.
+ * watcher has seen every change, it can mix old modules with new ones. `next dev` also
+ * recompiles every page that imports the code, which can take a minute on a slow computer.
+ * Leaves the page on the last of `urls`.
  */
-export async function waitForCode(page: Page, url = "/"): Promise<void> {
+export async function waitForCode(page: Page, urls = ["/"], timeout = 30_000): Promise<void> {
   await page.waitForTimeout(1_000);
-  await expect(async () => {
-    expect((await page.request.get(url)).status()).toBe(200);
-  }).toPass({ timeout: 30_000 });
+  for (const url of urls) {
+    await expect(async () => {
+      // In the browser, since `next dev` compiles a page's scripts when they're first loaded.
+      expect((await page.goto(url, { timeout }))?.status()).toBe(200);
+    }).toPass({ timeout });
+  }
 }
 
 /** Every test starts from the starter template's content. */

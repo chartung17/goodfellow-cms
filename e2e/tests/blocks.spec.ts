@@ -135,7 +135,8 @@ baseTest("adds a block to a site on GitHub in one publish", async ({ page }) => 
 });
 
 baseTest("adds a block to a Next.js site, which then runs it", async ({ page }) => {
-  baseTest.setTimeout(180_000);
+  // `next dev` recompiles once after adding the block and again after the test resets it.
+  baseTest.setTimeout(400_000);
   const root = nextSite as string;
   resetNextContent();
   try {
@@ -156,6 +157,9 @@ baseTest("adds a block to a Next.js site, which then runs it", async ({ page }) 
       baseExpect(await answer.isVisible()).toBe(true);
     }).toPass({ timeout: 60_000 });
   } finally {
-    if (resetNextContent()) await waitForCode(page, "http://localhost:4403/about/");
+    // The site's pages and the admin panel both import the blocks, so both recompile.
+    if (resetNextContent()) {
+      await waitForCode(page, ["http://localhost:4403/about/", "http://localhost:4403/admin/"], 120_000);
+    }
   }
 });
