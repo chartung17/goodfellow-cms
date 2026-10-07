@@ -17,6 +17,7 @@ Goodfellow aims to be all three good things at once: as easy to edit as a websit
 - **Your content is yours.** Every page is a readable file in your repository, with its whole history. You can move to another host, or another tool, whenever you like.
 - **Made for people who've never used git.** The admin panel says "Publish", not "commit", and explains problems in plain words. Sign-in is a button or a token link with the right permissions already chosen.
 - **Editors can do more without a developer.** Admins create collections and choose their fields, design the page every item shares, upload media, and add blocks from block registries, all from the admin panel.
+- **AI help at no extra cost.** The AI assistant is built into the editor, for anyone who wants it. Editors can use a free AI service, or their own account with Claude or another service, and nothing goes through Goodfellow.
 - **Built for developers to extend.** Any React component can become a block, sites can be part of a Next.js app, and the content format is documented.
 
 ## How Goodfellow compares
@@ -35,7 +36,9 @@ The trade-off is that WordPress is a program that has to run on a server, with P
 
 [TinaCMS](https://tina.io) is the closest relative. Like Goodfellow, it's open source, keeps content as files (Markdown, MDX or JSON) in a git repository, and lets editors see changes on the page as they make them.
 
-The differences are about who it's for. Tina's content model, its collections and fields, is defined in code in `tina/config`, so adding a new kind of content or a field takes a developer, while Goodfellow's admins do it in the admin panel. Tina also needs a backend: either Tina Cloud, whose [free plan](https://tina.io/pricing) covers two users and whose paid plans start at $24 a month per project, or a backend you host yourself, which needs serverless functions, a database and an authentication provider. Goodfellow has no backend at all; editors use their own GitHub or GitLab accounts, and there's no limit on how many.
+The biggest difference is the editor. In Tina, the page is shown beside a sidebar of forms, and blocks are added, reordered and changed as items in those forms. Goodfellow uses [Puck](https://puckeditor.com), where editors drag blocks onto the page itself, move them around there and edit them where they are, which is much quicker to learn. Goodfellow also has an AI assistant built in, at no cost.
+
+The other differences are about who it's for. Tina's content model, its collections and fields, is defined in code in `tina/config`, so adding a new kind of content or a field takes a developer, while Goodfellow's admins do it in the admin panel. Tina also needs a backend: either Tina Cloud, whose [free plan](https://tina.io/pricing) covers two users and whose paid plans start at $24 a month per project, or a backend you host yourself, which needs serverless functions, a database and an authentication provider. Goodfellow has no backend at all; editors use their own GitHub or GitLab accounts, and there's no limit on how many.
 
 **Choose TinaCMS** if a developer builds and looks after the site, and wants rich Markdown and MDX editing in the framework of their choice. **Choose Goodfellow** if the people running the site should be able to build pages and change how content is organized themselves.
 
@@ -46,7 +49,7 @@ The differences are about who it's for. Tina's content model, its collections an
 
 ## What Goodfellow can't do (yet)
 
-- **It's early.** Goodfellow isn't on npm yet, and some features on the [roadmap](https://github.com/chartung17/goodfellow-cms#roadmap), such as inviting editors and version history in the admin panel, aren't built yet.
+- **It's early.** Some features on the [roadmap](https://github.com/chartung17/goodfellow-cms#roadmap), such as inviting editors and version history in the admin panel, aren't built yet.
 - **Sites are static.** Shops, logins and comments need a service of their own. Contact forms will work through a form service.
 - **Publishing takes a minute or two**, while the host rebuilds the site. The editor shows changes at once, but visitors see them after the rebuild.
 - **Editors need a GitHub or GitLab account** with permission to change the site's repository.

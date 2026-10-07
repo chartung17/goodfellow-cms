@@ -351,6 +351,7 @@ my-site/
     - Automatic updates: a scheduled job updates Goodfellow, and blocks added from block registries, and publishes the update only if the site still builds. Block updates replace only files nobody has changed.
     - Plain-language explanations when a rebuild fails.
     - Contact forms, through a form service the site owner can set up without a developer.
+17. **Stock photos from the AI assistant.** When the media library has nothing that fits, the AI assistant can add free stock photos whose license allows it, such as from [Unsplash](https://unsplash.com), crediting the photographer as the license and the service require. A checkbox in the AI panel turns this on or off for each request and is remembered in the browser; a site's config can turn it off for everyone.
 
 ## Contributing
 
