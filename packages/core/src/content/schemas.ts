@@ -165,6 +165,11 @@ export const collectionFileSchema = z
     fields: z.array(collectionField).min(1),
     /** How entries are ordered in the admin panel and, by default, in lists. Defaults to by title. */
     sort: z.object({ field: fieldName, order: z.enum(["asc", "desc"]) }).optional(),
+    /**
+     * Stores entries as Markdown files (`<slug>.md`) instead of JSON. `body` names the
+     * formatted-text field that is the file's Markdown; the other fields are its front matter.
+     */
+    markdown: z.object({ body: fieldName }).optional(),
     /** The Puck layout every entry's page uses. */
     template: puckDataSchema.default({ root: {}, content: [] }),
   })
@@ -189,6 +194,24 @@ export const collectionFileSchema = z
     }
     if (file.sort && !names.has(file.sort.field)) {
       ctx.addIssue({ code: "custom", path: ["sort", "field"], message: "must be one of the collection's fields" });
+    }
+    if (file.markdown) {
+      const body = file.fields.find((field) => field.name === file.markdown?.body);
+      if (body?.type !== "richtext") {
+        ctx.addIssue({
+          code: "custom",
+          path: ["markdown", "body"],
+          message: "must be one of the collection's formatted-text fields",
+        });
+      }
+      // Front matter holds the version beside the fields, so no field can have its name.
+      if (names.has("version")) {
+        ctx.addIssue({
+          code: "custom",
+          path: ["fields"],
+          message: 'can\'t include a field named "version" when entries are Markdown files',
+        });
+      }
     }
   });
 

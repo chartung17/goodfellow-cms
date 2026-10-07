@@ -24,6 +24,16 @@ export {
   type SiteContent,
 } from "./content/load.js";
 export {
+  headingSlug,
+  isSafeUrl,
+  type MarkdownHeading,
+  type MarkdownOptions,
+  markdownHeadings,
+  markdownToHtml,
+  parseMarkdownEntry,
+  serializeMarkdownEntry,
+} from "./content/markdown.js";
+export {
   addressPatternProblem,
   COLLECTION_SETTINGS_FILE,
   COLLECTIONS_DIR,
