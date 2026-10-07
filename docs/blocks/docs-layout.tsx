@@ -1,10 +1,10 @@
 import { classNameField, cx } from "@goodfellow/react";
-import type { ComponentConfig, SlotComponent } from "@puckeditor/core";
+import type { ComponentConfig, Slot } from "@puckeditor/core";
 
 export interface DocsLayoutProps {
-  sidebar: SlotComponent;
-  content: SlotComponent;
-  aside: SlotComponent;
+  sidebar: Slot;
+  content: Slot;
+  aside: Slot;
   className: string;
 }
 
