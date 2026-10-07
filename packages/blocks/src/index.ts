@@ -3,6 +3,7 @@ import { Code } from "./code.js";
 import { CollectionList, EntryField } from "./collections.js";
 import { ContactDetails } from "./contact.js";
 import { Button, Heading, Image, Text } from "./content.js";
+import { CollectionNav, EntryPager, OnThisPage } from "./docs.js";
 import { Flex, Grid, Section, Space } from "./layout.js";
 import { Menu, SiteBrand } from "./navigation.js";
 import { Search } from "./search.js";
@@ -26,6 +27,14 @@ export {
   Text,
   type TextProps,
 } from "./content.js";
+export {
+  CollectionNav,
+  type CollectionNavProps,
+  EntryPager,
+  type EntryPagerProps,
+  OnThisPage,
+  type OnThisPageProps,
+} from "./docs.js";
 export {
   CODE_LANGUAGES,
   type CodeColors,
@@ -65,14 +74,17 @@ export const blocks = {
   Menu,
   SiteBrand,
   Search,
+  CollectionNav,
   CollectionList,
   EntryField,
+  EntryPager,
+  OnThisPage,
 };
 
 /** Groups for the editor's block list. */
 export const categories = {
   layout: { title: "Layout", components: ["Section", "Grid", "Flex", "Space"] },
   content: { title: "Content", components: ["Heading", "Text", "Button", "Image", "Code", "ContactDetails"] },
-  navigation: { title: "Navigation", components: ["Menu", "SiteBrand", "Search"] },
-  collections: { title: "Collections", components: ["CollectionList", "EntryField"] },
+  navigation: { title: "Navigation", components: ["Menu", "SiteBrand", "Search", "CollectionNav"] },
+  collections: { title: "Collections", components: ["CollectionList", "EntryField", "EntryPager", "OnThisPage"] },
 } satisfies Config["categories"];

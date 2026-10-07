@@ -1,6 +1,7 @@
 import {
   type Collection,
   collectionFileSchema,
+  type Entry,
   type Page,
   type SiteContent,
   siteSettingsSchema,
@@ -361,6 +362,78 @@ describe("built-in blocks", () => {
     expect(main).toContain('<pre class="shiki github-light"');
     expect(main).toContain('aria-label="Copy"');
     expect(main).not.toMatch(/<script|href="javascript/);
+  });
+
+  it("builds a documentation page: navigation by section, headings on this page, previous and next", async () => {
+    const doc = (slug: string, title: string, section: string, body: string): Entry => ({
+      collection: "docs",
+      slug,
+      file: `content/collections/docs/${slug}.md`,
+      path: `/docs/${slug}`,
+      content: { version: 1, fields: { title, section, body } },
+    });
+    const docs: Collection = {
+      id: "docs",
+      file: "content/collections/docs/_collection.json",
+      settings: collectionFileSchema.parse({
+        version: 1,
+        name: "Docs",
+        entryName: "Page",
+        path: "/docs/{slug}",
+        fields: [
+          { name: "title", label: "Title", type: "text" },
+          {
+            name: "section",
+            label: "Section",
+            type: "select",
+            options: [
+              { value: "start", label: "Getting started" },
+              { value: "guides", label: "Guides" },
+            ],
+          },
+          { name: "body", label: "Text", type: "richtext" },
+        ],
+        markdown: { body: "body" },
+        template: {
+          root: { props: { title: "{title}" } },
+          content: [
+            {
+              type: "CollectionNav",
+              props: { id: "n", collection: "", groupBy: "section", heading: "", className: "" },
+            },
+            { type: "OnThisPage", props: { id: "o", heading: "On this page", depth: "2", className: "" } },
+            {
+              type: "EntryPager",
+              props: { id: "p", groupBy: "section", previousLabel: "Previous", nextLabel: "Next", className: "" },
+            },
+          ],
+        },
+      }),
+      entries: [
+        doc("intro", "Introduction", "start", "Hi"),
+        doc("pages", "Pages", "guides", "Text"),
+        doc("install", "Install", "start", "## Requirements\n\n### Node\n\n## Steps"),
+      ],
+    };
+    const html = await renderPage(
+      { ...content, collections: [docs] },
+      {
+        path: "/docs/install",
+        file: "content/collections/docs/install.md",
+        content: { version: 1, data: docs.settings.template },
+        entry: { collection: "docs", slug: "install" },
+      },
+    );
+    const main = html.slice(html.indexOf("<main"), html.indexOf("</main>"));
+    // Grouped in the order of the choices, then in the collection's order.
+    expect(main.indexOf(">Getting started<")).toBeLessThan(main.indexOf(">Guides<"));
+    expect(main).toMatch(/aria-current="page"[^>]*>Install<\/a>/);
+    expect(main.indexOf(">Introduction<")).toBeLessThan(main.indexOf(">Install<"));
+    expect(main).toContain('href="#requirements"');
+    expect(main).toContain('href="#steps"');
+    expect(main).not.toContain('href="#node"');
+    expect(main).toMatch(/href="\/docs\/intro" rel="prev"[^>]*>.*Introduction/);
+    expect(main).toMatch(/href="\/docs\/pages" rel="next"[^>]*>.*Pages/);
   });
 
   it("leaves entry fields out of the page editor", () => {
