@@ -173,4 +173,5 @@ export {
   registryItemSchema,
   SHADCN_REGISTRY,
 } from "./registry.js";
+export { SEARCH_ATTRIBUTE, SEARCH_INDEX_DIR } from "./search.js";
 export { DEFAULT_RADIUS, DEFAULT_THEME_COLORS, escapeStyleText, googleFontsUrl, themeToCss } from "./theme.js";

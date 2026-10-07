@@ -1,8 +1,8 @@
 import { defineConfig } from "tsdown";
 
 export default defineConfig({
-  // The copy button is a Client Component, an entry of its own so its "use client" directive is kept.
-  entry: ["src/index.ts", "src/copy-button.tsx"],
+  // Client Components are entries of their own, so their "use client" directive is kept.
+  entry: ["src/index.ts", "src/copy-button.tsx", "src/search-box.tsx"],
   format: "esm",
   dts: true,
   platform: "neutral",

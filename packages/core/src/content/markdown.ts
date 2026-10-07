@@ -173,7 +173,9 @@ export interface MarkdownOptions {
 }
 
 /** A part of rendered Markdown: HTML, or a code block that isn't inside anything else. */
-export type MarkdownPart = { kind: "html"; html: string } | { kind: "code"; code: string; language: string; html: string };
+export type MarkdownPart =
+  | { kind: "html"; html: string }
+  | { kind: "code"; code: string; language: string; html: string };
 
 function markdownRenderer(options: MarkdownOptions) {
   const slug = slugger();

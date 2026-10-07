@@ -100,7 +100,9 @@ describe("renderPage", () => {
     expect(html).toContain('<link rel="stylesheet" href="/assets/site.css"/>');
     expect(html).toContain("family=Cinzel:wght@");
     expect(html).toContain("--primary:#1e3a8a");
-    expect(html).toContain('<main class="gf-main page-about"><div><h1>About us</h1></div></main>');
+    expect(html).toContain(
+      '<main class="gf-main page-about" data-pagefind-body=""><div><h1>About us</h1></div></main>',
+    );
     expect(html).not.toContain("<header");
   });
 
@@ -127,7 +129,7 @@ describe("renderPage", () => {
       ]),
     );
     expect(html).toContain(
-      '<main class="gf-main"><div><h1>Plain</h1><div class="text-center mt-4"><h1>Styled</h1></div></div></main>',
+      '<main class="gf-main" data-pagefind-body=""><div><h1>Plain</h1><div class="text-center mt-4"><h1>Styled</h1></div></div></main>',
     );
   });
 

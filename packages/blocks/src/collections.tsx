@@ -68,8 +68,13 @@ function MarkdownBody({
           // biome-ignore lint/suspicious/noArrayIndexKey: parts have no ids, and only change all together
           <CodeView key={index} code={part.code} html={part.html} copyLabel={copyLabel || undefined} />
         ) : (
-          // biome-ignore lint/suspicious/noArrayIndexKey: as above
-          <div key={index} className="contents" dangerouslySetInnerHTML={{ __html: part.html }} />
+          <div
+            // biome-ignore lint/suspicious/noArrayIndexKey: as above
+            key={index}
+            className="contents"
+            // biome-ignore lint/security/noDangerouslySetInnerHtml: markdownParts() escapes HTML and leaves out unsafe addresses
+            dangerouslySetInnerHTML={{ __html: part.html }}
+          />
         ),
       )}
     </div>

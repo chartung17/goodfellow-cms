@@ -18,6 +18,10 @@
       "types": "./dist/node.d.ts",
       "import": "./dist/node.js"
     },
+    "./search-index": {
+      "types": "./dist/node-search.d.ts",
+      "import": "./dist/node-search.js"
+    },
     "./package.json": "./package.json"
   },
   "files": [
@@ -30,6 +34,7 @@
   },
   "dependencies": {
     "marked": "18.1.0",
+    "pagefind": "1.5.2",
     "yaml": "2.9.1",
     "zod": "4.6.5"
   },

@@ -1,5 +1,6 @@
 import { parseArgs } from "node:util";
 import { ContentError } from "@goodfellow/core";
+import { writeSearchIndex } from "@goodfellow/core/search-index";
 import { build } from "./build.js";
 import { dev } from "./dev.js";
 import { preview } from "./preview.js";
@@ -11,6 +12,7 @@ Commands:
   dev       Start a development server that re-renders pages as you edit
   build     Build the static site into dist/
   preview   Serve the built site the way a static host would
+  index     Index a built site's pages for its search block (build does this itself)
 
 Options:
   --root <dir>    The site's folder (default: current folder)
@@ -51,6 +53,17 @@ async function main(): Promise<void> {
       const seconds = ((performance.now() - started) / 1000).toFixed(1);
       console.log(
         `Built ${result.pages.length} page${result.pages.length === 1 ? "" : "s"} into ${result.outDir} in ${seconds}s`,
+      );
+      if (result.searchIndexed !== undefined) console.log(`Indexed ${result.searchIndexed} pages for search`);
+      return;
+    }
+    case "index": {
+      const dir = positionals[1] ?? values.out ?? "out";
+      const indexed = await writeSearchIndex(dir);
+      console.log(
+        indexed === undefined
+          ? `No page in ${dir} has a search block, so there's nothing to index`
+          : `Indexed ${indexed} pages for search`,
       );
       return;
     }

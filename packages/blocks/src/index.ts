@@ -5,6 +5,7 @@ import { ContactDetails } from "./contact.js";
 import { Button, Heading, Image, Text } from "./content.js";
 import { Flex, Grid, Section, Space } from "./layout.js";
 import { Menu, SiteBrand } from "./navigation.js";
+import { Search } from "./search.js";
 
 export { Code, type CodeProps, CodeView } from "./code.js";
 export {
@@ -44,6 +45,7 @@ export {
   type SpaceProps,
 } from "./layout.js";
 export { Menu, type MenuProps, SiteBrand, type SiteBrandProps } from "./navigation.js";
+export { Search, type SearchProps } from "./search.js";
 
 /**
  * Every built-in block, keyed by the name stored in content files. Never rename
@@ -62,6 +64,7 @@ export const blocks = {
   ContactDetails,
   Menu,
   SiteBrand,
+  Search,
   CollectionList,
   EntryField,
 };
@@ -70,6 +73,6 @@ export const blocks = {
 export const categories = {
   layout: { title: "Layout", components: ["Section", "Grid", "Flex", "Space"] },
   content: { title: "Content", components: ["Heading", "Text", "Button", "Image", "Code", "ContactDetails"] },
-  navigation: { title: "Navigation", components: ["Menu", "SiteBrand"] },
+  navigation: { title: "Navigation", components: ["Menu", "SiteBrand", "Search"] },
   collections: { title: "Collections", components: ["CollectionList", "EntryField"] },
 } satisfies Config["categories"];

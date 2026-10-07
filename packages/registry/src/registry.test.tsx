@@ -90,7 +90,7 @@ describe("blocks", () => {
         },
       },
     });
-    expect(html).toContain('<main class="gf-main">');
+    expect(html).toContain('<main class="gf-main" data-pagefind-body="">');
     expect(html).not.toContain("<!--$!-->");
   });
 

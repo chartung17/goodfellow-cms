@@ -103,7 +103,11 @@ describe("headings", () => {
 
 describe("canFormatMarkdown", () => {
   it("accepts what a formatted editor can show, and nothing else", () => {
-    expect(canFormatMarkdown("# Hi\n\n**Bold**, *italic*, ~~gone~~, `code` and [a link](/a).\n\n- one\n- two\n\n> Quote\n\n```ts\nx\n```\n\n---")).toBe(true);
+    expect(
+      canFormatMarkdown(
+        "# Hi\n\n**Bold**, *italic*, ~~gone~~, `code` and [a link](/a).\n\n- one\n- two\n\n> Quote\n\n```ts\nx\n```\n\n---",
+      ),
+    ).toBe(true);
     for (const markdown of ["| a |\n|---|\n| 1 |", "![p](/p.png)", "<div>x</div>", "- [ ] task", "[a][1]\n\n[1]: /x"]) {
       expect(canFormatMarkdown(markdown), markdown).toBe(false);
     }

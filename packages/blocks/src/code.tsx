@@ -28,8 +28,11 @@ export function CodeView({
           {title}
         </figcaption>
       )}
-      {/* Highlighted by Shiki at build time, which escapes the code. */}
-      <div className="overflow-x-auto text-sm [&_pre]:m-0 [&_pre]:p-4" dangerouslySetInnerHTML={{ __html: html }} />
+      <div
+        className="overflow-x-auto text-sm [&_pre]:m-0 [&_pre]:p-4"
+        // biome-ignore lint/security/noDangerouslySetInnerHtml: highlighted by Shiki, which escapes the code
+        dangerouslySetInnerHTML={{ __html: html }}
+      />
       {copyLabel && <CopyButton code={code} label={copyLabel} />}
     </figure>
   );

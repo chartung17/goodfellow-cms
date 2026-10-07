@@ -25,7 +25,11 @@
     },
     "./package.json": "./package.json"
   },
+  "bin": {
+    "goodfellow-next": "./bin/goodfellow-next.js"
+  },
   "files": [
+    "bin",
     "dist"
   ],
   "scripts": {

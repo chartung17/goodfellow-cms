@@ -10,8 +10,8 @@ export default defineConfig([
     unbundle: true,
   },
   {
-    // Node only: reads and writes the site's files on disk.
-    entry: ["src/node.ts"],
+    // Node only: reads and writes the site's files on disk, and (on its own, since it runs Pagefind) indexes built sites.
+    entry: ["src/node.ts", "src/node-search.ts"],
     format: "esm",
     dts: true,
     platform: "node",
