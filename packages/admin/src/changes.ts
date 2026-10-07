@@ -21,9 +21,11 @@ import {
   type SiteSettings,
   SLUG_PLACEHOLDER,
   serializeContent,
+  serializeMarkdownEntry,
   TITLE_FIELD,
 } from "@goodfellow/core";
 import type { Data } from "@puckeditor/core";
+import { formattedHtml, htmlToMarkdown } from "./markdown-text.js";
 
 /** `"Mass & Confession Times"` → `"mass-confession-times"`. */
 export function slugify(text: string): string {
@@ -155,11 +157,23 @@ export function storedEntryFields(values: Record<string, unknown>): Record<strin
   return Object.fromEntries(Object.entries(values).filter(([, value]) => !isEmptyValue(value)));
 }
 
-export function entryFileChange(collection: string, slug: string, values: Record<string, unknown>): FileChange {
-  return {
-    path: entryFile(collection, slug),
-    content: serializeContent({ version: CURRENT_VERSION.entry, fields: storedEntryFields(values) }),
-  };
+/** A collection as entries' files need it: its folder, and whether entries are Markdown. */
+type EntryCollection = Pick<Collection, "id" | "settings">;
+
+/**
+ * Writes an entry's file: JSON, or in a collection of Markdown files, Markdown
+ * whose body is the body field's value (Markdown already).
+ */
+export function entryFileChange(
+  collection: EntryCollection,
+  slug: string,
+  values: Record<string, unknown>,
+): FileChange {
+  const fields = storedEntryFields(values);
+  const { settings } = collection;
+  return settings.markdown
+    ? { path: entryFile(collection.id, slug, "markdown"), content: serializeMarkdownEntry(settings, fields) }
+    : { path: entryFile(collection.id, slug), content: serializeContent({ version: CURRENT_VERSION.entry, fields }) };
 }
 
 /** A new collection's settings: a title and some text, shown by a template that lists every field. */
@@ -247,6 +261,7 @@ export function checkEntrySlug(
 
 /** Renames an entry, which changes its address, optionally updating menu links to it. */
 export function moveEntryChanges(
+  collection: EntryCollection,
   entry: Entry,
   slug: string,
   path: string | undefined,
@@ -255,10 +270,7 @@ export function moveEntryChanges(
 ): FileChange[] {
   const changes: FileChange[] = [
     { path: entry.file, delete: true },
-    {
-      path: entryFile(entry.collection, slug),
-      content: serializeContent({ ...entry.content, version: CURRENT_VERSION.entry }),
-    },
+    entryFileChange(collection, slug, entry.content.fields),
   ];
   const updatedMenus = updateLinks && entry.path && path ? updateMenuLinks(menus, entry.path, path) : undefined;
   if (updatedMenus) changes.push(menusFileChange(updatedMenus));
@@ -280,11 +292,22 @@ function keepsValue(fields: Map<string, CollectionField>, name: string, value: u
 export function collectionSettingsChanges(collection: Collection, settings: CollectionFile): FileChange[] {
   const fields = new Map(settings.fields.map((field) => [field.name, field]));
   const changes = [collectionFileChange(collection.id, settings)];
+  const before = collection.settings.markdown?.body;
+  const after = settings.markdown?.body;
+  const reformat = before !== after;
   for (const entry of collection.entries) {
     const values = Object.entries(entry.content.fields);
     const remaining = values.filter(([name, value]) => keepsValue(fields, name, value));
-    if (remaining.length === values.length) continue;
-    changes.push(entryFileChange(collection.id, entry.slug, Object.fromEntries(remaining)));
+    if (remaining.length === values.length && !reformat) continue;
+    const kept = Object.fromEntries(remaining);
+    if (reformat) {
+      // The body moves between Markdown and formatted text (HTML), and the file between .md and .json.
+      if (before !== undefined && typeof kept[before] === "string") kept[before] = formattedHtml(kept[before]);
+      if (after !== undefined && typeof kept[after] === "string") kept[after] = htmlToMarkdown(kept[after]);
+    }
+    const change = entryFileChange({ id: collection.id, settings }, entry.slug, kept);
+    if (change.path !== entry.file) changes.push({ path: entry.file, delete: true });
+    changes.push(change);
   }
   return changes;
 }

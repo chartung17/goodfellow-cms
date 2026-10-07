@@ -33,7 +33,9 @@
     "@goodfellow/ai": "workspace:*",
     "@goodfellow/core": "workspace:*",
     "@goodfellow/react": "workspace:*",
-    "@goodfellow/registry": "workspace:*"
+    "@goodfellow/registry": "workspace:*",
+    "turndown": "7.2.4",
+    "turndown-plugin-gfm": "1.0.2"
   },
   "peerDependencies": {
     "@puckeditor/core": "0.23.0",
@@ -44,6 +46,7 @@
     "@puckeditor/core": "0.23.0",
     "@types/react": "^19.2.0",
     "@types/react-dom": "^19.2.0",
+    "@types/turndown": "5.0.6",
     "react": "19.3.0",
     "react-dom": "19.3.0"
   }

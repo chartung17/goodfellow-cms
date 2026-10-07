@@ -187,7 +187,7 @@ describe("collections", () => {
   };
 
   it("leaves empty fields out of entry files", () => {
-    expect(entryFileChange("videos", "easter", { title: "Easter", speaker: "", text: "<p></p>", count: 0 })).toEqual({
+    expect(entryFileChange(videos, "easter", { title: "Easter", speaker: "", text: "<p></p>", count: 0 })).toEqual({
       path: "content/collections/videos/easter.json",
       content: '{\n  "version": 1,\n  "fields": {\n    "count": 0,\n    "title": "Easter"\n  }\n}\n',
     });
@@ -208,6 +208,66 @@ describe("collections", () => {
     expect(changes[2]).toMatchObject({ content: expect.not.stringContaining("talk") });
   });
 
+  describe("stored as Markdown", () => {
+    const docsSettings = collectionFileSchema.parse({
+      version: 1,
+      name: "Docs",
+      entryName: "Page",
+      path: "/docs/{slug}",
+      fields: [
+        { name: "title", label: "Title", type: "text" },
+        { name: "body", label: "Text", type: "richtext" },
+      ],
+      markdown: { body: "body" },
+    });
+    const docs: Collection = {
+      id: "docs",
+      file: "content/collections/docs/_collection.json",
+      settings: docsSettings,
+      entries: [
+        {
+          collection: "docs",
+          slug: "intro",
+          file: "content/collections/docs/intro.md",
+          path: "/docs/intro",
+          content: { version: 1, fields: { title: "Intro", body: "# Hello\n\nSome **bold** text." } },
+        },
+      ],
+    };
+
+    it("writes entries as Markdown files", () => {
+      expect(entryFileChange(docs, "intro", { title: "Intro", body: "Text" })).toEqual({
+        path: "content/collections/docs/intro.md",
+        content: "---\nversion: 1\ntitle: Intro\n---\n\nText\n",
+      });
+    });
+
+    it("converts every entry when a collection's format changes", () => {
+      const { markdown: _markdown, ...asJson } = docsSettings;
+      const toJson = collectionSettingsChanges(docs, asJson as CollectionFile);
+      expect(toJson.map((change) => ("delete" in change ? `-${change.path}` : change.path))).toEqual([
+        "content/collections/docs/_collection.json",
+        "-content/collections/docs/intro.md",
+        "content/collections/docs/intro.json",
+      ]);
+      const json = JSON.parse((toJson[2] as { content: string }).content);
+      expect(json.fields.body).toBe('<h1 id="hello">Hello</h1>\n<p>Some <strong>bold</strong> text.</p>\n');
+
+      const back = collectionSettingsChanges(
+        {
+          ...docs,
+          settings: asJson as CollectionFile,
+          entries: [{ ...(docs.entries[0] as Entry), file: "content/collections/docs/intro.json", content: json }],
+        },
+        docsSettings,
+      );
+      expect(back[2]).toEqual({
+        path: "content/collections/docs/intro.md",
+        content: "---\nversion: 1\ntitle: Intro\n---\n\n# Hello\n\nSome **bold** text.\n",
+      });
+    });
+  });
+
   it("checks an entry's address against the whole site", () => {
     const addresses = ["/", "/videos/easter", "/videos/advent", "/videos/live"];
     expect(checkEntrySlug("lent", videos, addresses)).toEqual({ ok: true, slug: "lent", path: "/videos/lent" });
@@ -220,6 +280,7 @@ describe("collections", () => {
   it("moves an entry and the menu links to it", () => {
     const easter = videos.entries[0] as Entry;
     const changes = moveEntryChanges(
+      videos,
       easter,
       "easter-sunday",
       "/videos/easter-sunday",

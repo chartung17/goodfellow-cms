@@ -103,7 +103,7 @@ function NewEntryDialog({ collection, onClose }: { collection: Collection; onClo
     if (!title.trim() || !check.ok) return;
     setBusy(true);
     const result = await publish(
-      [entryFileChange(collection.id, check.slug, { title: title.trim() })],
+      [entryFileChange(collection, check.slug, { title: title.trim() })],
       t("newEntry.message", { entry, title: title.trim() }),
     );
     setBusy(false);
@@ -188,7 +188,7 @@ function MoveEntryDialog({
     if (check.slug === entry.slug) return onClose();
     setBusy(true);
     const result = await publish(
-      moveEntryChanges(entry, check.slug, check.path, content.menus, updateLinks),
+      moveEntryChanges(collection, entry, check.slug, check.path, content.menus, updateLinks),
       t("moveEntry.message", {
         entry: inSentence(collection.settings.entryName),
         title,

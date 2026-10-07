@@ -179,6 +179,12 @@ export const defaultStrings = {
   "template.noPages":
     "Items in {name} don't have pages of their own, so there's no page design. To give them pages, turn that on in Settings.",
 
+  "collectionSettings.markdown": "Store items as Markdown files",
+  "collectionSettings.markdownHint":
+    "Each item's text is saved as Markdown, a plain-text format that developers can also edit in their own tools. It's edited here as before.",
+  "collectionSettings.markdownNeedsText": "To store items as Markdown files, add a formatted-text field first.",
+  "collectionSettings.markdownBody": "Field saved as the Markdown text",
+  "collectionSettings.markdownConverts": "Every item will be converted when you publish.",
   "collectionSettings.general": "General",
   "collectionSettings.path": "Address of each item's page",
   "collectionSettings.pathHint": "{slug} stands for each item's own address, as in /videos/{slug}.",
@@ -229,6 +235,11 @@ export const defaultStrings = {
   "demo.startOverBody": "Everything you've changed in this demo, including uploads, will be undone.",
   "blocks.demo":
     "In this demo you can see which blocks there are, but not add or remove them: a block is added to a real site by updating its code.",
+
+  "markdown.formatted": "Formatted",
+  "markdown.source": "Markdown",
+  "markdown.sourceOnly":
+    "This text uses things the formatted view can't show, such as tables or pictures, so it can only be edited as Markdown.",
 
   "blocks.title": "Blocks",
   "blocks.intro":

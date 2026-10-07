@@ -128,6 +128,42 @@ export function markdownHeadings(markdown: string): MarkdownHeading[] {
   return headings;
 }
 
+/** What the admin panel's formatted editor can show and save as Markdown without losing anything. */
+const FORMATTABLE = new Set([
+  "space",
+  "paragraph",
+  "heading",
+  "code",
+  "hr",
+  "blockquote",
+  "list",
+  "list_item",
+  "text",
+  "strong",
+  "em",
+  "del",
+  "codespan",
+  "link",
+  "br",
+  "escape",
+]);
+
+/**
+ * Whether Markdown only uses what a formatted editor can show: headings,
+ * paragraphs, lists, quotes, code, links, bold, italic and strikethrough. Tables,
+ * images, HTML, task lists and link definitions can only be edited as Markdown.
+ */
+export function canFormatMarkdown(markdown: string): boolean {
+  let formattable = true;
+  const marked = new Marked({ gfm: true });
+  marked.walkTokens(marked.lexer(markdown), (token) => {
+    if (!FORMATTABLE.has(token.type) || (token.type === "list_item" && (token as Tokens.ListItem).task)) {
+      formattable = false;
+    }
+  });
+  return formattable;
+}
+
 export interface MarkdownOptions {
   /**
    * Turns a code block into highlighted HTML, or returns `undefined` to show it

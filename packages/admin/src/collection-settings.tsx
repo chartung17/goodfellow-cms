@@ -40,6 +40,8 @@ interface Draft {
   path: string;
   sortField: string;
   sortOrder: "asc" | "desc";
+  /** The formatted-text field that is the body of entries' Markdown files, or "" for JSON files. */
+  markdownBody: string;
   fields: DraftField[];
 }
 
@@ -54,6 +56,7 @@ function toDraft(settings: CollectionFile): Draft {
     path: settings.path ?? `/${slugify(settings.name) || "items"}/{slug}`,
     sortField: settings.sort?.field ?? TITLE_FIELD,
     sortOrder: settings.sort?.order ?? "asc",
+    markdownBody: settings.markdown?.body ?? "",
     fields: settings.fields.map((field) => ({
       key: newKey(),
       name: field.name,
@@ -105,7 +108,8 @@ function fromDraft(settings: CollectionFile, draft: Draft): CollectionFile {
   }));
   const sortField = fields.some((field) => field.name === draft.sortField) ? draft.sortField : TITLE_FIELD;
   const isDefaultSort = sortField === TITLE_FIELD && draft.sortOrder === "asc";
-  const { path: _path, sort: _sort, ...rest } = settings;
+  const { path: _path, sort: _sort, markdown: _markdown, ...rest } = settings;
+  const body = fields.find((field) => field.name === draft.markdownBody && field.type === "richtext");
   return {
     ...rest,
     name: draft.name.trim(),
@@ -113,6 +117,7 @@ function fromDraft(settings: CollectionFile, draft: Draft): CollectionFile {
     ...(draft.withPages && { path: draft.path.trim() }),
     fields,
     ...(!isDefaultSort && { sort: { field: sortField, order: draft.sortOrder } }),
+    ...(body && { markdown: { body: body.name } }),
   };
 }
 
@@ -251,6 +256,55 @@ function FieldEditor({
       )}
       <p className="gfa-hint">{t("fields.placeholder", { placeholder })}</p>
     </div>
+  );
+}
+
+/** Whether entries are Markdown files, and which formatted-text field is their body. */
+function MarkdownSetting({
+  draft,
+  names,
+  onChange,
+}: {
+  draft: Draft;
+  names: DraftField[];
+  onChange: (body: string) => void;
+}) {
+  const t = useStrings();
+  const bodies = names.filter((field) => field.type === "richtext" && field.name);
+  const current = bodies.find((field) => field.name === draft.markdownBody);
+  return (
+    <>
+      <label className="gfa-checkbox">
+        <input
+          type="checkbox"
+          checked={current !== undefined}
+          disabled={bodies.length === 0}
+          onChange={(event) => onChange(event.target.checked ? (bodies[0]?.name ?? "") : "")}
+        />
+        {t("collectionSettings.markdown")}
+      </label>
+      <p className="gfa-hint">
+        {t(bodies.length === 0 ? "collectionSettings.markdownNeedsText" : "collectionSettings.markdownHint")}
+      </p>
+      {current && bodies.length > 1 && (
+        <Field label={t("collectionSettings.markdownBody")}>
+          {(props) => (
+            <select
+              {...props}
+              className="gfa-input"
+              value={current.name}
+              onChange={(event) => onChange(event.target.value)}
+            >
+              {bodies.map((field) => (
+                <option key={field.key} value={field.name}>
+                  {field.label || field.name}
+                </option>
+              ))}
+            </select>
+          )}
+        </Field>
+      )}
+    </>
   );
 }
 
@@ -469,6 +523,15 @@ export function CollectionSettingsScreen({ collection }: { collection: Collectio
               )}
             </Field>
           </div>
+
+          <MarkdownSetting
+            draft={draft}
+            names={names}
+            onChange={(markdownBody) => setDraft({ ...draft, markdownBody })}
+          />
+          {draft.markdownBody !== (collection.settings.markdown?.body ?? "") && collection.entries.length > 0 && (
+            <p className="gfa-hint">{t("collectionSettings.markdownConverts")}</p>
+          )}
 
           <h2 className="gfa-section-title">{t("fields.title")}</h2>
           <p className="gfa-hint">{t("fields.intro")}</p>

@@ -24,6 +24,7 @@ export {
   type SiteContent,
 } from "./content/load.js";
 export {
+  canFormatMarkdown,
   headingSlug,
   isSafeUrl,
   type MarkdownHeading,

@@ -26,6 +26,7 @@ import { useEffect, useMemo, useState } from "react";
 import { useAdmin, useSiteContent } from "./admin-context.js";
 import { entryFileChange, storedEntryFields } from "./changes.js";
 import { CollectionLayout, inSentence } from "./collection-screen.js";
+import { MarkdownField } from "./markdown-field.js";
 import { MediaChooser } from "./media-library.js";
 import { PuckEditor, SiteFrame } from "./puck-editor.js";
 import { useStrings } from "./strings.js";
@@ -40,8 +41,14 @@ function Hint({ text }: { text?: string }) {
 
 /** The Puck field for one of a collection's fields, shown in the editor's sidebar. */
 /** What the AI assistant is told a field holds, since it can't tell from a custom field. */
-function aiHint(field: CollectionField): AiFieldHint {
+function aiHint(field: CollectionField, markdown: boolean): AiFieldHint {
   const description = field.hint;
+  if (markdown) {
+    return {
+      type: "string",
+      description: [description, "Formatted text, written in Markdown"].filter(Boolean).join(". "),
+    };
+  }
   switch (field.type) {
     case "number":
       return { type: "number", description };
@@ -64,12 +71,28 @@ function aiHint(field: CollectionField): AiFieldHint {
   }
 }
 
-function puckField(field: CollectionField): Field {
-  return { ...fieldControl(field), metadata: { ai: aiHint(field) } };
+function puckField(field: CollectionField, collection: Collection): Field {
+  const markdown = collection.settings.markdown?.body === field.name;
+  return { ...fieldControl(field, markdown), metadata: { ai: aiHint(field, markdown) } };
 }
 
-function fieldControl(field: CollectionField): Field {
+function fieldControl(field: CollectionField, markdown: boolean): Field {
   const label = field.required ? `${field.label} *` : field.label;
+  if (markdown) {
+    return {
+      type: "custom",
+      label,
+      render: ({ value, onChange, id }) => (
+        <MarkdownField
+          id={id}
+          label={label}
+          hint={field.hint}
+          value={typeof value === "string" ? value : ""}
+          onChange={onChange}
+        />
+      ),
+    };
+  }
   switch (field.type) {
     case "richtext":
       return { type: "richtext", label };
@@ -243,7 +266,7 @@ function EntryEditor({ collection, entry }: { collection: Collection; entry: Ent
     () => ({
       components: {},
       root: {
-        fields: Object.fromEntries(fields.map((field) => [field.name, puckField(field)])) as Fields,
+        fields: Object.fromEntries(fields.map((field) => [field.name, puckField(field, collection)])) as Fields,
         render: () => (
           <EntryPreview
             collection={collection}
@@ -291,7 +314,7 @@ function EntryEditor({ collection, entry }: { collection: Collection; entry: Ent
         const values = Object.fromEntries(Object.entries(next.root.props ?? {}).filter(([name]) => name !== "id"));
         const title = typeof values.title === "string" && values.title.trim() ? values.title.trim() : entry.slug;
         return {
-          changes: [entryFileChange(collection.id, entry.slug, values)],
+          changes: [entryFileChange(collection, entry.slug, values)],
           message: t("editEntry.message", { entry: entryName, title }),
         };
       }}
