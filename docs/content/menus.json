@@ -1,0 +1,19 @@
+{
+  "version": 1,
+  "menus": {
+    "main": [
+      {
+        "href": "/docs/introduction",
+        "label": "Docs"
+      },
+      {
+        "href": "/docs/why-goodfellow",
+        "label": "Why Goodfellow"
+      },
+      {
+        "href": "https://github.com/chartung17/goodfellow-cms",
+        "label": "GitHub"
+      }
+    ]
+  }
+}

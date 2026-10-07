@@ -8,7 +8,7 @@
 
 @layer components {
   /* Puck wraps rich text in its own elements, so match the content tags rather than direct children. */
-  .gf-prose :where(p, ul, ol, blockquote, pre, hr, h2, h3, h4):not(:first-child) {
+  .gf-prose :where(p, ul, ol, blockquote, pre, hr, h2, h3, h4, table):not(:first-child) {
     margin-top: 1em;
   }
 
@@ -52,8 +52,58 @@
     border-top: 1px solid var(--color-border);
   }
 
+  .gf-prose h4 {
+    font-weight: 600;
+    margin-top: 1.25em;
+  }
+
   .gf-prose code {
     font-family: ui-monospace, monospace;
     font-size: 0.9em;
+  }
+
+  /* Inline code, but not code blocks, which are highlighted or shown plainly below. */
+  .gf-prose :not(pre) > code {
+    background: var(--color-muted);
+    border-radius: 0.25rem;
+    padding: 0.1em 0.3em;
+  }
+
+  .gf-prose pre:not(.shiki) {
+    background: var(--color-muted);
+    border-radius: var(--radius-lg);
+    padding: 1rem;
+    overflow-x: auto;
+  }
+
+  .gf-prose img {
+    max-width: 100%;
+    height: auto;
+    border-radius: var(--radius-lg);
+  }
+
+  /* Tables from Markdown scroll sideways on narrow screens rather than widening the page. */
+  .gf-prose table {
+    display: block;
+    max-width: 100%;
+    overflow-x: auto;
+    border-collapse: collapse;
+    font-size: 0.95em;
+  }
+
+  .gf-prose :where(th, td) {
+    border: 1px solid var(--color-border);
+    padding: 0.5em 0.75em;
+    text-align: left;
+    vertical-align: top;
+  }
+
+  .gf-prose th {
+    background: var(--color-muted);
+    font-weight: 600;
+  }
+
+  .gf-prose li > input[type="checkbox"] {
+    margin-right: 0.5em;
   }
 }

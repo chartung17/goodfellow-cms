@@ -1,0 +1,67 @@
+---
+version: 1
+title: Put it online
+description: Store the site on GitHub or GitLab, choose a host, and set up sign-in for editors.
+section: start
+order: 4
+---
+
+Setup takes four steps, done once by whoever sets up the site.
+
+## 1. Store the site on GitHub or GitLab
+
+Create a repository and push the site's folder to it, including `package-lock.json`.
+
+## 2. Tell Goodfellow where it's stored
+
+If you gave the repository to `npm create goodfellow`, this is done. Otherwise, in `goodfellow.config.tsx`, uncomment one `backend` line and its `import`, and fill in the repository:
+
+```tsx
+import { github } from "@goodfellow/github";
+
+export default defineConfig({
+  blocks,
+  categories,
+  backend: github({ repo: "your-name/your-site" }),
+});
+```
+
+Builds include the admin panel at `/admin` only once a backend is set. If the live site is built from a branch other than the repository's default branch, add `branch: "name"`.
+
+Then set the site's address under **Site settings → General → Site address**, including any subfolder, such as `https://your-name.github.io/your-site`. It's used for the sitemap and for link previews.
+
+## 3. Choose a host
+
+Each host's free plan has its own rules about business use; read [Hosts and business sites](/docs/hosts) first if the site is for a business, sells anything or shows ads.
+
+**GitHub Pages**, free for public repositories:
+
+1. In the repository on GitHub, go to **Settings → Pages** and set **Source** to **GitHub Actions**.
+2. Push. `.github/workflows/deploy.yml` builds and publishes the site on every change and once a night. If your main branch isn't called `main`, change it in that file.
+
+**GitLab Pages**, free for public and private projects:
+
+1. Push. `.gitlab-ci.yml` builds and publishes the site on every change to the default branch.
+2. For nightly rebuilds, add a schedule under **Build → Pipeline schedules**.
+3. The site's address is under **Deploy → Pages**.
+
+**Vercel**, which works with GitHub and GitLab:
+
+1. Import the repository in Vercel. `vercel.json` already has the right settings.
+2. For nightly rebuilds, create a deploy hook under **Settings → Git → Deploy Hooks**, and call it from a scheduled GitHub Action or GitLab pipeline schedule.
+
+Delete the setup files of the hosts you don't use. Nightly rebuilds keep pages that depend on the date, such as a list of upcoming events, current.
+
+If the host serves the site from a subfolder, such as `/your-site/` on GitHub Pages, the setup files pass it to the build; see [Commands](/docs/commands) for the base path.
+
+## 4. Set up sign-in
+
+**GitHub:** nothing to set up. Editors sign in at `/admin` with an access token, created from a link that chooses the right permissions; see [Editors and sign-in](/docs/sign-in).
+
+**GitLab:** editors can sign in with an access token straight away. For one-click **Sign in with GitLab**, register the admin panel with GitLab once:
+
+1. Go to your profile's **Preferences → Applications** (or a group's **Settings → Applications**) and add an application.
+2. Set the **Redirect URI** to the admin panel's address with a trailing slash, such as `https://your-site.example/admin/`, leave **Confidential** off, and choose the `api` scope.
+3. Copy the **Application ID** into the config: `gitlab({ project: "your-name/your-site", clientId: "…" })`.
+
+Every editor needs permission to change the repository: on GitHub, write access; on GitLab, the Developer role or higher.

@@ -1,0 +1,23 @@
+# Goodfellow's documentation site
+
+These are Goodfellow's docs, built with Goodfellow itself. The pages are a collection of Markdown files in `content/collections/docs/`, one per page, shown with the collection's page design: navigation, the page's text, "On this page", and previous and next links. The home page and "Page not found" are ordinary pages in `content/pages/`.
+
+## Editing
+
+Edit the Markdown files directly, or in the admin panel:
+
+```sh
+pnpm install && pnpm build   # from the repository's root
+cd docs
+pnpm dev                     # site at http://localhost:4321, admin panel at /admin
+```
+
+Each file starts with its front matter: `title`, a `description` shown under the title and in search results, its `section` (`start`, `editors`, `owners` or `developers`) and its `order` within the section. Links between pages are root-relative, such as `/docs/create-a-site`, and headings can be linked to as `/docs/create-a-site#try-it-on-your-computer`. A test checks that every link and heading link goes somewhere.
+
+Keep files in the form the admin panel writes them: after editing one by hand, `pnpm test` in `packages/cli` says if it isn't.
+
+When a change to Goodfellow changes what users see or do, update these pages in the same change.
+
+## Building
+
+`pnpm build` writes the site to `dist/`, with a search index, since the header has a Search block. `pnpm preview` serves it. The site goes online in roadmap step 13.

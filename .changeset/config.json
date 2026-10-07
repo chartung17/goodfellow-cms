@@ -8,6 +8,7 @@
   "baseBranch": "master",
   "updateInternalDependencies": "patch",
   "ignore": [
+    "@goodfellow/docs",
     "@goodfellow/e2e",
     "@goodfellow/example-parish",
     "@goodfellow/template-next",

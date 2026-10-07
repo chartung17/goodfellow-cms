@@ -1,0 +1,25 @@
+{
+  "version": 1,
+  "description": "A website builder for people who aren't developers, with no server or database: pages are files in your own GitHub or GitLab repository.",
+  "favicon": "/media/favicon.svg",
+  "language": "en",
+  "logo": {
+    "alt": "Goodfellow",
+    "src": "/media/logo.svg"
+  },
+  "theme": {
+    "colors": {
+      "border": "#e7e5e4",
+      "muted": "#f4f4f0",
+      "mutedForeground": "#57534e",
+      "primary": "#14532d",
+      "primaryForeground": "#ffffff"
+    },
+    "fonts": {
+      "body": "Inter",
+      "heading": "Fraunces"
+    }
+  },
+  "title": "Goodfellow",
+  "titleTemplate": "%s | Goodfellow"
+}
