@@ -1,0 +1,99 @@
+{
+  "$schema": "https://ui.shadcn.com/schema/registry.json",
+  "name": "goodfellow",
+  "homepage": "https://github.com/chartung17/goodfellow-cms",
+  "items": [
+    {
+      "name": "shadcn-hero",
+      "type": "registry:block",
+      "title": "Hero",
+      "description": "A large heading at the top of a page, with text, buttons and a picture.",
+      "registryDependencies": ["@goodfellow/button"],
+      "files": [{ "path": "site/blocks/installed/shadcn-hero/block.tsx", "type": "registry:block" }],
+      "meta": { "goodfellow": { "category": "Page sections", "recommended": true } }
+    },
+    {
+      "name": "shadcn-cards",
+      "type": "registry:block",
+      "title": "Cards",
+      "description": "A grid of cards, each with a picture, a heading, text and a link.",
+      "registryDependencies": ["@goodfellow/card", "@goodfellow/button"],
+      "files": [{ "path": "site/blocks/installed/shadcn-cards/block.tsx", "type": "registry:block" }],
+      "meta": { "goodfellow": { "category": "Page sections", "recommended": true } }
+    },
+    {
+      "name": "shadcn-call-to-action",
+      "type": "registry:block",
+      "title": "Call to action",
+      "description": "A highlighted box asking visitors to do something, with a button.",
+      "registryDependencies": ["@goodfellow/card", "@goodfellow/button"],
+      "files": [{ "path": "site/blocks/installed/shadcn-call-to-action/block.tsx", "type": "registry:block" }],
+      "meta": { "goodfellow": { "category": "Page sections", "recommended": true } }
+    },
+    {
+      "name": "shadcn-testimonials",
+      "type": "registry:block",
+      "title": "Testimonials",
+      "description": "Quotes from people, with their names and photos.",
+      "registryDependencies": ["@goodfellow/card"],
+      "files": [{ "path": "site/blocks/installed/shadcn-testimonials/block.tsx", "type": "registry:block" }],
+      "meta": { "goodfellow": { "category": "Page sections", "recommended": true } }
+    },
+    {
+      "name": "shadcn-pricing",
+      "type": "registry:block",
+      "title": "Pricing table",
+      "description": "Plans side by side, with prices, what each includes and a button.",
+      "registryDependencies": ["@goodfellow/card", "@goodfellow/badge", "@goodfellow/button"],
+      "dependencies": ["lucide-react"],
+      "files": [{ "path": "site/blocks/installed/shadcn-pricing/block.tsx", "type": "registry:block" }],
+      "meta": { "goodfellow": { "category": "Page sections" } }
+    },
+    {
+      "name": "shadcn-notice",
+      "type": "registry:block",
+      "title": "Notice",
+      "description": "A short message that stands out, such as a closure or a change of times.",
+      "registryDependencies": ["@goodfellow/alert"],
+      "dependencies": ["lucide-react"],
+      "files": [{ "path": "site/blocks/installed/shadcn-notice/block.tsx", "type": "registry:block" }],
+      "meta": { "goodfellow": { "category": "Page sections", "recommended": true } }
+    },
+    {
+      "name": "shadcn-faq",
+      "type": "registry:block",
+      "title": "FAQ",
+      "description": "Questions that open to show their answers.",
+      "registryDependencies": ["@goodfellow/accordion"],
+      "files": [
+        { "path": "site/blocks/installed/shadcn-faq/block.tsx", "type": "registry:block" },
+        { "path": "site/blocks/installed/shadcn-faq/faq-list.tsx", "type": "registry:component" }
+      ],
+      "meta": { "goodfellow": { "category": "Interactive", "recommended": true } }
+    },
+    {
+      "name": "shadcn-tabs",
+      "type": "registry:block",
+      "title": "Tabs",
+      "description": "Content split into tabs, one shown at a time.",
+      "registryDependencies": ["@goodfellow/tabs"],
+      "files": [
+        { "path": "site/blocks/installed/shadcn-tabs/block.tsx", "type": "registry:block" },
+        { "path": "site/blocks/installed/shadcn-tabs/tabs-view.tsx", "type": "registry:component" }
+      ],
+      "meta": { "goodfellow": { "category": "Interactive", "recommended": true } }
+    },
+    {
+      "name": "shadcn-carousel",
+      "type": "registry:block",
+      "title": "Image carousel",
+      "description": "Pictures shown one at a time, with buttons to move between them.",
+      "registryDependencies": ["@goodfellow/carousel"],
+      "files": [
+        { "path": "site/blocks/installed/shadcn-carousel/block.tsx", "type": "registry:block" },
+        { "path": "site/blocks/installed/shadcn-carousel/image-carousel.tsx", "type": "registry:component" }
+      ],
+      "meta": { "goodfellow": { "category": "Interactive" } }
+    }
+  ]
+}

@@ -1,13 +1,12 @@
 import {
-  CONTENT_DIR,
   ConflictError,
   type DeployStatus,
+  EDITABLE_FOLDERS,
   encodeBase64Bytes,
   type FileChange,
   GitApiError,
   type GitBackend,
   type GitUser,
-  MEDIA_DIR,
   SignInError,
   type WriteOptions,
 } from "@goodfellow/core";
@@ -82,7 +81,7 @@ export class GitLabBackend implements GitBackend {
   private tree(sha: string): Promise<Map<string, string>> {
     let tree = this.trees.get(sha);
     if (!tree) {
-      tree = Promise.all([this.listFolder(sha, CONTENT_DIR), this.listFolder(sha, MEDIA_DIR)]).then(
+      tree = Promise.all(EDITABLE_FOLDERS.map((folder) => this.listFolder(sha, folder))).then(
         (folders) => new Map(folders.flat()),
       );
       tree.catch(() => this.trees.delete(sha));

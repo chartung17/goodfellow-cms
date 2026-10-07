@@ -15,6 +15,14 @@
   --color-accent: var(--accent);
   --color-accent-foreground: var(--accent-foreground);
   --color-border: var(--border);
+  /* The rest of shadcn/ui's colors, for blocks built with it, follow the ones above unless custom CSS sets them. */
+  --color-card: var(--card, var(--background));
+  --color-card-foreground: var(--card-foreground, var(--foreground));
+  --color-popover: var(--popover, var(--background));
+  --color-popover-foreground: var(--popover-foreground, var(--foreground));
+  --color-destructive: var(--destructive, #dc2626);
+  --color-input: var(--input, var(--border));
+  --color-ring: var(--ring, var(--primary));
   --font-sans: var(--gf-font-body);
   --font-heading: var(--gf-font-heading);
   --radius-sm: calc(var(--radius) - 4px);

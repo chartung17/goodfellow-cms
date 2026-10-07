@@ -11,6 +11,7 @@ export const defaultStrings = {
   "nav.pages": "Pages",
   "nav.collections": "Collections",
   "nav.media": "Media",
+  "nav.blocks": "Blocks",
   "nav.layout": "Header & footer",
   "nav.settings": "Site settings",
 
@@ -220,6 +221,42 @@ export const defaultStrings = {
   "fields.type.image": "Image (URL)",
   "fields.type.select": "Choice from a list",
 
+  "blocks.title": "Blocks",
+  "blocks.intro":
+    "Add blocks to the editor, or remove ones you don't use. A change shows in the editor once the site has been updated, usually within a few minutes.",
+  "blocks.installed": "Added to this site",
+  "blocks.noneInstalled": "No blocks have been added yet. The editor offers the built-in ones.",
+  "blocks.loading": "Loading the blocks you can add…",
+  "blocks.recommended": "Recommended",
+  "blocks.add": "Add",
+  "blocks.addLabel": "Add {name}",
+  "blocks.added": "Added",
+  "blocks.remove": "Remove",
+  "blocks.removeLabel": "Remove {name}",
+  "blocks.addedNotice": "{name} was added. It will be in the editor's list of blocks once the site has been updated.",
+  "blocks.removedNotice": "{name} was removed. The editor stops offering it once the site has been updated.",
+  "blocks.addMessage": "Add the {name} block",
+  "blocks.removeMessage": "Remove the {name} block",
+  "blocks.removeTitle": "Remove {name}?",
+  "blocks.removeBody": "{name} will no longer be offered in the editor. You can add it again later.",
+  "blocks.inUse": "{name} is used in: {places}. Take it out of those first, then remove it.",
+  "blocks.usedTemplate": "the page design of {name}",
+  "blocks.error.record": "The list of blocks added to this site couldn't be read. Tell whoever looks after the site.",
+  "blocks.error.unreachable":
+    "The blocks you can add couldn't be loaded. Check your internet connection and try again.",
+  "blocks.error.invalid": "The list of blocks you can add has a problem, so it couldn't be read. Try again later.",
+  "blocks.error.untrusted": "This block comes from somewhere this site doesn't trust, so it can't be added.",
+  "blocks.error.not-a-block": "This can't be added to the editor as a block.",
+  "blocks.error.already-installed": "{name} has already been added.",
+  "blocks.error.name-taken": "The site already has a block with the same name as {name}, so it can't be added.",
+  "blocks.error.packages":
+    "This block needs software the site doesn't have ({packages}). Ask whoever looks after the site to add it.",
+  "blocks.error.unsupported-file":
+    "This block includes a file that can't be added from here ({path}). Ask whoever looks after the site to add it.",
+  "blocks.error.file-exists":
+    "The site already has a different file where this block goes ({path}). Ask whoever looks after the site to add it.",
+  "blocks.error.not-installed": "{name} hasn't been added, so there's nothing to remove.",
+  "blocks.error.in-use": "{name} is still used on the site. Take it out first, then remove it.",
   "media.title": "Media",
   "media.intro":
     "Images and files for the site. Upload them here, or while editing a page. Large photos are made smaller, and details hidden in photos, such as where they were taken, are removed.",

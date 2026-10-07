@@ -6,6 +6,8 @@ import { fileURLToPath } from "node:url";
 import { parseArgs } from "node:util";
 import {
   type Backend,
+  BLOCK_CHOICES,
+  type BlockChoice,
   HOSTS,
   type Host,
   hostsFor,
@@ -25,6 +27,7 @@ Options:
   --github <repo>     The GitHub repository the site will be stored in, such as your-name/your-site
   --gitlab <project>  The GitLab project the site will be stored in, such as your-group/your-site
   --host <host>       github-pages, gitlab-pages or vercel. Keeps only that host's setup file.
+  --blocks <choice>   recommended (the default) to add the recommended blocks, or built-in for Goodfellow's own only
   -y, --yes           Don't ask anything: use the options given, and defaults for the rest
   -h, --help          Show this help
 `;
@@ -98,6 +101,7 @@ async function main(): Promise<void> {
       github: { type: "string" },
       gitlab: { type: "string" },
       host: { type: "string" },
+      blocks: { type: "string" },
       yes: { type: "boolean", short: "y" },
       help: { type: "boolean", short: "h" },
     },
@@ -116,6 +120,10 @@ async function main(): Promise<void> {
   let host: string | undefined = values.host;
   if (host !== undefined && !isHost(host)) {
     throw new ScaffoldError(`--host takes ${Object.keys(HOSTS).join(", ")}.`);
+  }
+  let blocks: string | undefined = values.blocks;
+  if (blocks !== undefined && !(blocks in BLOCK_CHOICES)) {
+    throw new ScaffoldError(`--blocks takes ${Object.keys(BLOCK_CHOICES).join(" or ")}.`);
   }
 
   if (stdin.isTTY && !values.yes) {
@@ -146,6 +154,15 @@ async function main(): Promise<void> {
         if (storage && repo) backend = { host: storage, repo };
       }
       host ??= await chooseHost(rl, storage);
+      blocks ??= await choose(
+        rl,
+        "Which blocks should the editor offer to start with?",
+        Object.entries(BLOCK_CHOICES).map(([value, { label, description }]) => ({
+          value: value as BlockChoice,
+          label,
+          note: description,
+        })),
+      );
     } finally {
       rl.close();
     }
@@ -166,6 +183,7 @@ async function main(): Promise<void> {
     versions,
     ...(backend && { backend }),
     ...(host && { host: host as Host }),
+    ...((blocks ?? "recommended") === "recommended" && { registryDir: join(templatesDir, "registry") }),
   });
 
   const where = relative(process.cwd(), target) || ".";

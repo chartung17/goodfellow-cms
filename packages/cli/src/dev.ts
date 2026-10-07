@@ -12,7 +12,7 @@ import {
   type Page,
   type SiteContent,
 } from "@goodfellow/core";
-import { fileSystemSource, handleDevApi, localFileStore } from "@goodfellow/core/node";
+import { fileSystemSource, handleDevApi, localFileStore, localRegistryDir } from "@goodfellow/core/node";
 import react from "@vitejs/plugin-react";
 import { createServer, type Plugin, type ViteDevServer } from "vite";
 import { ADMIN_ENTRY, adminEntryPlugin, adminHtml } from "./admin-entry.js";
@@ -162,6 +162,7 @@ function serveMedia(root: string) {
 /** Serves the local backend's API, the admin panel at /admin, and pages rendered on request from the files on disk. */
 function devPlugin(root: string, styles: () => StylesEntries): Plugin {
   const store = localFileStore(root);
+  const registryDir = localRegistryDir(root);
   return {
     name: "goodfellow:dev",
     configureServer(server: ViteDevServer) {
@@ -171,7 +172,7 @@ function devPlugin(root: string, styles: () => StylesEntries): Plugin {
       // Runs after Vite's own middleware, so modules, assets and public/ files are served first.
       return () => {
         server.middlewares.use(async (req: IncomingMessage, res: ServerResponse, next: () => void) => {
-          if (await handleDevApi(store, req, res)) return;
+          if (await handleDevApi(store, req, res, { registryDir })) return;
           if (req.method !== "GET" && req.method !== "HEAD") return next();
           const url = new URL(req.url ?? "/", "http://localhost");
 

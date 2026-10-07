@@ -1,5 +1,5 @@
 import type { ContentSource } from "./load.js";
-import { CONTENT_DIR, MEDIA_DIR } from "./paths.js";
+import { COMPONENTS_DIR, CONTENT_DIR, HOOKS_DIR, INSTALLED_BLOCKS_DIR, LIB_DIR, MEDIA_DIR } from "./paths.js";
 
 /** One change in a save: a file's new text, its new bytes (for uploads such as images), or its removal. */
 export type FileChange =
@@ -48,17 +48,21 @@ export class ConflictError extends Error {
   }
 }
 
-const EDITABLE_ROOTS = [CONTENT_DIR, MEDIA_DIR];
+/**
+ * The folders the admin panel reads and writes: content, media, and the code of
+ * blocks installed from block registries.
+ */
+export const EDITABLE_FOLDERS = [CONTENT_DIR, MEDIA_DIR, INSTALLED_BLOCKS_DIR, COMPONENTS_DIR, LIB_DIR, HOOKS_DIR];
 
 /**
- * Whether the admin panel may read or write a path: only files under
- * `content/` and `public/media/`, written as plain relative paths.
+ * Whether the admin panel may read or write a path: only files in
+ * `EDITABLE_FOLDERS`, written as plain relative paths.
  */
 export function isEditablePath(path: string): boolean {
   if (path.startsWith("/") || path.includes("\\") || path.includes("\0")) return false;
   const segments = path.split("/");
   if (segments.some((segment) => segment === "" || segment === "." || segment === "..")) return false;
-  return EDITABLE_ROOTS.some((root) => path.startsWith(`${root}/`));
+  return EDITABLE_FOLDERS.some((root) => path.startsWith(`${root}/`));
 }
 
 /**

@@ -1,4 +1,6 @@
+import { readFile } from "node:fs/promises";
 import type { IncomingMessage, ServerResponse } from "node:http";
+import { join } from "node:path";
 import { ConflictError, type ContentStore, type FileChange } from "./index.js";
 import { InvalidPathError } from "./node-local-files.js";
 
@@ -48,6 +50,22 @@ export interface DevApiOptions {
    * Next.js's development server) sees a different address in `host`.
    */
   trustOrigin?: (origin: string, host: string | undefined) => boolean;
+  /** The built block registry to serve at `registry/<name>.json`, for the admin panel's Blocks screen. */
+  registryDir?: string;
+}
+
+/** Serves a file of the built block registry: public, read-only files, so they need no checks. */
+async function sendRegistryFile(res: ServerResponse, dir: string | undefined, name: string): Promise<void> {
+  if (!dir || !/^[a-z0-9]+(?:-[a-z0-9]+)*\.json$/.test(name)) return send(res, 404, { error: "not-found" });
+  try {
+    const text = await readFile(join(dir, name), "utf8");
+    res.statusCode = 200;
+    res.setHeader("Content-Type", "application/json; charset=utf-8");
+    res.setHeader("Cache-Control", "no-store");
+    res.end(text);
+  } catch {
+    send(res, 404, { error: "not-found" });
+  }
 }
 
 function sameOrigin(origin: string, host: string | undefined): boolean {
@@ -90,6 +108,10 @@ export async function handleDevApi(
   if (!url.pathname.startsWith(`${DEV_API_PREFIX}/`)) return false;
   const endpoint = url.pathname.slice(DEV_API_PREFIX.length + 1);
 
+  if (req.method === "GET" && endpoint.startsWith("registry/")) {
+    await sendRegistryFile(res, options.registryDir, endpoint.slice("registry/".length));
+    return true;
+  }
   if (!isTrusted(req, options.trustOrigin)) {
     send(res, 403, { error: "forbidden" });
     return true;

@@ -9,3 +9,10 @@ declare class TextDecoder {
   constructor(label?: string, options?: { fatal?: boolean });
   decode(input?: Uint8Array): string;
 }
+declare const crypto: {
+  subtle: { digest(algorithm: "SHA-256", data: Uint8Array): Promise<ArrayBuffer> };
+};
+declare class URL {
+  constructor(url: string, base?: string);
+  readonly href: string;
+}

@@ -1,0 +1,110 @@
+{
+  "source": "https://ui.shadcn.com/r/styles/new-york-v4/{name}.json",
+  "items": [
+    {
+      "name": "accordion",
+      "type": "registry:ui",
+      "dependencies": [
+        "cn",
+        "radix-ui"
+      ],
+      "registryDependencies": [],
+      "files": [
+        {
+          "path": "site/components/ui/accordion.tsx",
+          "type": "registry:ui"
+        }
+      ]
+    },
+    {
+      "name": "alert",
+      "type": "registry:ui",
+      "dependencies": [
+        "cn"
+      ],
+      "registryDependencies": [],
+      "files": [
+        {
+          "path": "site/components/ui/alert.tsx",
+          "type": "registry:ui"
+        }
+      ]
+    },
+    {
+      "name": "badge",
+      "type": "registry:ui",
+      "dependencies": [
+        "cn",
+        "radix-ui"
+      ],
+      "registryDependencies": [],
+      "files": [
+        {
+          "path": "site/components/ui/badge.tsx",
+          "type": "registry:ui"
+        }
+      ]
+    },
+    {
+      "name": "button",
+      "type": "registry:ui",
+      "dependencies": [
+        "cn",
+        "radix-ui"
+      ],
+      "registryDependencies": [],
+      "files": [
+        {
+          "path": "site/components/ui/button.tsx",
+          "type": "registry:ui"
+        }
+      ]
+    },
+    {
+      "name": "card",
+      "type": "registry:ui",
+      "dependencies": [
+        "cn"
+      ],
+      "registryDependencies": [],
+      "files": [
+        {
+          "path": "site/components/ui/card.tsx",
+          "type": "registry:ui"
+        }
+      ]
+    },
+    {
+      "name": "carousel",
+      "type": "registry:ui",
+      "dependencies": [
+        "cn",
+        "embla-carousel-react"
+      ],
+      "registryDependencies": [
+        "@goodfellow/button"
+      ],
+      "files": [
+        {
+          "path": "site/components/ui/carousel.tsx",
+          "type": "registry:ui"
+        }
+      ]
+    },
+    {
+      "name": "tabs",
+      "type": "registry:ui",
+      "dependencies": [
+        "cn",
+        "radix-ui"
+      ],
+      "registryDependencies": [],
+      "files": [
+        {
+          "path": "site/components/ui/tabs.tsx",
+          "type": "registry:ui"
+        }
+      ]
+    }
+  ]
+}

@@ -8,6 +8,14 @@ export const FOOTER_FILE = "content/layout/footer.json";
 export const CUSTOM_CSS_FILE = "content/styles/custom.css";
 export const MEDIA_DIR = "public/media";
 export const COLLECTIONS_DIR = "content/collections";
+/** Where blocks installed from block registries go, with the record of what's installed and the list the config imports. */
+export const INSTALLED_BLOCKS_DIR = "blocks/installed";
+export const INSTALLED_RECORD_FILE = "blocks/installed/installed.json";
+export const INSTALLED_INDEX_FILE = "blocks/installed/index.ts";
+/** Folders blocks' shared code is installed into, as the shadcn CLI's defaults put it. */
+export const COMPONENTS_DIR = "components";
+export const LIB_DIR = "lib";
+export const HOOKS_DIR = "hooks";
 /** The file in each collection's folder that holds its fields, address pattern and template. */
 export const COLLECTION_SETTINGS_FILE = "_collection.json";
 

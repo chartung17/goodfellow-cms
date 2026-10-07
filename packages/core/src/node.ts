@@ -2,3 +2,4 @@ export { DEV_API_HEADER, DEV_API_PREFIX, type DevApiOptions, handleDevApi, isLoc
 export { fileSystemSource } from "./node-fs-source.js";
 export { InvalidPathError, localFileStore } from "./node-local-files.js";
 export { readMediaSizes } from "./node-media.js";
+export { localRegistryDir } from "./node-registry.js";

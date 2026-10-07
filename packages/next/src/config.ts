@@ -2,7 +2,7 @@ import { createServer } from "node:http";
 import type { AddressInfo } from "node:net";
 import { resolve } from "node:path";
 import { normalizeBase } from "@goodfellow/core";
-import { DEV_API_PREFIX, handleDevApi, isLocalOrigin, localFileStore } from "@goodfellow/core/node";
+import { DEV_API_PREFIX, handleDevApi, isLocalOrigin, localFileStore, localRegistryDir } from "@goodfellow/core/node";
 import type { NextConfig } from "next";
 
 export interface GoodfellowNextOptions {
@@ -27,9 +27,12 @@ function startDevApi(root: string): Promise<number> {
   const globals = globalThis as { [SERVER_KEY]?: Promise<number> };
   globals[SERVER_KEY] ??= new Promise((resolvePort, reject) => {
     const store = localFileStore(root);
+    const registryDir = localRegistryDir(root);
     const server = createServer(async (req, res) => {
       // Requests come through Next.js's development server, so they're from its address rather than this one's.
-      if (!(await handleDevApi(store, req, res, { trustOrigin: isLocalOrigin }))) res.writeHead(404).end();
+      if (!(await handleDevApi(store, req, res, { trustOrigin: isLocalOrigin, registryDir }))) {
+        res.writeHead(404).end();
+      }
     });
     server.on("error", reject);
     server.listen(0, "127.0.0.1", () => resolvePort((server.address() as AddressInfo).port));

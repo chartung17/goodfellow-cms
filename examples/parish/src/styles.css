@@ -1,4 +1,6 @@
 @import "tailwindcss";
+/* Animations for blocks installed from block registries, such as an FAQ's opening answers. */
+@import "tw-animate-css";
 @import "@goodfellow/react/theme.css";
 @import "@goodfellow/blocks/styles.css";
 

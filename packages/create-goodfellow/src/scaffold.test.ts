@@ -65,6 +65,30 @@ describe("scaffold", () => {
     expect(existsSync(join(target, "dist"))).toBe(false);
   });
 
+  it("starts with the recommended blocks when asked, installed as the admin panel would", async () => {
+    const target = join(dir, "site");
+    await scaffold({ template: starter, target, versions, registryDir: join(repo, "packages/registry/r") });
+    const record = JSON.parse(await readFile(join(target, "blocks/installed/installed.json"), "utf8"));
+    expect(Object.keys(record.blocks).sort()).toEqual([
+      "shadcn-call-to-action",
+      "shadcn-cards",
+      "shadcn-faq",
+      "shadcn-hero",
+      "shadcn-notice",
+      "shadcn-tabs",
+      "shadcn-testimonials",
+    ]);
+    expect(record.blocks["shadcn-faq"].source).toBe("@goodfellow/shadcn-faq");
+    expect(existsSync(join(target, "components/ui/accordion.tsx"))).toBe(true);
+    expect(await readFile(join(target, "blocks/installed/index.ts"), "utf8")).toContain('"shadcn-hero"');
+
+    // Without it, only the built-in blocks.
+    const plain = join(dir, "plain");
+    await scaffold({ template: starter, target: plain, versions });
+    expect(existsSync(join(plain, "blocks/installed/installed.json"))).toBe(false);
+    expect(existsSync(join(plain, "components"))).toBe(false);
+  });
+
   it("copies the parish example, with its own blocks", async () => {
     const target = join(dir, "parish");
     await scaffold({ template: parish, target, versions });

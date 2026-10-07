@@ -5,3 +5,4 @@ dist/
 .DS_Store
 packages/create-goodfellow/templates/
 packages/next/src/generated/
+packages/registry/r/

@@ -1,7 +1,7 @@
 import { createHash } from "node:crypto";
 import { mkdir, readFile, rm, writeFile } from "node:fs/promises";
 import { dirname, join } from "node:path";
-import { CONTENT_DIR, ConflictError, type ContentStore, type FileChange, isEditablePath, MEDIA_DIR } from "./index.js";
+import { ConflictError, type ContentStore, EDITABLE_FOLDERS, type FileChange, isEditablePath } from "./index.js";
 import { fileSystemSource } from "./node-fs-source.js";
 
 export class InvalidPathError extends Error {
@@ -27,7 +27,7 @@ export function localFileStore(root: string): ContentStore {
   let queue: Promise<unknown> = Promise.resolve();
 
   async function revision(): Promise<string> {
-    const files = [...(await source.list(CONTENT_DIR)), ...(await source.list(MEDIA_DIR))].sort();
+    const files = (await Promise.all(EDITABLE_FOLDERS.map((folder) => source.list(folder)))).flat().sort();
     const hash = createHash("sha256");
     for (const file of files) {
       const content = await readFile(join(root, file));

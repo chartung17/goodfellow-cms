@@ -62,7 +62,9 @@ export function baseViteConfig(root: string, configFile: string, modules: Client
     cacheDir: join(root, "node_modules/.vite"),
     logLevel: "warn",
     plugins: [tailwindcss(), serverEntryPlugin(configFile), islandsPlugin(root, modules)],
-    // Block packs go through Vite, so their Client Components become islands too.
+    // `@/` is the site's root, as in shadcn/ui projects, where installed blocks find `@/components/ui/…`.
+    resolve: { alias: [{ find: /^@\//, replacement: `${root}/` }] },
+    // Packages of blocks go through Vite, so their Client Components become islands too.
     ssr: { noExternal: blockPackages(root) },
   };
 }

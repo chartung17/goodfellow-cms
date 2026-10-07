@@ -1,6 +1,6 @@
 // Copies the starter and the examples into templates/, with the version of every
 // Goodfellow package, so the published create-goodfellow has everything it copies.
-import { readdirSync, readFileSync, rmSync, writeFileSync } from "node:fs";
+import { cpSync, readdirSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { copyTemplate } from "../dist/index.js";
@@ -15,6 +15,9 @@ rmSync(out, { recursive: true, force: true });
 for (const [name, source] of Object.entries(sources)) {
   await copyTemplate(join(repo, source), join(out, name), { bundling: true });
 }
+
+// The block registry, so new sites can start with the recommended blocks without downloading them.
+cpSync(join(repo, "packages/registry/r"), join(out, "registry"), { recursive: true });
 
 const versions = {};
 for (const dir of readdirSync(join(repo, "packages"))) {

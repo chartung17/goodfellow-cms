@@ -1,4 +1,5 @@
 import { createRequire } from "node:module";
+import { DEV_API_PREFIX } from "@goodfellow/core/node";
 import type { Plugin } from "vite";
 
 export const ADMIN_ENTRY = "virtual:goodfellow/admin";
@@ -40,6 +41,8 @@ export function adminEntryPlugin(configFile: string, entry: AdminEntryMode): Plu
           "mountAdmin(element, {",
           "  config,",
           "  store: localStore(),",
+          // The block registry the site's packages include, which the development server serves.
+          `  registry: ${JSON.stringify(`${DEV_API_PREFIX}/registry/{name}.json`)},`,
           `  preview: { stylesheets: [${JSON.stringify(entry.previewStylesheet)}], themeCss, tailwindBrowserUrl },`,
           `  siteUrl: "/",`,
           "});",

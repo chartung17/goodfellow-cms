@@ -4,7 +4,7 @@ A git-based website builder built on the [Puck](https://puckeditor.com) visual e
 
 Goodfellow gives non-technical site owners a drag-and-drop editor at `/admin` with no server, database or monthly hosting bill. Pages are stored as files in the site's own GitHub or GitLab repository. Every save is a commit, and a free static host (GitHub Pages, GitLab Pages or Vercel) rebuilds the site.
 
-> **Status: early development.** Static rendering, the admin panel, collections, the AI assistant, the media library, publishing to GitHub or GitLab, `create-goodfellow` and the Next.js adapter work, with deploy setups for GitHub Pages, GitLab Pages and Vercel. Nothing is published to npm yet. This README describes what Goodfellow is meant to become; the [roadmap](#roadmap) shows what exists.
+> **Status: early development.** Static rendering, the admin panel, collections, the AI assistant, the media library, blocks from Goodfellow's shadcn/ui block registry, publishing to GitHub or GitLab, `create-goodfellow` and the Next.js adapter work, with deploy setups for GitHub Pages, GitLab Pages and Vercel. Nothing is published to npm yet. This README describes what Goodfellow is meant to become; the [roadmap](#roadmap) shows what exists.
 
 ## How it works
 
@@ -31,6 +31,7 @@ Planned for the first release:
 - **Collections and templates.** Build a layout once (for example `/videos/{slug}`), then add entries by filling in a simple form.
 - **AI assistant.** Describe what you want and AI writes it into the page, rewrites a block, or fills in an item's fields. Editors choose the AI service: Claude, OpenAI, a free service, or any chat app by copy and paste.
 - **Class names and custom CSS.** Any block can take Tailwind classes, and admins can write site-wide CSS. Classes appear in the editor preview immediately, before the site is rebuilt.
+- **More blocks without a developer.** Admins add blocks built with [shadcn/ui](https://ui.shadcn.com), such as an FAQ, tabs and a pricing table, from the admin panel, and remove them again. Developers can publish registries of blocks built with other libraries.
 - **Custom blocks** for developers: any React component can become a block.
 - **Interactive blocks.** Blocks can use React Client Components, which run in the browser with or without Next.js. Pages without them load no JavaScript at all.
 - **Sign-in without a server:**
@@ -70,13 +71,13 @@ Create a new site with Node 22 or later:
 npm create goodfellow@latest my-site
 ```
 
-It asks which site to start from, where the site will be stored (GitHub or GitLab) and where it will be hosted, with each host's rules for business sites, and sets the site up to match. Three sites are available:
+It asks which site to start from, where the site will be stored (GitHub or GitLab), where it will be hosted, with each host's rules for business sites, and whether to start with the recommended [shadcn blocks](#blocks-from-block-registries) or the built-in blocks only, and sets the site up to match. Three sites are available:
 
 - **Starter** (`templates/starter`): a home page, an about page and a news section.
 - **Parish example** (`examples/parish`): a made-up parish with Mass times, events, news, bulletins and staff, and blocks of its own. It shows what a complete site looks like and how a developer adds blocks.
 - **Starter for Next.js** (`templates/next`): the starter as a Next.js app, for developers who want their own Next.js pages beside the site's. See [Next.js](#nextjs).
 
-To skip the questions, give the answers as options: `npm create goodfellow@latest my-site -- --template parish --github your-name/your-site --host github-pages`. Run it with `--help` for the full list.
+To skip the questions, give the answers as options: `npm create goodfellow@latest my-site -- --template parish --github your-name/your-site --host github-pages --blocks built-in`. Run it with `--help` for the full list.
 
 Until Goodfellow is published to npm, `npm create goodfellow` doesn't work yet, so try the sites in this repository instead. The repository is a pnpm workspace: its sites use the repository's own packages (`workspace:*` in their `package.json`), so `npm install` fails inside them. Get pnpm with `corepack enable` (or `npm install -g pnpm`), then run:
 
@@ -130,6 +131,7 @@ The admin panel is at `/admin` on the live site, and while `goodfellow dev` is r
 - **Pages:** create pages, edit them in Puck, change a page's address (updating menu links to it), and delete pages. The editor shows the site's header and footer around the page, styled exactly like the live site.
 - **Collections:** groups of similar items, such as videos, events or staff. Create a collection, choose its fields (short or long text, formatted text, numbers, dates, links, images and choices from a list), and design the page every item shares in Puck. Then add items by filling in their fields, with a live preview of the item's page. A link field can point to an uploaded file, such as a PDF. Removing a field removes it from every item in the same publish.
 - **Header & footer:** edit them in Puck, like pages.
+- **Blocks:** add blocks from [block registries](#blocks-from-block-registries) to the editor, and remove them. Blocks the site doesn't use can be removed; for one it does, the admin panel lists where it's used.
 - **Site settings:** the site's name, address, logo and icons; contact details; colors, fonts and corner rounding; menus; and custom CSS. A preview of the home page shows changes as you type, and Undo and Redo work across every tab. Fonts are chosen from a searchable list of Google Fonts, each shown in its own typeface.
 - **Live styling:** CSS classes typed into a block, and custom CSS (including Tailwind's `@apply`), take effect in the editor immediately, before the site is rebuilt.
 - **Signing in:** on the live site, editors sign in with GitHub or GitLab. GitHub uses an access token, created from a link that fills in the right permissions. GitLab offers one-click sign-in once the site's OAuth application is registered, with an access token as the alternative. Editors choose whether to stay signed in on the device.
@@ -217,6 +219,32 @@ They run in the browser however the site is built. With `goodfellow build` and `
 
 Each page with a Client Component loads React, so use HTML and CSS where they're enough: `<details>` for something that opens and closes, `:hover` and `:focus-within` for menus. Islands also have [limits](#nextjs) that Next.js doesn't, such as not sharing React context with each other.
 
+### Blocks from block registries
+
+The admin panel's **Blocks** screen adds more blocks to the editor, built with [shadcn/ui](https://ui.shadcn.com) and listed by kind, with the recommended ones marked:
+
+| Block | What it's for |
+|---|---|
+| Hero | A large heading at the top of a page, with text, buttons and a picture |
+| Cards | A grid of cards, each with a picture, a heading, text and a link |
+| Call to action | A highlighted box asking visitors to do something, with a button |
+| Testimonials | Quotes from people, with their names and photos |
+| Notice | A short message that stands out, such as a closure or a change of times |
+| Pricing table | Plans side by side, with prices, what each includes and a button |
+| FAQ | Questions that open to show their answers |
+| Tabs | Content split into tabs, one shown at a time |
+| Image carousel | Pictures shown one at a time, with buttons to move between them |
+
+Adding a block publishes its code into the site's repository, as a developer running `npx shadcn add` would: the block goes in `blocks/installed/`, and the shadcn components it uses in `components/ui/`. The editor offers it once the site has been rebuilt, a minute or two after publishing (at once with `goodfellow dev`). Like the built-in blocks, they use the site's colors, fonts and corner radius. FAQ, Tabs and Image carousel are [interactive](#interactive-blocks); the others need no JavaScript, and the FAQ's and Tabs' hidden content is still in the page for search engines.
+
+Since the blocks' code is in the site, a developer can change it like any other code. Removing a block keeps files someone has changed.
+
+Developers can publish registries of Goodfellow blocks built with other component libraries, in the format [described in `@goodfellow/registry`](packages/registry/README.md#publishing-your-own-registry). A site offers blocks only from Goodfellow's registry and the registries its `goodfellow.config.tsx` lists, since a block's code runs in the admin panel:
+
+```tsx
+registries: { "@acme": "https://acme.example/r/{name}.json" },
+```
+
 ## Repository layout
 
 This is a pnpm workspace managed with Turborepo.
@@ -232,6 +260,7 @@ This is a pnpm workspace managed with Turborepo.
 | `packages/blocks` | `@goodfellow/blocks` | Built-in, library-agnostic blocks | Started |
 | `packages/cli` | `goodfellow` | `goodfellow dev`, `build` and `preview` | Started |
 | `packages/next` | `@goodfellow/next` | Next.js adapter: pages as Server Components, static export, the admin panel | Started |
+| `packages/registry` | `@goodfellow/registry` | Goodfellow's block registry: blocks built with shadcn/ui, and the format for other registries | Started |
 | `packages/create-goodfellow` | `create-goodfellow` | Creates a new site from the starter or an example | Started |
 | `templates/starter` | | The starter site copied by `create-goodfellow` | Started |
 | `templates/next` | | The starter as a Next.js app | Started |
@@ -244,6 +273,8 @@ This is a pnpm workspace managed with Turborepo.
 my-site/
 ├── goodfellow.config.tsx    # blocks, git backend, repository
 ├── blocks/                  # the site's own custom blocks
+│   └── installed/           # blocks added on the admin panel's Blocks screen
+├── components/ui/           # shadcn components those blocks use
 ├── content/                 # everything the admin panel edits
 │   ├── site.json            # title, favicon, metadata, theme colors, fonts
 │   ├── menus.json           # navigation menus
@@ -256,6 +287,7 @@ my-site/
 │   └── styles/custom.css
 ├── public/media/            # uploaded images and files, served at /media/
 ├── src/styles.css           # imports Tailwind and the theme; scans content/ for classes
+├── components.json          # shadcn settings, for developers adding blocks with the shadcn CLI
 ├── .github/workflows/deploy.yml
 ├── .gitlab-ci.yml
 └── vercel.json
@@ -272,7 +304,7 @@ my-site/
 7. **Starters** (done). `create-goodfellow`, which creates a site and sets up its storage and host, and an example parish site with collections and custom blocks.
 8. **Next.js adapter** (done). Goodfellow pages and the admin panel in a Next.js app, exported as static files, with a Next.js starter. Links use `next/link` and images `next/image`, sites can be served from a subfolder, and blocks can use Client Components.
 9. **Interactive blocks everywhere** (done). Client Components in blocks (`"use client"`) run in the browser on sites built with `goodfellow build` too, not only with Next.js.
-10. **shadcn blocks.** A registry of Goodfellow blocks built with [shadcn/ui](https://ui.shadcn.com), installed into the site without a developer. When creating a site, admins choose "Recommended" or "Built-in blocks only"; the admin panel lets them add and remove individual blocks. Others can publish registries of blocks built with other libraries, in a documented format.
+10. **shadcn blocks** (done). A registry of Goodfellow blocks built with [shadcn/ui](https://ui.shadcn.com), installed into the site without a developer. When creating a site, admins choose "Recommended" or "Built-in blocks only"; the admin panel lets them add and remove individual blocks. Others can publish registries of blocks built with other libraries, in a documented format. Updating installed blocks comes with step 15's automatic updates.
 11. **Demo mode.** A site whose config sets `demo: true` (it can only be turned on in the config, never from the admin panel) opens its admin panel to anyone, with no sign-in. Visitors can try everything they can, from editing pages and collections to the media library, settings and the AI assistant, but nothing can be published, and their changes stay in their own browser. The admin panel reads the site's content without signing in, so the repository must be public. The documentation site will link to a demo.
 12. **Documentation site.** Guides for site owners and editors, plus reference docs for developers. Includes each host's rules for commercial sites on its free plan, kept up to date.
 13. **Site setup without a developer.** A web page where anyone can create a site from a starter, store it on GitHub or GitLab, and put it online with GitHub Pages, GitLab Pages or Vercel. It asks what the site is for and recommends a host whose free plan allows it, such as GitLab Pages for a business. Builds work out which repository they're in, so nobody has to edit the config.
@@ -280,7 +312,7 @@ my-site/
 15. **Running a site without a developer.**
     - Invite and remove editors from the admin panel.
     - Version history, with a way to restore an earlier version of a page.
-    - Automatic updates: a scheduled job updates Goodfellow and publishes the update only if the site still builds.
+    - Automatic updates: a scheduled job updates Goodfellow, and blocks added from block registries, and publishes the update only if the site still builds. Block updates replace only files nobody has changed.
     - Plain-language explanations when a rebuild fails.
     - Contact forms, through a form service the site owner can set up without a developer.
 

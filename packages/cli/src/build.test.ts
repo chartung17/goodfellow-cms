@@ -146,6 +146,23 @@ describe.each([
   });
 });
 
+describe.each([
+  ["starter template", starter],
+  ["parish example", parish],
+  ["Next.js starter", resolve(import.meta.dirname, "../../../templates/next")],
+])("%s", (_name, root) => {
+  it("is ready for blocks from block registries", async () => {
+    const { EMPTY_RECORD, installedIndex, REGISTRY_PACKAGES } = await import("@goodfellow/core");
+    const pkg = JSON.parse(await readFile(join(root, "package.json"), "utf8")) as { dependencies: object };
+    // The admin panel can't add packages, so sites have every one the registry's blocks use.
+    expect(Object.keys(pkg.dependencies)).toEqual(expect.arrayContaining([...REGISTRY_PACKAGES]));
+    expect(await readFile(join(root, "blocks/installed/index.ts"), "utf8")).toBe(installedIndex(EMPTY_RECORD));
+    expect(await readFile(join(root, "goodfellow.config.tsx"), "utf8")).toContain(
+      'import { installedBlocks, installedCategories } from "./blocks/installed";',
+    );
+  });
+});
+
 describe("parish example", () => {
   it("has the same deploy setups as the starter", async () => {
     for (const file of [
@@ -154,6 +171,9 @@ describe("parish example", () => {
       "vercel.json",
       ".gitignore",
       "src/styles.css",
+      "components.json",
+      "tsconfig.json",
+      "blocks/installed/index.ts",
     ]) {
       expect(await readFile(join(parish, file), "utf8"), file).toBe(await readFile(join(starter, file), "utf8"));
     }

@@ -27,8 +27,12 @@
     "typecheck": "tsc -p tsconfig.json",
     "test": "vitest run"
   },
+  "dependencies": {
+    "@goodfellow/core": "workspace:*"
+  },
   "devDependencies": {
     "@goodfellow/example-parish": "workspace:*",
+    "@goodfellow/registry": "workspace:*",
     "@goodfellow/template-next": "workspace:*",
     "@goodfellow/template-starter": "workspace:*"
   }
