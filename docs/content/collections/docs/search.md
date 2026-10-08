@@ -13,7 +13,7 @@ The **Search** block searches the whole site in the visitor's browser with [Page
 Builds index a site only if one of its pages has a Search block. The block marks itself with a `data-goodfellow-search` attribute, and after the pages are written, the build looks for it:
 
 - `goodfellow build` indexes the site in `dist/` itself, writing the index to `dist/pagefind/`.
-- Next.js sites run `goodfellow-next index out` after `next build`, as the Next.js starter's build script does.
+- Next.js sites run `goodfellow-next finish out` after `next build`, as the Next.js starter's build script does. (`goodfellow-next index out` only writes the index.)
 - `goodfellow index <folder>` indexes any other built site.
 
 Pages mark their main content with Pagefind's `data-pagefind-body`, so the header and footer, which are on every page, aren't indexed, and neither is "Page not found". Search doesn't work in `goodfellow dev` or the editor's preview, since there's no index there; the box says so, in words the block's settings choose.

@@ -102,7 +102,7 @@ To put a site online, follow [the starter's README](templates/starter/README.md)
 - `<GoodfellowAdmin config={config} />` from `@goodfellow/next/admin` is the admin panel, in a Client Component at `app/admin/page.tsx`.
 - Pages render as Server Components. Blocks' links to the site's pages use `next/link`, so moving between pages doesn't reload, and the site's images use `next/image` with their sizes filled in. Images are served as they are unless the site sets a [custom image loader](https://nextjs.org/docs/app/api-reference/components/image#loader), since a static export can't resize them on request.
 - Blocks can render Client Components (`"use client"`) with any React hooks, and they run in the browser. They can read the site with `useSite()`.
-- The starter's build script runs `goodfellow-next index out` after `next build`, which writes the [search index](#search) if a page has a Search block.
+- The starter's build script runs `goodfellow-next finish out` after `next build`. It writes the [search index](#search) if a page has a Search block, and on Windows it moves Next.js's prefetch files to where browsers look for them (Next.js 16 writes them into folders there, so moving between pages would fetch files that don't exist). `goodfellow-next index out` only writes the index.
 
 **Compared with `goodfellow build`:** interactive blocks work with both, but `goodfellow build` runs each Client Component as a separate [island](#interactive-blocks), which has limits that more interactive sites run into:
 
@@ -263,7 +263,7 @@ The Markdown is GitHub-flavored, with tables. HTML in it is shown as text rather
 
 ### Search
 
-The Search block searches the whole site in the visitor's browser with [Pagefind](https://pagefind.app), so no search service is needed. Builds index a site only when one of its pages has a Search block, which marks itself with `data-goodfellow-search`; a third-party block can use the same index by doing the same. `goodfellow build` indexes the site itself, and Next.js sites run `goodfellow-next index out` after `next build`. Pages' main content is indexed, so headers, footers and "Page not found" are left out.
+The Search block searches the whole site in the visitor's browser with [Pagefind](https://pagefind.app), so no search service is needed. Builds index a site only when one of its pages has a Search block, which marks itself with `data-goodfellow-search`; a third-party block can use the same index by doing the same. `goodfellow build` indexes the site itself, and Next.js sites run `goodfellow-next finish out` after `next build`. Pages' main content is indexed, so headers, footers and "Page not found" are left out.
 
 ### Demo mode
 

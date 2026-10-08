@@ -23,6 +23,11 @@
       "import": "./dist/admin.js",
       "default": "./dist/admin.js"
     },
+    "./export": {
+      "types": "./dist/export.d.ts",
+      "import": "./dist/export.js",
+      "default": "./dist/export.js"
+    },
     "./package.json": "./package.json"
   },
   "bin": {
