@@ -35,6 +35,7 @@ describe("withGoodfellow", () => {
       { root },
     )("phase-development-server");
     expect(config.output).toBeUndefined();
+    expect(config.experimental?.reactDebugChannel).toBe(false);
 
     const rewrites = await config.rewrites?.();
     if (!Array.isArray(rewrites)) throw new Error("Expected a list of rewrites.");

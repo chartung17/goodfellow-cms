@@ -16,6 +16,7 @@ import { useRoute } from "./router.js";
 import { SETTINGS_TABS, SettingsScreen, type SettingsTab } from "./settings-screen.js";
 import { SignInGate } from "./sign-in.js";
 import { defaultStrings, type Strings, StringsProvider, useStrings } from "./strings.js";
+import { setThemeChoice, type ThemeChoice, useApplyThemeChoice, useThemeChoice } from "./theme.js";
 import { Button, Dialog, ErrorMessage } from "./ui.js";
 import { AppLink } from "./use-link.js";
 
@@ -165,6 +166,24 @@ function AccountMenu() {
   );
 }
 
+/** Light, dark, or the computer's setting, remembered in this browser. */
+function ThemeMenu() {
+  const t = useStrings();
+  const choice = useThemeChoice();
+  return (
+    <select
+      className="gfa-theme-menu"
+      aria-label={t("appearance.choice")}
+      value={choice}
+      onChange={(event) => setThemeChoice(event.target.value as ThemeChoice)}
+    >
+      <option value="system">{t("appearance.system")}</option>
+      <option value="light">{t("appearance.light")}</option>
+      <option value="dark">{t("appearance.dark")}</option>
+    </select>
+  );
+}
+
 function Shell() {
   const t = useStrings();
   const { state, siteUrl } = useAdmin();
@@ -206,6 +225,7 @@ function Shell() {
         <a className="gfa-topbar-link" href={siteUrl} target="_blank" rel="noreferrer">
           {t("app.viewSite")}
         </a>
+        <ThemeMenu />
         <AccountMenu />
       </header>
       <DemoBanner />
@@ -229,6 +249,8 @@ function MissingBackend() {
 
 /** The admin panel. Render it on its own page, such as `/admin`. */
 export function Admin({ config, store, host = config.backend, preview, siteUrl = "/", strings, registry }: AdminProps) {
+  // Light or dark everywhere, signing in included.
+  useApplyThemeChoice();
   const demo = useMemo(
     () => (config.demo ? createDemoStore(siteUrl, store) : undefined),
     [config.demo, siteUrl, store],

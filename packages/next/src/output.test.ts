@@ -11,28 +11,33 @@ const read = (file: string) => readFile(join(next, "out", file), "utf8");
 /** Attributes `next/image` adds to `<img>`, or sets where `<img>` leaves the default. */
 const IMAGE_ONLY = new Set(["decoding", "data-nimg", "width", "height", "loading"]);
 
+/** Attributes menus mark the current page with, which Next.js's shared layout sets in the browser instead. */
+const CURRENT_PAGE = new Set(["data-current", "aria-current"]);
+
 /**
  * The part of a page Goodfellow renders (header, page and footer), comparable
- * between renderers: attributes in order, without `next/image`'s extras, and
- * without the trailing slash `next/link` adds to page links (`trailingSlash`).
+ * between renderers: attributes in order, without `next/image`'s extras, without
+ * menus' marks for the current page, and without the trailing slash `next/link`
+ * adds to page links (`trailingSlash`).
  */
 function body(html: string): string {
   const match = /<header class="gf-header">[\s\S]*?<\/footer>/.exec(html);
   if (!match) throw new Error("No Goodfellow page in this HTML.");
-  return match[0].replace(
-    /<([a-z]+)((?:\s[^\s=>]+(?:="[^"]*")?)*)\s*(\/?)>/g,
-    (_tag, name: string, attributes: string) => {
+  // The empty boundary Next.js renders after a layout's page, where it would show loading states.
+  return match[0]
+    .replaceAll("<!--$--><!--/$-->", "")
+    .replace(/<([a-z]+)((?:\s[^\s=>]+(?:="[^"]*")?)*)\s*(\/?)>/g, (_tag, name: string, attributes: string) => {
       const list = [...attributes.matchAll(/\s([^\s=>]+)(?:="([^"]*)")?/g)]
         .map(([, key = "", value = ""]) => [key, value] as const)
         .filter(
           ([key, value]) =>
+            !CURRENT_PAGE.has(key) &&
             !(name === "img" && (IMAGE_ONLY.has(key) || (key === "style" && value === "color:transparent"))),
         )
         .map(([key, value]) => [key, key === "href" && value.length > 1 ? value.replace(/\/$/, "") : value] as const)
         .sort(([a], [b]) => a.localeCompare(b));
       return `<${name}${list.map(([key, value]) => ` ${key}="${value}"`).join("")}>`;
-    },
-  );
+    });
 }
 
 async function files(dir: string): Promise<string[]> {

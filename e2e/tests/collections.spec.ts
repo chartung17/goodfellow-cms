@@ -34,6 +34,44 @@ test("edits an item, previewing it with the collection's page design", async ({ 
   expect(await (await request.get("/news/welcome")).text()).toContain("Our new website is here");
 });
 
+test("the item editor shows only what items need, with a wider sidebar of its own", async ({ page }) => {
+  const rightSideBar = page.locator('[class*="_Sidebar--right_"]');
+  const sideBarWidth = async () => Math.round((await rightSideBar.boundingBox())?.width ?? 0);
+  await page.goto("/admin#/");
+  await page.evaluate(() => localStorage.setItem("puck-sidebar-widths", JSON.stringify({ right: 300 })));
+
+  await page.goto("/admin#/collections/news/edit?slug=welcome");
+  await expect(canvas(page).getByRole("heading", { name: "Welcome to our new website" })).toBeVisible();
+  // No blocks to add or outline: only the AI assistant, which starts closed.
+  const nav = page.locator('.gfa-editor nav[class*="_Nav_"]');
+  await expect(nav.getByText("AI", { exact: true })).toBeVisible();
+  await expect(nav.getByText("Blocks", { exact: true })).toBeHidden();
+  await expect(nav.getByText("Outline", { exact: true })).toBeHidden();
+  await expect(page.locator(".gfa-ai")).toBeHidden();
+  await expect.poll(sideBarWidth).toBe(520);
+
+  // Resizing it is remembered for items only.
+  const handle = page.locator('[class*="_ResizeHandle--right_"]');
+  const box = await handle.boundingBox();
+  if (!box) throw new Error("No resize handle");
+  await page.mouse.move(box.x + box.width / 2, box.y + box.height / 2);
+  await page.mouse.down();
+  await page.mouse.move(box.x + box.width / 2 - 80, box.y + box.height / 2, { steps: 5 });
+  await page.mouse.up();
+  await expect.poll(sideBarWidth).toBe(600);
+  await expect.poll(() => page.evaluate(() => localStorage.getItem("goodfellow-entry-sidebar-width"))).toBe("600");
+  await expect
+    .poll(() => page.evaluate(() => JSON.parse(localStorage.getItem("puck-sidebar-widths") ?? "{}").right))
+    .toBe(300);
+
+  await page.goto(`/admin#/pages/edit?path=${encodeURIComponent("/about")}`);
+  await expect(canvas(page).getByRole("heading", { name: "About us" })).toBeVisible();
+  await expect(page.locator('.gfa-editor nav[class*="_Nav_"]').getByText("Blocks", { exact: true })).toBeVisible();
+  await expect.poll(sideBarWidth).toBe(300);
+  await page.goto("/admin#/collections/news/edit?slug=welcome");
+  await expect.poll(sideBarWidth).toBe(600);
+});
+
 test("won't publish an item without its required fields", async ({ page }) => {
   await page.goto("/admin#/collections/news/edit?slug=open-house");
   await expect(canvas(page).getByRole("heading", { name: "Open house this Saturday" })).toBeVisible();

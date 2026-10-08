@@ -253,12 +253,24 @@ export const defaultStrings = {
   "blocks.added": "Added",
   "blocks.remove": "Remove",
   "blocks.removeLabel": "Remove {name}",
-  "blocks.addedNotice": "{name} was added. It will be in the editor's list of blocks once the site has been updated.",
-  "blocks.removedNotice": "{name} was removed. The editor stops offering it once the site has been updated.",
+  "blocks.undo": "Undo",
+  "blocks.undoAddLabel": "Don't add {name}",
+  "blocks.undoRemoveLabel": "Don't remove {name}",
+  "blocks.willAdd": "Will be added",
+  "blocks.willRemove": "Will be removed",
+  "blocks.pendingTitle": "Changes to publish",
+  "blocks.pendingAdd": "Add {name}",
+  "blocks.pendingRemove": "Remove {name}",
+  "blocks.discard": "Discard changes",
+  "blocks.publish": "Publish",
+  "blocks.publishedNotice":
+    "Published. Added blocks will be in the editor's list of blocks, and removed ones gone from it, once the site has been updated.",
   "blocks.addMessage": "Add the {name} block",
   "blocks.removeMessage": "Remove the {name} block",
-  "blocks.removeTitle": "Remove {name}?",
-  "blocks.removeBody": "{name} will no longer be offered in the editor. You can add it again later.",
+  "blocks.changeMessage": "Change blocks: {changes}",
+  "blocks.addPart": "add {names}",
+  "blocks.removePart": "remove {names}",
+  "blocks.inUseTitle": "{name} can't be removed yet",
   "blocks.inUse": "{name} is used in: {places}. Take it out of those first, then remove it.",
   "blocks.usedTemplate": "the page design of {name}",
   "blocks.error.record": "The list of blocks added to this site couldn't be read. Tell whoever looks after the site.",
@@ -365,10 +377,15 @@ export const defaultStrings = {
   "ai.error.service": "{service} reported a problem. Try again in a moment.",
 
   "settings.title": "Site settings",
+  "appearance.choice": "Colors of the admin panel",
+  "appearance.system": "Match my computer",
+  "appearance.light": "Light",
+  "appearance.dark": "Dark",
   "settings.tab.general": "General",
   "settings.tab.theme": "Colors & fonts",
   "settings.tab.menus": "Menus",
   "settings.tab.css": "Custom CSS",
+  "settings.tab.code": "Code",
   "settings.message": "Update site settings",
   "settings.preview": "Preview of the home page",
   "settings.previewEmpty": "Add a home page to see a preview here.",
@@ -441,6 +458,18 @@ export const defaultStrings = {
 
   "css.intro": "CSS here applies to every page and overrides the blocks' own styles. Tailwind's @apply works too.",
   "css.label": "Custom CSS",
+  "code.editorHint":
+    "Tab indents, and suggestions appear as you type. Press Escape, then Tab, to leave the editor. Ctrl+F finds and replaces.",
+  "code.intro":
+    "Code from services such as analytics or site verification, added to every page of the site. It never runs in the admin panel, so check it on the site once it's published. Paste only code you trust: it can change anything on the site.",
+  "code.head": "In the page head",
+  "code.headHint": "Script, style, link, meta and noscript tags, such as the ones Google Analytics gives you.",
+  "code.body": "At the end of the page",
+  "code.bodyHint": "Any HTML, such as a chat widget, added just before the end of every page.",
+  "code.error.text":
+    'The code in the page head has text outside a tag: "{text}". Only tags such as <script> and <meta> can go there.',
+  "code.error.tag": 'A <{tag}> tag can\'t go in the page head. Put it in "At the end of the page" instead.',
+  "code.error.unclosed": "A {tag} tag in the page head isn't closed.",
 } as const;
 
 export type StringKey = keyof typeof defaultStrings;

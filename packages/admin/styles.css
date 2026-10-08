@@ -2,21 +2,43 @@
  * Styles for Goodfellow's admin panel. Plain CSS with gfa- prefixed classes,
  * so they never depend on or leak into the site's own styles.
  */
+/* Each color is light-dark(light, dark): light-dark() picks by color-scheme, which follows
+ * the computer's setting unless the admin panel's color menu chose (data-gfa-theme). */
 :root {
-  --gfa-bg: #f8fafc;
-  --gfa-surface: #ffffff;
-  --gfa-text: #0f172a;
-  --gfa-muted: #64748b;
-  --gfa-border: #e2e8f0;
-  --gfa-accent: #2563eb;
-  --gfa-accent-text: #ffffff;
-  --gfa-danger: #dc2626;
-  --gfa-success-bg: #ecfdf5;
-  --gfa-success-text: #065f46;
-  --gfa-error-bg: #fef2f2;
-  --gfa-error-text: #991b1b;
+  color-scheme: light dark;
+  --gfa-bg: light-dark(#f8fafc, #0b1120);
+  --gfa-surface: light-dark(#ffffff, #111827);
+  --gfa-text: light-dark(#0f172a, #e2e8f0);
+  --gfa-muted: light-dark(#64748b, #94a3b8);
+  --gfa-border: light-dark(#e2e8f0, #1f2937);
+  --gfa-input-border: light-dark(#cbd5e1, #475569);
+  --gfa-accent: light-dark(#2563eb, #60a5fa);
+  --gfa-accent-text: light-dark(#ffffff, #0b1120);
+  --gfa-current-bg: light-dark(#eff6ff, #172554);
+  --gfa-danger: light-dark(#dc2626, #f87171);
+  --gfa-danger-border: light-dark(#fecaca, #7f1d1d);
+  --gfa-success-bg: light-dark(#ecfdf5, #052e1c);
+  --gfa-success-text: light-dark(#065f46, #6ee7b7);
+  --gfa-success-border: light-dark(#a7f3d0, #065f46);
+  --gfa-error-bg: light-dark(#fef2f2, #3b0d0d);
+  --gfa-error-text: light-dark(#991b1b, #fca5a5);
+  --gfa-demo-bg: light-dark(#fef9c3, #422006);
+  --gfa-demo-border: light-dark(#fde68a, #854d0e);
+  --gfa-demo-text: light-dark(#713f12, #fde68a);
+  --gfa-checker: light-dark(#f1f5f9, #1e293b);
+  --gfa-checker-alt: light-dark(#ffffff, #0f172a);
   --gfa-radius: 6px;
   --gfa-topbar-height: 52px;
+  --gfa-code-active-line: light-dark(rgb(37 99 235 / 0.06), rgb(96 165 250 / 0.08));
+  --gfa-code-selection: light-dark(rgb(37 99 235 / 0.2), rgb(96 165 250 / 0.3));
+}
+
+:root[data-gfa-theme="light"] {
+  color-scheme: light;
+}
+
+:root[data-gfa-theme="dark"] {
+  color-scheme: dark;
 }
 
 html,
@@ -68,9 +90,9 @@ body,
   gap: 12px;
   flex-shrink: 0;
   padding: 6px 16px;
-  background: #fef9c3;
-  border-bottom: 1px solid #fde68a;
-  color: #713f12;
+  background: var(--gfa-demo-bg);
+  border-bottom: 1px solid var(--gfa-demo-border);
+  color: var(--gfa-demo-text);
   font-size: 14px;
 }
 
@@ -111,7 +133,7 @@ body,
 .gfa-nav a[aria-current="page"],
 .gfa-tab[aria-current="page"],
 .gfa-tab[aria-selected="true"] {
-  background: #eff6ff;
+  background: var(--gfa-current-bg);
   color: var(--gfa-accent);
   font-weight: 600;
 }
@@ -211,7 +233,7 @@ body,
 
 .gfa-button-danger {
   background: var(--gfa-surface);
-  border-color: #fecaca;
+  border-color: var(--gfa-danger-border);
   color: var(--gfa-danger);
 }
 
@@ -283,7 +305,7 @@ body,
   width: 100%;
   min-height: 38px;
   padding: 6px 10px;
-  border: 1px solid #cbd5e1;
+  border: 1px solid var(--gfa-input-border);
   border-radius: var(--gfa-radius);
   background: var(--gfa-surface);
   color: var(--gfa-text);
@@ -322,7 +344,7 @@ body,
   width: 44px;
   height: 38px;
   padding: 2px;
-  border: 1px solid #cbd5e1;
+  border: 1px solid var(--gfa-input-border);
   border-radius: var(--gfa-radius);
   background: var(--gfa-surface);
   flex-shrink: 0;
@@ -349,13 +371,13 @@ body,
 
 .gfa-notice-success {
   background: var(--gfa-success-bg);
-  border-color: #a7f3d0;
+  border-color: var(--gfa-success-border);
   color: var(--gfa-success-text);
 }
 
 .gfa-notice-error {
   background: var(--gfa-error-bg);
-  border-color: #fecaca;
+  border-color: var(--gfa-danger-border);
   color: var(--gfa-error-text);
 }
 
@@ -855,7 +877,7 @@ body,
   width: 100%;
   aspect-ratio: 4 / 3;
   object-fit: contain;
-  background: repeating-conic-gradient(#f1f5f9 0 25%, #fff 0 50%) 50% / 16px 16px;
+  background: repeating-conic-gradient(var(--gfa-checker) 0 25%, var(--gfa-checker-alt) 0 50%) 50% / 16px 16px;
   border-radius: 4px;
 }
 
@@ -1059,4 +1081,148 @@ body,
   font-size: 13px;
   line-height: 1.5;
   resize: vertical;
+}
+
+/*
+ * Items have no blocks, so the item editor leaves out Puck's Blocks and Outline
+ * buttons, always the first two in its side bar (after the legacy side bar's,
+ * which only shows on wide screens, when the AI assistant is off).
+ */
+.gfa-editor-entry.gfa-editor-ai nav[class*="_Nav_"] > ul > li:nth-child(-n + 2),
+.gfa-editor-entry:not(.gfa-editor-ai) nav[class*="_Nav_"] > ul > li:nth-child(n + 2):nth-child(-n + 3) {
+  display: none;
+}
+
+/* The formatted editor is as tall as the Markdown one. */
+.gfa-markdown-formatted [class*="_RichTextEditor--editor_"] {
+  min-height: 24rem;
+}
+
+.gfa-block-pending {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
+/* Blocks marked to add or remove, published together. */
+.gfa-block-pending-bar {
+  position: sticky;
+  top: 0;
+  z-index: 5;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin: 16px 0;
+  padding: 12px 16px;
+  background: var(--gfa-surface);
+  border: 1px solid var(--gfa-accent);
+  border-radius: var(--gfa-radius);
+}
+
+.gfa-block-pending-bar ul {
+  margin: 4px 0 0;
+  padding-left: 20px;
+}
+
+.gfa-block-pending-bar .gfa-dialog-actions {
+  margin: 0;
+}
+
+.gfa-code-editor .cm-editor {
+  max-height: 70vh;
+}
+
+/*
+ * Puck's colors, dark when the admin panel is: its scales run the other way
+ * round, so its light tints become dark ones. They override Puck's own, which
+ * are in its puck-tokens layer. The canvas shows the site in its own colors.
+ */
+:root {
+  --puck-color-grey-01: light-dark(#181818, #f8fafc);
+  --puck-color-grey-02: light-dark(#292929, #f1f5f9);
+  --puck-color-grey-03: light-dark(#404040, #e2e8f0);
+  --puck-color-grey-04: light-dark(#5a5a5a, #cbd5e1);
+  --puck-color-grey-05: light-dark(#767676, #94a3b8);
+  --puck-color-grey-06: light-dark(#949494, #7c8aa0);
+  --puck-color-grey-07: light-dark(#ababab, #64748b);
+  --puck-color-grey-08: light-dark(#c3c3c3, #475569);
+  --puck-color-grey-09: light-dark(#dcdcdc, #334155);
+  --puck-color-grey-10: light-dark(#efefef, #1e293b);
+  --puck-color-grey-11: light-dark(#f5f5f5, #172033);
+  --puck-color-grey-12: light-dark(#fafafa, #0f172a);
+  --puck-color-azure-01: light-dark(#00175d, #eff6ff);
+  --puck-color-azure-02: light-dark(#002c77, #dbeafe);
+  --puck-color-azure-03: light-dark(#014292, #bfdbfe);
+  --puck-color-azure-04: light-dark(#0158ad, #93c5fd);
+  --puck-color-azure-05: light-dark(#3479be, #60a5fa);
+  --puck-color-azure-06: light-dark(#6499cf, #3b82f6);
+  --puck-color-azure-07: light-dark(#88b0da, #2563eb);
+  --puck-color-azure-08: light-dark(#abc7e5, #1d4ed8);
+  --puck-color-azure-09: light-dark(#cfdff0, #1e3a8a);
+  --puck-color-azure-10: light-dark(#e7eef7, #172554);
+  --puck-color-azure-11: light-dark(#f3f6fb, #111c3d);
+  --puck-color-azure-12: light-dark(#f7faff, #0f1a33);
+  --puck-color-rose-01: light-dark(#4a001c, #fef8fc);
+  --puck-color-rose-02: light-dark(#670833, #faf4f8);
+  --puck-color-rose-03: light-dark(#87114c, #f6eaf1);
+  --puck-color-rose-04: light-dark(#a81a66, #efd6e3);
+  --puck-color-rose-05: light-dark(#bc5089, #e3b8cf);
+  --puck-color-rose-06: light-dark(#cc7ca5, #d89aba);
+  --puck-color-rose-07: light-dark(#d89aba, #cc7ca5);
+  --puck-color-rose-08: light-dark(#e3b8cf, #bc5089);
+  --puck-color-rose-09: light-dark(#efd6e3, #a81a66);
+  --puck-color-rose-10: light-dark(#f6eaf1, #87114c);
+  --puck-color-rose-11: light-dark(#faf4f8, #670833);
+  --puck-color-rose-12: light-dark(#fef8fc, #4a001c);
+  --puck-color-green-01: light-dark(#002000, #f3fcf4);
+  --puck-color-green-02: light-dark(#043604, #eff8f0);
+  --puck-color-green-03: light-dark(#084e08, #ddf3e0);
+  --puck-color-green-04: light-dark(#0c680c, #b8e8bf);
+  --puck-color-green-05: light-dark(#1d882f, #7dd78b);
+  --puck-color-green-06: light-dark(#2faa53, #56c16f);
+  --puck-color-green-07: light-dark(#56c16f, #2faa53);
+  --puck-color-green-08: light-dark(#7dd78b, #1d882f);
+  --puck-color-green-09: light-dark(#b8e8bf, #0c680c);
+  --puck-color-green-10: light-dark(#ddf3e0, #084e08);
+  --puck-color-green-11: light-dark(#eff8f0, #043604);
+  --puck-color-green-12: light-dark(#f3fcf4, #002000);
+  --puck-color-yellow-01: light-dark(#211000, #fcfaf0);
+  --puck-color-yellow-02: light-dark(#362700, #f9f7ed);
+  --puck-color-yellow-03: light-dark(#4c4000, #f3efd9);
+  --puck-color-yellow-04: light-dark(#645a00, #e6deb1);
+  --puck-color-yellow-05: light-dark(#877614, #d4c474);
+  --puck-color-yellow-06: light-dark(#ab9429, #bfac4e);
+  --puck-color-yellow-07: light-dark(#bfac4e, #ab9429);
+  --puck-color-yellow-08: light-dark(#d4c474, #877614);
+  --puck-color-yellow-09: light-dark(#e6deb1, #645a00);
+  --puck-color-yellow-10: light-dark(#f3efd9, #4c4000);
+  --puck-color-yellow-11: light-dark(#f9f7ed, #362700);
+  --puck-color-yellow-12: light-dark(#fcfaf0, #211000);
+  --puck-color-red-01: light-dark(#4c0000, #fff9fa);
+  --puck-color-red-02: light-dark(#6a0a10, #faf4f5);
+  --puck-color-red-03: light-dark(#8a1422, #f6eaec);
+  --puck-color-red-04: light-dark(#ac1f35, #efd7db);
+  --puck-color-red-05: light-dark(#bf5366, #e4b9c2);
+  --puck-color-red-06: light-dark(#ce7e8e, #d99ca8);
+  --puck-color-red-07: light-dark(#d99ca8, #ce7e8e);
+  --puck-color-red-08: light-dark(#e4b9c2, #bf5366);
+  --puck-color-red-09: light-dark(#efd7db, #ac1f35);
+  --puck-color-red-10: light-dark(#f6eaec, #8a1422);
+  --puck-color-red-11: light-dark(#faf4f5, #6a0a10);
+  --puck-color-red-12: light-dark(#fff9fa, #4c0000);
+  --puck-color-black: light-dark(#000000, #f1f5f9);
+  --puck-color-white: light-dark(#ffffff, #111827);
+}
+
+.gfa-theme-menu {
+  min-height: 32px;
+  padding: 4px 8px;
+  border: 1px solid var(--gfa-input-border);
+  border-radius: var(--gfa-radius);
+  background: var(--gfa-surface);
+  color: var(--gfa-text);
+  font: inherit;
+  font-size: 14px;
 }

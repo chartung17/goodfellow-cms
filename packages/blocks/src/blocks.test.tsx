@@ -138,12 +138,11 @@ describe("built-in blocks", () => {
     const html = await render([
       { type: "Menu", props: { id: "m", menu: "main", orientation: "horizontal", className: "" } },
     ]);
-    expect(html).toContain('<nav aria-label="main">');
-    expect(html).toMatch(/href="\/about" class="[^"]*font-semibold"/);
-    expect(html).toContain(
-      'href="/about/staff" class="block rounded-md px-3 py-2 hover:bg-accent hover:text-accent-foreground" aria-current="page"',
-    );
-    expect(html).not.toMatch(/href="\/" class="[^"]*font-semibold"/);
+    expect(html).toContain('<nav aria-label="main" data-gf-menu="">');
+    // The current page's section, and the page itself, which is the current one.
+    expect(html).toMatch(/href="\/about" class="[^"]*data-current:font-semibold" data-current="">/);
+    expect(html).toMatch(/href="\/about\/staff" class="[^"]*" data-current="" aria-current="page">/);
+    expect(html).not.toMatch(/href="\/" class="[^"]*" data-current/);
   });
 
   it("renders nothing for a menu that doesn't exist", async () => {

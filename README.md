@@ -98,11 +98,11 @@ To put a site online, follow [the starter's README](templates/starter/README.md)
 `@goodfellow/next` puts a Goodfellow site in a Next.js app (App Router, Next.js 16), exported as static files so the same free hosts serve it. [The Next.js starter](templates/next/README.md) has it all set up:
 
 - `withGoodfellow()` in `next.config.ts` exports static files with a folder per page, serves the site from `basePath` (or the `GOODFELLOW_BASE` environment variable, as `goodfellow build` does), and in `next dev` runs the admin panel's local backend, which saves to the files on disk. The local backend is never part of a build.
-- `goodfellowPages(config)` gives the routes their parts: `Page`, `generateStaticParams` and `generateMetadata` for `app/[[...path]]/page.tsx`, `NotFound` for `app/not-found.tsx`, `sitemap` and `robots`, and `demoContent` for `app/admin/demo-content.json/route.ts`, which serves a [demo's](#demo-mode) copy of the content (an empty file on other sites, since a static export can't leave a route out).
+- `goodfellowPages(config)` gives the routes their parts: `Layout` for `app/(site)/layout.tsx`, which shows the header and footer once around every page, so they stay as they are when moving between pages (menus mark the current page in the browser, since a layout doesn't know it); `Page`, `generateStaticParams` and `generateMetadata` for `app/(site)/[[...path]]/page.tsx`; `NotFound` for `app/not-found.tsx`, with the header and footer of its own, since Next.js shows it outside the layout; `sitemap` and `robots`, and `demoContent` for `app/admin/demo-content.json/route.ts`, which serves a [demo's](#demo-mode) copy of the content (an empty file on other sites, since a static export can't leave a route out).
 - `<GoodfellowAdmin config={config} />` from `@goodfellow/next/admin` is the admin panel, in a Client Component at `app/admin/page.tsx`.
 - Pages render as Server Components. Blocks' links to the site's pages use `next/link`, so moving between pages doesn't reload, and the site's images use `next/image` with their sizes filled in. Images are served as they are unless the site sets a [custom image loader](https://nextjs.org/docs/app/api-reference/components/image#loader), since a static export can't resize them on request.
 - Blocks can render Client Components (`"use client"`) with any React hooks, and they run in the browser. They can read the site with `useSite()`.
-- The starter's build script runs `goodfellow-next index out` after `next build`, which writes the [search index](#search) if a page has a Search block.
+- The starter's build script runs `goodfellow-next finish out` after `next build`. It writes the [search index](#search) if a page has a Search block, and on Windows it moves Next.js's prefetch files to where browsers look for them (Next.js 16 writes them into folders there, so moving between pages would fetch files that don't exist). `goodfellow-next index out` only writes the index.
 
 **Compared with `goodfellow build`:** interactive blocks work with both, but `goodfellow build` runs each Client Component as a separate [island](#interactive-blocks), which has limits that more interactive sites run into:
 
@@ -135,7 +135,8 @@ The admin panel is at `/admin` on the live site, and while `goodfellow dev` is r
 - **Collections:** groups of similar items, such as videos, events or staff. Create a collection, choose its fields (short or long text, formatted text, numbers, dates, links, images and choices from a list), and design the page every item shares in Puck. Then add items by filling in their fields, with a live preview of the item's page. A link field can point to an uploaded file, such as a PDF. Removing a field removes it from every item in the same publish. A collection can store its items as Markdown files instead of JSON: its text is then edited in the formatted editor or as Markdown, and text the formatted editor can't show, such as a table, only as Markdown.
 - **Header & footer:** edit them in Puck, like pages.
 - **Blocks:** add blocks from [block registries](#blocks-from-block-registries) to the editor, and remove them. Blocks the site doesn't use can be removed; for one it does, the admin panel lists where it's used.
-- **Site settings:** the site's name, address, logo and icons; contact details; colors, fonts and corner rounding; menus; and custom CSS. A preview of the home page shows changes as you type, and Undo and Redo work across every tab. Fonts are chosen from a searchable list of Google Fonts, each shown in its own typeface.
+- **Site settings:** the site's name, address, logo and icons; contact details; colors, fonts and corner rounding; menus; custom CSS; and code for every page, such as analytics. A preview of the home page shows changes as you type, and Undo and Redo work across every tab. Fonts are chosen from a searchable list of Google Fonts, each shown in its own typeface. Custom CSS and code are edited in a code editor that indents, closes brackets and suggests properties and tags.
+- **Light and dark:** the admin panel follows the computer's light or dark setting, or an editor's choice in its top bar, remembered in their browser. The site's previews keep the site's own colors.
 - **Live styling:** CSS classes typed into a block, and custom CSS (including Tailwind's `@apply`), take effect in the editor immediately, before the site is rebuilt.
 - **Signing in:** on the live site, editors sign in with GitHub or GitLab. GitHub uses an access token, created from a link that fills in the right permissions. GitLab offers one-click sign-in once the site's OAuth application is registered, with an access token as the alternative. Editors choose whether to stay signed in on the device.
 - **Publishing:** each Publish saves every changed file in one commit to the site's main branch. If someone else published changes to other files in the meantime, publishing still goes ahead; if they changed the same files, it stops instead of overwriting their work.
@@ -242,8 +243,9 @@ The admin panel's **Blocks** screen adds more blocks to the editor, built with [
 | FAQ | Questions that open to show their answers |
 | Tabs | Content split into tabs, one shown at a time |
 | Image carousel | Pictures shown one at a time, with buttons to move between them |
+| Custom HTML | HTML written by hand, such as a widget's embed code. It's made safe (scripts, styles, frames and forms left out) unless you choose to use it exactly as written |
 
-Adding a block publishes its code into the site's repository, as a developer running `npx shadcn add` would: the block goes in `blocks/installed/`, and the shadcn components it uses in `components/ui/`. The editor offers it once the site has been rebuilt, a minute or two after publishing (at once with `goodfellow dev`). Like the built-in blocks, they use the site's colors, fonts and corner radius. FAQ, Tabs and Image carousel are [interactive](#interactive-blocks); the others need no JavaScript, and the FAQ's and Tabs' hidden content is still in the page for search engines.
+Admins mark blocks to add and remove, then publish them together in one save, which writes their code into the site's repository, as a developer running `npx shadcn add` would: the block goes in `blocks/installed/`, and the shadcn components it uses in `components/ui/`. The editor offers it once the site has been rebuilt, a minute or two after publishing (at once with `goodfellow dev`). Like the built-in blocks, they use the site's colors, fonts and corner radius. FAQ, Tabs and Image carousel are [interactive](#interactive-blocks); the others need no JavaScript, and the FAQ's and Tabs' hidden content is still in the page for search engines.
 
 Since the blocks' code is in the site, a developer can change it like any other code. Removing a block keeps files someone has changed.
 
@@ -261,7 +263,7 @@ The Markdown is GitHub-flavored, with tables. HTML in it is shown as text rather
 
 ### Search
 
-The Search block searches the whole site in the visitor's browser with [Pagefind](https://pagefind.app), so no search service is needed. Builds index a site only when one of its pages has a Search block, which marks itself with `data-goodfellow-search`; a third-party block can use the same index by doing the same. `goodfellow build` indexes the site itself, and Next.js sites run `goodfellow-next index out` after `next build`. Pages' main content is indexed, so headers, footers and "Page not found" are left out.
+The Search block searches the whole site in the visitor's browser with [Pagefind](https://pagefind.app), so no search service is needed. Builds index a site only when one of its pages has a Search block, which marks itself with `data-goodfellow-search`; a third-party block can use the same index by doing the same. `goodfellow build` indexes the site itself, and Next.js sites run `goodfellow-next finish out` after `next build`. Pages' main content is indexed, so headers, footers and "Page not found" are left out.
 
 ### Demo mode
 
@@ -352,6 +354,7 @@ my-site/
     - Plain-language explanations when a rebuild fails.
     - Contact forms, through a form service the site owner can set up without a developer.
 17. **Stock photos from the AI assistant.** When the media library has nothing that fits, the AI assistant can add free stock photos whose license allows it, such as from [Unsplash](https://unsplash.com), crediting the photographer as the license and the service require. A checkbox in the AI panel turns this on or off for each request and is remembered in the browser; a site's config can turn it off for everyone.
+18. **Light and dark sites.** A site can have a light and a dark mode, with every theme color set for each in Site settings. Pages follow the visitor's light or dark setting, and blocks follow the theme in both, as the admin panel's own light and dark modes do.
 
 ## Contributing
 

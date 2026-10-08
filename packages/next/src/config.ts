@@ -76,6 +76,9 @@ function imageSettings(images: NextConfig["images"]): NextConfig["images"] {
  * - Serves images as they are unless the site sets an image loader, since static files can't be optimized on request.
  * - In `next dev`, runs the admin panel's local backend, so publishing saves to
  *   the files on disk. It's never part of a build.
+ * - In `next dev`, turns off React's debug channel (`experimental.reactDebugChannel`)
+ *   unless the site sets it: with the header and footer in a layout, it made the
+ *   browser's memory grow to gigabytes on every page, until pages crashed.
  */
 export function withGoodfellow(nextConfig: NextConfig = {}, options: GoodfellowNextOptions = {}) {
   const root = resolve(options.root ?? process.cwd());
@@ -100,6 +103,7 @@ export function withGoodfellow(nextConfig: NextConfig = {}, options: GoodfellowN
     };
     return {
       ...config,
+      experimental: { reactDebugChannel: false, ...nextConfig.experimental },
       rewrites: async () => withRewrite(await nextConfig.rewrites?.(), rewrite),
     };
   };

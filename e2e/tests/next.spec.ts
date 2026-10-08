@@ -1,4 +1,4 @@
-import { readFileSync, writeFileSync } from "node:fs";
+import { mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { test as base, expect as baseExpect } from "@playwright/test";
 import { nextSite, resetNextContent } from "../scripts/site.mjs";
@@ -84,4 +84,26 @@ test("runs a block's Client Component in the browser, with the site's data and n
   await expect(page.getByRole("heading", { name: "About us", level: 1 })).toBeVisible();
   expect(new URL(page.url()).pathname).toBe("/about/");
   expect(await page.evaluate(() => (window as { notReloaded?: boolean }).notReloaded)).toBe(true);
+});
+
+test("adds the site's own code to every page once, kept when moving between pages", async ({ page }) => {
+  mkdirSync(join(nextSite, "content/code"), { recursive: true });
+  writeFileSync(
+    join(nextSite, "content/code/head.html"),
+    '<meta name="gf-test" content="yes">\n<script>window.headRan = (window.headRan || 0) + 1;</script>\n',
+  );
+  writeFileSync(
+    join(nextSite, "content/code/body.html"),
+    "<script>window.bodyRan = (window.bodyRan || 0) + 1;</script>\n",
+  );
+
+  await page.goto(`${BASE}/`);
+  await expect(page.locator('head meta[name="gf-test"]')).toHaveAttribute("content", "yes");
+  await expect.poll(() => page.evaluate(() => (window as { headRan?: number }).headRan)).toBe(1);
+  await expect.poll(() => page.evaluate(() => (window as { bodyRan?: number }).bodyRan)).toBe(1);
+
+  await page.locator("header nav").getByRole("link", { name: "About" }).click();
+  await expect(page.getByRole("heading", { name: "About us", level: 1 })).toBeVisible();
+  expect(await page.evaluate(() => (window as { headRan?: number }).headRan)).toBe(1);
+  expect(await page.evaluate(() => (window as { bodyRan?: number }).bodyRan)).toBe(1);
 });

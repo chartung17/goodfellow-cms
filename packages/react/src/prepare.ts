@@ -89,6 +89,46 @@ function withBaseInHtml(value: unknown, base: string): unknown {
   return value;
 }
 
+/** Everything `<PageHeader>` and `<PageFooter>` need to render the site's header and footer. */
+export interface PreparedLayout {
+  /** The site, without a current page: a layout is shared by every page. */
+  site: SiteContextValue;
+  layoutConfig: Config;
+  header: Data;
+  footer: Data;
+}
+
+function rebaser(options: RenderOptions) {
+  const base = normalizeBase(options.base);
+  return <T>(value: T): T => (base === "/" ? value : (withBaseInHtml(value, base) as T));
+}
+
+/**
+ * Gets the site's header and footer ready to render for a layout shared by
+ * every page, such as a Next.js layout. They're given no current page (`path`
+ * is empty), so blocks that highlight it, such as Menu, leave that to the browser.
+ */
+export async function prepareLayout(
+  configs: PuckConfigs,
+  content: SiteContent,
+  options: RenderOptions = {},
+): Promise<PreparedLayout> {
+  const site: SiteContextValue = {
+    settings: content.settings,
+    menus: content.menus,
+    path: "",
+    collections: content.collections,
+    ...options,
+  };
+  const metadata = siteMetadata(site);
+  const [header, footer] = await Promise.all([
+    prepareData(content.header.data, configs.layout, metadata),
+    prepareData(content.footer.data, configs.layout, metadata),
+  ]);
+  const rebase = rebaser(options);
+  return { site, layoutConfig: configs.layout, header: rebase(header), footer: rebase(footer) };
+}
+
 /**
  * Gets a page ready to render: fills in an entry's values, and resolves the
  * page, header and footer. With a `base`, rich text's links and images get it too.
@@ -119,8 +159,7 @@ export async function preparePage(
     prepareData(content.header.data, configs.layout, metadata),
     prepareData(content.footer.data, configs.layout, metadata),
   ]);
-  const base = normalizeBase(options.base);
-  const rebase = <T>(value: T): T => (base === "/" ? value : (withBaseInHtml(value, base) as T));
+  const rebase = rebaser(options);
   return {
     site,
     page: applied,

@@ -25,15 +25,31 @@ test("serves every page, style and image from the base path", async ({ page }) =
   await expect(page.locator('link[rel="icon"]')).toHaveAttribute("href", "/site/media/favicon.svg");
 });
 
-test("moves between pages with next/link", async ({ page }) => {
+test("moves between pages with next/link, keeping the header and marking the current page in its menu", async ({
+  page,
+}) => {
   await page.goto(`${SITE}/`);
+  const menu = page.locator("header nav");
+  await expect(menu.getByRole("link", { name: "Home" })).toHaveAttribute("aria-current", "page");
   await page.evaluate(() => {
     (window as { notReloaded?: boolean }).notReloaded = true;
+    // The header is shown by the layout, so moving to another page keeps the same element.
+    Object.assign(document.querySelector("header.gf-header") as object, { kept: true });
   });
-  await page.locator("header nav").getByRole("link", { name: "News" }).click();
+  await menu.getByRole("link", { name: "News" }).click();
   await expect(page.getByRole("heading", { name: "News", level: 1 })).toBeVisible();
   expect(new URL(page.url()).pathname).toBe("/site/news/");
   expect(await page.evaluate(() => (window as { notReloaded?: boolean }).notReloaded)).toBe(true);
+  expect(await page.evaluate(() => "kept" in (document.querySelector("header.gf-header") as object))).toBe(true);
+  await expect(menu.getByRole("link", { name: "News" })).toHaveAttribute("aria-current", "page");
+  await expect(menu.getByRole("link", { name: "News" })).toHaveAttribute("data-current", "");
+  await expect(menu.getByRole("link", { name: "Home" })).not.toHaveAttribute("aria-current", "page");
+
+  // An item's page is in its section: News stays marked, though not as the current page.
+  await page.goto(`${SITE}/news/welcome/`);
+  await expect(menu.getByRole("link", { name: "News" })).toHaveAttribute("data-current", "");
+  await expect(menu.getByRole("link", { name: "News" })).not.toHaveAttribute("aria-current", "page");
+  await expect(menu.getByRole("link", { name: "Home" })).not.toHaveAttribute("data-current", "");
 });
 
 test("shows the site's own page for addresses that don't exist", async ({ page }) => {

@@ -4,11 +4,13 @@ import { type Collection, type Entry, entryFieldProblems, sortCollectionEntries 
 import { ContentError, type ContentProblem } from "./errors.js";
 import { parseMarkdownEntry } from "./markdown.js";
 import {
+  BODY_CODE_FILE,
   COLLECTION_SETTINGS_FILE,
   COLLECTIONS_DIR,
   CUSTOM_CSS_FILE,
   entryAddress,
   FOOTER_FILE,
+  HEAD_CODE_FILE,
   HEADER_FILE,
   isAddressSegment,
   isReservedPagePath,
@@ -66,6 +68,15 @@ export interface SiteContent {
   collections: Collection[];
   /** Admin-written CSS, or `""`. */
   customCss: string;
+  /** Admin-written code for every page, such as analytics: `head` for the `<head>`, `body` for the end of the `<body>`. Missing means none. */
+  code?: SiteCode;
+}
+
+export interface SiteCode {
+  /** HTML for the `<head>`: script, style, link, meta, base and noscript elements only (see `parseHeadCode`). */
+  head: string;
+  /** HTML for the end of the `<body>`. */
+  body: string;
 }
 
 const EMPTY_LAYOUT: LayoutFile = { version: 1, data: { root: {}, content: [] } };
@@ -138,15 +149,18 @@ export async function loadSiteContent(source: ContentSource): Promise<SiteConten
     return fallback;
   }
 
-  const [settings, menusFile, header, footer, customCss, pageFiles, collectionFiles] = await Promise.all([
-    loadOptional("site", siteSettingsSchema, SITE_FILE, siteSettingsSchema.parse({ version: 1 })),
-    loadOptional("menus", menusFileSchema, MENUS_FILE, { version: 1, menus: {} }),
-    loadOptional("layout", layoutFileSchema, HEADER_FILE, EMPTY_LAYOUT),
-    loadOptional("layout", layoutFileSchema, FOOTER_FILE, EMPTY_LAYOUT),
-    source.read(CUSTOM_CSS_FILE),
-    source.list(PAGES_DIR),
-    source.list(COLLECTIONS_DIR),
-  ]);
+  const [settings, menusFile, header, footer, customCss, headCode, bodyCode, pageFiles, collectionFiles] =
+    await Promise.all([
+      loadOptional("site", siteSettingsSchema, SITE_FILE, siteSettingsSchema.parse({ version: 1 })),
+      loadOptional("menus", menusFileSchema, MENUS_FILE, { version: 1, menus: {} }),
+      loadOptional("layout", layoutFileSchema, HEADER_FILE, EMPTY_LAYOUT),
+      loadOptional("layout", layoutFileSchema, FOOTER_FILE, EMPTY_LAYOUT),
+      source.read(CUSTOM_CSS_FILE),
+      source.read(HEAD_CODE_FILE),
+      source.read(BODY_CODE_FILE),
+      source.list(PAGES_DIR),
+      source.list(COLLECTIONS_DIR),
+    ]);
 
   const pages: Page[] = [];
   const filesByPath = new Map<string, string>();
@@ -218,7 +232,16 @@ export async function loadSiteContent(source: ContentSource): Promise<SiteConten
   }
 
   pages.sort((a, b) => a.path.localeCompare(b.path));
-  return { settings, menus: menusFile.menus, header, footer, pages, collections, customCss: customCss ?? "" };
+  return {
+    settings,
+    menus: menusFile.menus,
+    header,
+    footer,
+    pages,
+    collections,
+    customCss: customCss ?? "",
+    code: { head: headCode ?? "", body: bodyCode ?? "" },
+  };
 }
 
 /** Reads a Markdown entry like a JSON one: migrated to the current version, then checked. */

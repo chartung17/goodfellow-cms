@@ -60,6 +60,17 @@
       "meta": { "goodfellow": { "category": "Page sections", "recommended": true } }
     },
     {
+      "name": "custom-html",
+      "type": "registry:block",
+      "title": "Custom HTML",
+      "description": "HTML written by hand, such as a widget's embed code. Made safe unless you choose to use it exactly as written.",
+      "files": [
+        { "path": "site/blocks/installed/custom-html/block.tsx", "type": "registry:block" },
+        { "path": "site/blocks/installed/custom-html/html-preview.tsx", "type": "registry:component" }
+      ],
+      "meta": { "goodfellow": { "category": "Advanced" } }
+    },
+    {
       "name": "shadcn-faq",
       "type": "registry:block",
       "title": "FAQ",

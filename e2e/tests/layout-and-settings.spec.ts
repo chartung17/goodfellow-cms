@@ -46,12 +46,15 @@ test("undoes and redoes changes on every tab, with typing undone as one step", a
   await color.fill("#7c2d12");
 
   await page.getByRole("link", { name: "Custom CSS" }).click();
-  const css = page.getByRole("textbox", { name: "Custom CSS" });
-  const cssBefore = await css.inputValue();
-  await css.press("ControlOrMeta+End");
-  await css.pressSequentially("h1 { color: red; }");
+  // The code editor, once it has loaded.
+  const css = page.locator(".gfa-code-editor .cm-content");
+  const cssBefore = readSiteFile("content/styles/custom.css").trimEnd();
+  await css.click();
+  await page.keyboard.press("ControlOrMeta+End");
+  await page.keyboard.type("h1 { color: red; }");
+  await expect.poll(() => css.innerText()).toContain("color: red");
   await undo.click();
-  await expect(css).toHaveValue(cssBefore);
+  await expect.poll(async () => (await css.innerText()).trimEnd()).toBe(cssBefore);
 
   await page.getByRole("link", { name: "Colors & fonts" }).click();
   await expect(color).toHaveValue("#7c2d12");
@@ -106,6 +109,56 @@ test("chooses fonts from a searchable list of Google Fonts", async ({ page }) =>
   await expect(page.getByText("Published.", { exact: true })).toBeVisible();
   expect(readJson("content/site.json")).toMatchObject({ theme: { fonts: { body: "Lora" } } });
   expect(readSiteFile("content/site.json")).not.toContain('"heading"');
+});
+
+test("edits custom CSS like a code editor: it indents, closes braces and suggests properties", async ({ page }) => {
+  await page.goto("/admin#/settings/css");
+  const editor = page.locator(".gfa-code-editor .cm-content");
+  await editor.click();
+  await page.keyboard.press("ControlOrMeta+a");
+  await page.keyboard.press("Delete");
+  await page.keyboard.type(".gf-main {");
+  await page.keyboard.press("Enter");
+  await page.keyboard.type("colo");
+  await expect(page.locator(".cm-tooltip-autocomplete")).toContainText("color");
+  // The editor takes a moment before Enter picks a suggestion, so typing quickly isn't caught by one.
+  await page.waitForTimeout(200);
+  await page.keyboard.press("Enter");
+  // The suggestion brings its colon.
+  await page.keyboard.type("red;");
+  await page.getByRole("button", { name: "Publish" }).click();
+  await expect(page.getByText("Published.", { exact: true })).toBeVisible();
+  expect(readSiteFile("content/styles/custom.css")).toBe(".gf-main {\n  color: red;\n}\n");
+});
+
+test("adds the site's own code to every page, but never runs it in the admin panel", async ({ page }) => {
+  await page.goto("/admin#/settings/code");
+  const head = page.getByRole("textbox", { name: "In the page head" });
+  await head.fill("<div>Not for the head</div>");
+  await page.getByRole("button", { name: "Publish" }).click();
+  await expect(page.getByRole("alert")).toContainText("Fix the highlighted problems");
+  await expect(page.getByText("A <div> tag can't go in the page head.")).toBeVisible();
+
+  await head.fill('<meta name="gf-test" content="yes">\n<script>window.headRan = true;</script>');
+  await page
+    .getByRole("textbox", { name: "At the end of the page" })
+    .fill("<script>window.bodyRan = (window.bodyRan || 0) + 1;</script>");
+  await page.getByRole("button", { name: "Publish" }).click();
+  await expect(page.getByText("Published.", { exact: true })).toBeVisible();
+  expect(readSiteFile("content/code/head.html")).toBe(
+    '<meta name="gf-test" content="yes">\n<script>window.headRan = true;</script>\n',
+  );
+  expect(readSiteFile("content/code/body.html")).toBe("<script>window.bodyRan = (window.bodyRan || 0) + 1;</script>\n");
+
+  // The preview shows the site without its code.
+  for (const frame of page.frames()) {
+    expect(await frame.evaluate(() => "headRan" in window || "bodyRan" in window)).toBe(false);
+  }
+
+  await page.goto("/about");
+  await expect(page.locator('head meta[name="gf-test"]')).toHaveAttribute("content", "yes");
+  expect(await page.evaluate(() => (window as { headRan?: boolean }).headRan)).toBe(true);
+  expect(await page.evaluate(() => (window as { bodyRan?: number }).bodyRan)).toBe(1);
 });
 
 test("won't publish invalid settings", async ({ page }) => {
@@ -163,4 +216,30 @@ test("isn't reachable from other websites", async ({ request }) => {
     headers: { "x-goodfellow-request": "1" },
   });
   expect(outside.status()).toBe(400);
+});
+
+test("shows the admin panel light or dark, following the computer unless an editor chooses", async ({ page }) => {
+  const background = () => page.locator(".gfa-app").evaluate((app) => getComputedStyle(app).backgroundColor);
+  await page.emulateMedia({ colorScheme: "light" });
+  await page.goto("/admin#/pages");
+  await expect.poll(background).toBe("rgb(248, 250, 252)");
+
+  const menu = page.getByRole("combobox", { name: "Colors of the admin panel" });
+  await menu.selectOption({ label: "Dark" });
+  await expect.poll(background).toBe("rgb(11, 17, 32)");
+  // Puck's own colors follow.
+  await page.goto(`/admin#/pages/edit?path=${encodeURIComponent("/about")}`);
+  await expect(canvas(page).getByRole("heading", { name: "About us" })).toBeVisible();
+  const sidebar = page.locator('[class*="_Sidebar--right_"]');
+  await expect.poll(() => sidebar.evaluate((el) => getComputedStyle(el).backgroundColor)).toBe("rgb(17, 24, 39)");
+
+  // Remembered in this browser.
+  await page.reload();
+  await expect(menu).toHaveValue("dark");
+  await expect.poll(background).toBe("rgb(11, 17, 32)");
+
+  await menu.selectOption({ label: "Match my computer" });
+  await expect.poll(background).toBe("rgb(248, 250, 252)");
+  await page.emulateMedia({ colorScheme: "dark" });
+  await expect.poll(background).toBe("rgb(11, 17, 32)");
 });

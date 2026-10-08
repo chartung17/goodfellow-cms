@@ -23,7 +23,8 @@ The News page and its stories are an example of a collection: a group of similar
 | File | What it does |
 |---|---|
 | `goodfellow.config.tsx` | The site's blocks and where it's stored, shared by its pages and the admin panel |
-| `app/[[...path]]/page.tsx` | Every page in `content/`, rendered as Server Components. Links between pages use `next/link`, and images `next/image`. |
+| `app/(site)/layout.tsx` | The site's header and footer, shown once around every page, so they stay as they are when moving between pages |
+| `app/(site)/[[...path]]/page.tsx` | Every page in `content/`, rendered as Server Components. Links between pages use `next/link`, and images `next/image`. |
 | `app/not-found.tsx` | The site's "Page not found" page, `content/pages/404.json` |
 | `app/admin/page.tsx` | The admin panel |
 | `app/admin/demo-content.json/route.ts` | For a [demo](https://github.com/chartung17/goodfellow-cms#demo-mode) (`demo: true` in the config), the copy of the content its admin panel starts from |

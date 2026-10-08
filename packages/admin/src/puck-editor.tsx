@@ -10,7 +10,7 @@ import {
   Render,
   type UiState,
 } from "@puckeditor/core";
-import { type ReactNode, useMemo, useRef, useState } from "react";
+import { type ReactNode, useCallback, useMemo, useRef, useState } from "react";
 import { useAdmin, useSiteContent } from "./admin-context.js";
 import { aiPlugin } from "./ai-panel.js";
 import { storedData } from "./changes.js";
@@ -134,6 +134,70 @@ export interface PuckEditorProps {
   notice?: ReactNode;
   ui?: Partial<UiState>;
   plugins?: Plugin[];
+  /**
+   * Gives the right sidebar its own width, remembered under `key`, instead of
+   * the width Puck shares between every editor.
+   */
+  rightSideBar?: { key: string; width: number };
+}
+
+/** Where Puck remembers the sidebars' widths for every editor. */
+const PUCK_WIDTHS = "puck-sidebar-widths";
+
+function readStorage(key: string): string | null {
+  try {
+    return localStorage.getItem(key);
+  } catch {
+    return null;
+  }
+}
+
+function writeStorage(key: string, value: string | null) {
+  try {
+    if (value === null) localStorage.removeItem(key);
+    else localStorage.setItem(key, value);
+  } catch {
+    // Without storage, widths just aren't remembered.
+  }
+}
+
+/**
+ * A right sidebar width of this editor's own: the one it was left at, or `width`.
+ * Puck saves every resize as the width for all editors, so the shared setting is
+ * put back afterwards.
+ */
+function useOwnRightSideBar(own: PuckEditorProps["rightSideBar"]) {
+  const [initial] = useState(() => {
+    if (!own) return undefined;
+    const saved = Number(readStorage(own.key));
+    return Number.isFinite(saved) && saved > 0 ? saved : own.width;
+  });
+  const shared = useRef(readStorage(PUCK_WIDTHS));
+  const onAction = useCallback(
+    (action: { type: string; ui?: unknown }) => {
+      if (!own || action.type !== "setUi" || typeof action.ui !== "object" || action.ui === null) return;
+      const width = (action.ui as Partial<UiState>).rightSideBarWidth;
+      if (typeof width !== "number") return;
+      writeStorage(own.key, String(Math.round(width)));
+      // Puck saves the width right after this action; then the shared one goes back to what it was.
+      setTimeout(() => {
+        const saved = readStorage(PUCK_WIDTHS);
+        let widths: Record<string, unknown> = {};
+        try {
+          widths = saved ? JSON.parse(saved) : {};
+        } catch {}
+        let before: Record<string, unknown> = {};
+        try {
+          before = shared.current ? JSON.parse(shared.current) : {};
+        } catch {}
+        const { right: _ours, ...rest } = widths;
+        const restored = before.right === undefined ? rest : { ...rest, right: before.right };
+        writeStorage(PUCK_WIDTHS, Object.keys(restored).length > 0 ? JSON.stringify(restored) : null);
+      }, 0);
+    },
+    [own],
+  );
+  return { width: initial, onAction: own ? onAction : undefined };
 }
 
 /** Puck, set up for one page, header, footer, template or entry: site context, live preview styles and publishing. */
@@ -150,6 +214,7 @@ export function PuckEditor({
   notice,
   ui,
   plugins,
+  rightSideBar,
 }: PuckEditorProps) {
   const t = useStrings();
   const { config: siteConfig, pageConfig, layoutConfig, templateConfig, publish, reload } = useAdmin();
@@ -202,6 +267,12 @@ export function PuckEditor({
     }
   };
 
+  const ownSideBar = useOwnRightSideBar(rightSideBar);
+  const puckUi = useMemo(
+    () => (ownSideBar.width ? { ...ui, rightSideBarWidth: ownSideBar.width } : ui),
+    [ui, ownSideBar.width],
+  );
+
   const aiLabel = t("ai.label");
   const allPlugins = useMemo(
     () => [
@@ -230,7 +301,7 @@ export function PuckEditor({
   );
 
   return (
-    <div className="gfa-editor">
+    <div className={cx("gfa-editor", `gfa-editor-${kind}`, siteConfig.ai !== false && "gfa-editor-ai")}>
       {notice && <div className="gfa-editor-notice">{notice}</div>}
       {status.type !== "idle" && (
         <div className="gfa-editor-status">
@@ -271,8 +342,9 @@ export function PuckEditor({
             headerPath={kind === "page" || kind === "entry" ? path : undefined}
             height="100%"
             iframe={{ syncHostStyles: false }}
-            ui={ui}
+            ui={puckUi}
             plugins={allPlugins}
+            onAction={ownSideBar.onAction}
             overrides={overrides}
             onChange={(next) => setDirty(serializeContent(storedData(next)) !== published.current)}
             onPublish={onPublish}

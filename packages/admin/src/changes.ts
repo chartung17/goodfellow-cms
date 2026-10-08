@@ -1,4 +1,5 @@
 import {
+  BODY_CODE_FILE,
   type Collection,
   type CollectionField,
   type CollectionFile,
@@ -9,6 +10,7 @@ import {
   entryAddress,
   entryFile,
   type FileChange,
+  HEAD_CODE_FILE,
   isAddressSegment,
   isEmptyValue,
   isReservedPagePath,
@@ -18,10 +20,12 @@ import {
   type Page,
   pagePathToFile,
   SITE_FILE,
+  type SiteCode,
   type SiteSettings,
   SLUG_PLACEHOLDER,
   serializeContent,
   serializeMarkdownEntry,
+  storedCode,
   TITLE_FIELD,
 } from "@goodfellow/core";
 import type { Data } from "@puckeditor/core";
@@ -138,6 +142,20 @@ export function storedCss(css: string): string {
 export function customCssFileChange(css: string): FileChange {
   const stored = storedCss(css);
   return stored ? { path: CUSTOM_CSS_FILE, content: stored } : { path: CUSTOM_CSS_FILE, delete: true };
+}
+
+/** Writes the site's own code for the head and the end of the body, deleting a file once its code is gone. */
+export function codeFileChanges(code: SiteCode, current: SiteCode = { head: "", body: "" }): FileChange[] {
+  const changes: FileChange[] = [];
+  for (const [path, next, before] of [
+    [HEAD_CODE_FILE, code.head, current.head],
+    [BODY_CODE_FILE, code.body, current.body],
+  ] as const) {
+    const stored = storedCode(next);
+    if (stored === storedCode(before)) continue;
+    changes.push(stored ? { path, content: stored } : { path, delete: true });
+  }
+  return changes;
 }
 
 /** Writes a collection's settings file. */

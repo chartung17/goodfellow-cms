@@ -106,6 +106,28 @@ describe("renderPage", () => {
     expect(html).not.toContain("<header");
   });
 
+  it("adds the site's own code to the head and the end of the body", async () => {
+    const html = await renderPage(
+      makeContent({
+        code: {
+          head: '<!-- Analytics -->\n<script async src="https://example.org/tag.js?id=1&amp;x=2"></script>\n<script>window.n = 1 < 2;</script>\n<meta name="verify" content="abc">',
+          body: '<noscript><iframe src="https://example.org/ns"></iframe></noscript>',
+        },
+      }),
+      makePage([]),
+    );
+    const head = html.slice(html.indexOf("<head>"), html.indexOf("</head>"));
+    expect(head).toContain('<script async="" src="https://example.org/tag.js?id=1&amp;x=2"></script>');
+    expect(head).toContain("<script>window.n = 1 < 2;</script>");
+    expect(head).toContain('<meta name="verify" content="abc"/>');
+    expect(html).toContain(
+      '<div data-goodfellow-code="" style="display:contents"><noscript><iframe src="https://example.org/ns"></iframe></noscript></div></body>',
+    );
+    // Code that doesn't belong in the head is left out (the admin panel won't publish it).
+    const wrong = await renderPage(makeContent({ code: { head: "<div>Hi</div>", body: "" } }), makePage([]));
+    expect(wrong).not.toContain("<div>Hi</div>");
+  });
+
   it("renders the header and footer around the page", async () => {
     const html = await renderPage(
       makeContent({

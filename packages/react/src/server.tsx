@@ -8,6 +8,7 @@ import {
   themeToCss,
 } from "@goodfellow/core";
 import { prerender } from "react-dom/static";
+import { BodyCode, HeadCode } from "./custom-code.js";
 import { fillSlots } from "./island.js";
 import { ISLAND_TAG, SITE_DATA_ID } from "./island-shared.js";
 import { PageBody } from "./page-body.js";
@@ -96,6 +97,7 @@ export function createPageRenderer(config: GoodfellowConfig) {
           ))}
           {/* biome-ignore lint/security/noDangerouslySetInnerHtml: themeToCss escapes its output */}
           <style dangerouslySetInnerHTML={{ __html: themeToCss(settings.theme) }} />
+          <HeadCode code={content.code?.head} />
         </head>
         <body>
           <PageBody
@@ -106,6 +108,7 @@ export function createPageRenderer(config: GoodfellowConfig) {
             header={prepared.header}
             footer={prepared.footer}
           />
+          <BodyCode code={content.code?.body} />
           {assets.scripts?.map((src) => (
             <script key={src} type="module" src={src} />
           ))}

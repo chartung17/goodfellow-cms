@@ -1,6 +1,15 @@
 export { applyBasePath, normalizeBase, withBase } from "./base-path.js";
 export { type AiConfig, defineConfig, type GoodfellowConfig } from "./config.js";
 export {
+  HEAD_TAGS,
+  HeadCodeError,
+  type HeadCodeProblem,
+  type HeadElement,
+  type HeadTag,
+  parseHeadCode,
+  storedCode,
+} from "./content/code.js";
+export {
   type Collection,
   type Entry,
   entryFieldProblems,
@@ -21,6 +30,7 @@ export {
   loadSiteContent,
   type Page,
   parseContentFile,
+  type SiteCode,
   type SiteContent,
 } from "./content/load.js";
 export {
@@ -39,6 +49,7 @@ export {
 } from "./content/markdown.js";
 export {
   addressPatternProblem,
+  BODY_CODE_FILE,
   COLLECTION_SETTINGS_FILE,
   COLLECTIONS_DIR,
   COMPONENTS_DIR,
@@ -48,6 +59,7 @@ export {
   entryAddress,
   entryFile,
   FOOTER_FILE,
+  HEAD_CODE_FILE,
   HEADER_FILE,
   HOOKS_DIR,
   INSTALLED_BLOCKS_DIR,
@@ -68,6 +80,7 @@ export {
   SITE_FILE,
   SLUG_PLACEHOLDER,
 } from "./content/paths.js";
+export { sanitizeHtml } from "./content/sanitize.js";
 export {
   type CollectionField,
   type CollectionFile,
@@ -145,6 +158,8 @@ export {
 export {
   type AvailableBlock,
   availableBlocks,
+  type BlockChange,
+  type BlockChangesOptions,
   type BlockMeta,
   type BlockUse,
   blockUses,
@@ -161,6 +176,7 @@ export {
   itemUrl,
   type Plan,
   parseInstalledRecord,
+  planBlockChanges,
   planInstall,
   planRemove,
   REGISTRY_PACKAGES,

@@ -19,12 +19,15 @@ The admin panel's **Blocks** screen adds more blocks to the editor, from Goodfel
 | FAQ | Questions that open to show their answers |
 | Tabs | Content split into tabs, one shown at a time |
 | Image carousel | Pictures shown one at a time, with buttons to move between them |
+| Custom HTML | HTML written by hand, such as a widget's embed code. It's made safe (scripts, styles, frames and forms left out) unless you choose to use it exactly as written |
 
 ## Adding a block
 
-**Add** publishes the block's code into the site's repository, as a developer running `npx shadcn add` would: the block goes in `blocks/installed/`, and the shadcn components it uses in `components/ui/`. The editor offers it once the site has been rebuilt, a minute or two after publishing. Like the built-in blocks, these use the site's colors, fonts and corner rounding.
+**Add** and **Remove** mark blocks to add or remove; **Publish** then makes every change in one save, and **Discard changes** forgets them. Publishing writes each added block's code into the site's repository, as a developer running `npx shadcn add` would: the block goes in `blocks/installed/`, and the shadcn components it uses in `components/ui/`. The editor offers it once the site has been rebuilt, a minute or two after publishing. Like the built-in blocks, these use the site's colors, fonts and corner rounding.
 
 FAQ, Tabs and Image carousel are interactive. The FAQ's answers and the tabs' content are in the page even when hidden, so search engines and search boxes find them.
+
+Custom HTML used exactly as written runs its scripts on the site, but in the editor it's shown in a sealed-off frame, where it can't reach the admin panel. Only use HTML you trust that way. On a Next.js site, its scripts run when the page is first opened, not when visitors move to it from another page.
 
 ## Removing a block
 
