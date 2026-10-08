@@ -1,4 +1,4 @@
-import { readFileSync, realpathSync, statSync } from "node:fs";
+import { existsSync, readFileSync, realpathSync, statSync } from "node:fs";
 import { createRequire } from "node:module";
 import { dirname, extname, join, relative } from "node:path";
 import { type Plugin, parseAst } from "vite";
@@ -253,8 +253,20 @@ export function islandsPlugin(root: string, modules: ClientModules): Plugin {
       return `${ISLAND_PREFIX}${file}`;
     },
 
+    // A removed Client Component, such as a removed block's, leaves the browser's entry, which would fail to load otherwise.
+    watchChange(id, change) {
+      if (change.event !== "delete") return;
+      for (const [name, file] of modules) {
+        if (file === id || slashes(file) === slashes(id)) {
+          modules.delete(name);
+          invalidateEntry();
+        }
+      }
+    },
+
     load(id) {
       if (id === RESOLVED_ISLANDS_ENTRY) {
+        for (const [name, file] of modules) if (!existsSync(file)) modules.delete(name);
         // Each module is loaded only on pages that use it.
         const loaders = [...modules].map(
           ([name, file]) => `  ${JSON.stringify(name)}: () => import(${JSON.stringify(file)}),`,
