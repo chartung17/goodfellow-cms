@@ -113,4 +113,26 @@ describe("blocks", () => {
     const tabs = await render("shadcn-tabs", {});
     expect(tabs).toContain("What the second tab shows.");
   });
+
+  it("makes custom HTML safe unless told to use it as written", async () => {
+    const block = (await import("../site/blocks/installed/custom-html/block.tsx")).default as ComponentConfig;
+    const render = (props: Record<string, unknown>) =>
+      createPageRenderer({ blocks: { "custom-html": block } })(content, {
+        path: "/",
+        file: "content/pages/index.json",
+        content: {
+          version: 1,
+          data: {
+            root: { props: {} },
+            content: [{ type: "custom-html", props: { id: "b", ...block.defaultProps, ...props } }],
+          },
+        },
+      });
+    const html = '<p class="note" onclick="steal()">Hi</p><script>window.ran = true;</script>';
+    const safe = await render({ html, className: "my-html" });
+    expect(safe).toContain('<div class="my-html"><p class="note">Hi</p></div>');
+    expect(safe).not.toContain("window.ran");
+    const asWritten = await render({ html, sanitize: false });
+    expect(asWritten).toContain(`<div>${html}</div>`);
+  });
 });

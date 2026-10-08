@@ -78,6 +78,54 @@ test("adds a block from Goodfellow's registry, which the editor then offers and 
   }).toPass({ timeout: 30_000 });
 });
 
+test("runs custom HTML used as written on the site, but only in a sandboxed frame in the editor", async ({ page }) => {
+  await page.goto("/admin#/blocks");
+  await expect(page.getByRole("heading", { name: "Advanced" })).toBeVisible();
+  await expect(page.getByRole("listitem").filter({ hasText: "Custom HTML" }).getByText("Recommended")).toBeHidden();
+  await page.evaluate(() => Object.assign(window, { beforeAdding: true }));
+  await page.getByRole("button", { name: "Add Custom HTML" }).click();
+  await publishBlocks(page);
+  await expect.poll(() => onDisk("blocks/installed/custom-html/block.tsx")).toBe(true);
+  await expect.poll(() => page.evaluate(() => "beforeAdding" in window).catch(() => true)).toBe(false);
+
+  const html =
+    '<p id="widget">Widget</p><script>document.getElementById("widget").textContent = "Ran"; try { window.parent.document.title = "Reached"; } catch {}</script>';
+  writeSiteFile(
+    "content/pages/widget.json",
+    `${JSON.stringify(
+      {
+        version: 1,
+        data: {
+          content: [{ type: "custom-html", props: { id: "custom-html-1", className: "", html, sanitize: false } }],
+          root: { props: { className: "", description: "", image: "", title: "Widget" } },
+        },
+      },
+      null,
+      2,
+    )}\n`,
+  );
+
+  await page.goto("/widget");
+  await expect(page.locator("#widget")).toHaveText("Ran");
+
+  await page.goto("/admin#/");
+  await page.goto(`/admin#/pages/edit?path=${encodeURIComponent("/widget")}`);
+  const frame = page.frameLocator("iframe#preview-frame").frameLocator('iframe[title="Custom HTML"]');
+  await expect(frame.locator("#widget")).toHaveText("Ran");
+  await expect(page.frameLocator("iframe#preview-frame").locator('iframe[title="Custom HTML"]')).toHaveAttribute(
+    "sandbox",
+    "allow-scripts",
+  );
+  // Its script couldn't reach the editor.
+  expect(await page.title()).not.toBe("Reached");
+  expect(
+    await page
+      .frameLocator("iframe#preview-frame")
+      .locator("body")
+      .evaluate((body) => body.ownerDocument.title),
+  ).not.toBe("Reached");
+});
+
 test("won't remove a block that's in use, and removes it once it isn't", async ({ page }) => {
   await addFaq(page);
   writeSiteFile("content/pages/help.json", `${JSON.stringify(faqPage, null, 2)}\n`);

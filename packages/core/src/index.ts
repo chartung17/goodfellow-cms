@@ -80,6 +80,7 @@ export {
   SITE_FILE,
   SLUG_PLACEHOLDER,
 } from "./content/paths.js";
+export { sanitizeHtml } from "./content/sanitize.js";
 export {
   type CollectionField,
   type CollectionFile,

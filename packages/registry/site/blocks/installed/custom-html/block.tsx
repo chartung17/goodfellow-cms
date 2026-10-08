@@ -1,0 +1,44 @@
+import { classNameField, sanitizeHtml } from "@goodfellow/react";
+import type { ComponentConfig } from "@puckeditor/core";
+import { HtmlPreview } from "./html-preview";
+
+export interface CustomHtmlProps {
+  html: string;
+  sanitize: boolean;
+  className: string;
+}
+
+/**
+ * HTML written by hand, such as a widget's embed code. It's made safe by
+ * default: scripts, styles, frames, forms and inline styles are left out. Used
+ * as it's written, it runs on the site, but in the editor only inside a
+ * sandboxed frame, where it can't reach the admin panel.
+ */
+const CustomHtml: ComponentConfig<CustomHtmlProps> = {
+  label: "Custom HTML",
+  fields: {
+    html: { type: "textarea", label: "HTML" },
+    sanitize: {
+      type: "radio",
+      label: "Make it safe",
+      options: [
+        { label: "Yes: leave out scripts, styles and frames", value: true },
+        { label: "No: use it exactly as written", value: false },
+      ],
+    },
+    className: classNameField,
+  },
+  defaultProps: { html: "<p>Your HTML goes here.</p>", sanitize: true, className: "" },
+  render: ({ html, sanitize, className, puck }) => {
+    if (!sanitize && puck.isEditing) return <HtmlPreview html={html} className={className} />;
+    return (
+      <div
+        className={className || undefined}
+        // biome-ignore lint/security/noDangerouslySetInnerHtml: sanitized unless the editor chose to use it as written
+        dangerouslySetInnerHTML={{ __html: sanitize ? sanitizeHtml(html) : html }}
+      />
+    );
+  },
+};
+
+export default CustomHtml;

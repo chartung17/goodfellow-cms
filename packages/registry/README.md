@@ -13,6 +13,7 @@ Goodfellow's block registry: blocks built with [shadcn/ui](https://ui.shadcn.com
 | FAQ | Interactive | Yes |
 | Tabs | Interactive | Yes |
 | Image carousel | Interactive | |
+| Custom HTML | Advanced | |
 
 New sites made with `create-goodfellow` start with the recommended blocks unless the admin chooses "Built-in blocks only".
 

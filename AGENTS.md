@@ -135,7 +135,7 @@ Blocks built with a component library come from block registries: shadcn registr
 - **Removing** a block that any page, template, header or footer uses is refused (`blockUses()`), since content refers to blocks by name.
 - **Trust:** installed code runs in the admin panel with the editor's git token (rule 8), so the admin panel installs only from Goodfellow's registry, shadcn/ui's own (for plain names such as `"button"`) and registries in the config's `registries`.
 - **Packages:** the admin panel can't update a lockfile, so every site includes `REGISTRY_PACKAGES` (plus React, Puck and `@goodfellow/react`), and items needing anything else are refused. Adding a package to the list means adding it to every site and to `e2e/package.json` in the same change.
-- **Stable names:** a registry item's name is its block's key in content, so it never changes. Goodfellow's start with `shadcn-`.
+- **Stable names:** a registry item's name is its block's key in content, so it never changes. Goodfellow's shadcn/ui blocks start with `shadcn-`; its others, such as `custom-html`, are lowercase too, so they can't clash with built-in blocks' names.
 - **Releases:** the admin panel installs from the `@goodfellow/registry` release it was built with (`__GOODFELLOW_REGISTRY_VERSION__`), through jsDelivr, so a version always means the same files. Its `registry` prop points elsewhere; the dev servers serve the site's installed copy at `/__goodfellow/api/registry/{name}.json` (`localRegistryDir()`).
 - **Snapshot:** the registry's shadcn components in `packages/registry/site/components/ui/` are copied from shadcn/ui by `pnpm --filter @goodfellow/registry update-shadcn`, since shadcn's registry isn't versioned. Never edit them by hand; review and commit what the script writes. `pnpm build` writes the published `r/` folder.
 - **Registry blocks** follow every rule under Blocks. Interactive ones put every part that shares React context (an `Accordion` with its items) in one `"use client"` file, since islands don't share context, and keep hidden content in the HTML (`forceMount`, hidden with CSS). The registry's tests install and render every block.
@@ -147,7 +147,7 @@ Don't copy or adapt any code from `puckeditor/puck-configs` until that repositor
 - **Tokens:** never log tokens, include them in error messages or URLs, or send them anywhere except the git host's API. Store them only where the user chose (session or local storage), and clear them on sign-out.
 - **AI keys** follow the same rules: sent only to their own service, kept only where the editor chose, cleared on sign-out, and removed from error messages with `redact()`.
 - **Custom CSS:** when injecting admin-written CSS into a page, escape anything that could close the `<style>` element.
-- **Rich text and embeds:** sanitize rich text when rendering it. Embeds only render in sandboxed iframes or through an allowlisted provider.
+- **Rich text and embeds:** sanitize rich text when rendering it. Embeds only render in sandboxed iframes or through an allowlisted provider. Custom HTML is sanitized with `sanitizeHtml()` unless its editor chooses to use it as written; then the editor shows it only in an iframe sandboxed without `allow-same-origin`, and the site's own code (`content/code/`) never renders in the admin panel at all.
 - **Tests:** never call the real GitHub, GitLab or AI services' APIs in tests; use the fakes (`@goodfellow/ai/testing` for AI services). Never commit real tokens or keys, even expired ones.
 
 ## Writing for non-technical users
