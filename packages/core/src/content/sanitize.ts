@@ -1,5 +1,8 @@
-import xss from "xss";
+import filterXss from "xss";
 import { isSafeUrl } from "./markdown.js";
+
+// The package is CommonJS, and some of its exports are only on its default export in Node, which its types don't say.
+const xss = filterXss as unknown as typeof import("xss");
 
 /** Attributes any kept element may have, so CSS can style what's kept. */
 const GLOBAL_ATTRIBUTES = ["class", "id", "title", "lang", "dir"];

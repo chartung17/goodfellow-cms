@@ -115,7 +115,8 @@ describe("blocks", () => {
   });
 
   it("makes custom HTML safe unless told to use it as written", async () => {
-    const block = (await import("../site/blocks/installed/custom-html/block.tsx")).default as ComponentConfig;
+    const name = "custom-html";
+    const block = (await import(`../site/blocks/installed/${name}/block.tsx`)).default as ComponentConfig;
     const render = (props: Record<string, unknown>) =>
       createPageRenderer({ blocks: { "custom-html": block } })(content, {
         path: "/",
