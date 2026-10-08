@@ -381,6 +381,7 @@ export const defaultStrings = {
   "settings.tab.theme": "Colors & fonts",
   "settings.tab.menus": "Menus",
   "settings.tab.css": "Custom CSS",
+  "settings.tab.code": "Code",
   "settings.message": "Update site settings",
   "settings.preview": "Preview of the home page",
   "settings.previewEmpty": "Add a home page to see a preview here.",
@@ -453,6 +454,16 @@ export const defaultStrings = {
 
   "css.intro": "CSS here applies to every page and overrides the blocks' own styles. Tailwind's @apply works too.",
   "css.label": "Custom CSS",
+  "code.intro":
+    "Code from services such as analytics or site verification, added to every page of the site. It never runs in the admin panel, so check it on the site once it's published. Paste only code you trust: it can change anything on the site.",
+  "code.head": "In the page head",
+  "code.headHint": "Script, style, link, meta and noscript tags, such as the ones Google Analytics gives you.",
+  "code.body": "At the end of the page",
+  "code.bodyHint": "Any HTML, such as a chat widget, added just before the end of every page.",
+  "code.error.text":
+    'The code in the page head has text outside a tag: "{text}". Only tags such as <script> and <meta> can go there.',
+  "code.error.tag": 'A <{tag}> tag can\'t go in the page head. Put it in "At the end of the page" instead.',
+  "code.error.unclosed": "A {tag} tag in the page head isn't closed.",
 } as const;
 
 export type StringKey = keyof typeof defaultStrings;

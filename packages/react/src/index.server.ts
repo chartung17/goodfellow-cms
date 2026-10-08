@@ -1,4 +1,6 @@
 // What Server Components (the "react-server" condition) get: the same API, without React context.
+
+export { BodyCode, HeadCode } from "./custom-code.js";
 export { cx } from "./cx.js";
 export { applyEntry, placeholderValues } from "./entry.js";
 export { SiteImage, SiteLink } from "./links.server.js";
@@ -7,8 +9,9 @@ export {
   type PageBodyProps,
   PageContent,
   type PageContentProps,
-  PageLayout,
-  type PageLayoutProps,
+  PageFooter,
+  PageHeader,
+  type PageHeaderProps,
   siteMetadata,
 } from "./page-body.server.js";
 export {

@@ -5,7 +5,7 @@ import { createPageBody } from "./page-body-shared.js";
 import { SiteProvider, setSite } from "./site-context.server.js";
 import type { SiteContextValue } from "./site-types.js";
 
-export type { PageBodyProps, PageContentProps, PageLayoutProps } from "./page-body-shared.js";
+export type { PageBodyProps, PageContentProps, PageHeaderProps } from "./page-body-shared.js";
 export { siteMetadata } from "./site-types.js";
 
 /**
@@ -61,6 +61,6 @@ function Render({
 
 /**
  * Pages rendered as Server Components: `PageBody` is the site header, the page
- * itself and the site footer; `PageLayout` and `PageContent` are the two parts.
+ * itself and the site footer; `PageHeader`, `PageContent` and `PageFooter` are its parts.
  */
-export const { PageBody, PageLayout, PageContent } = createPageBody({ Render, SiteProvider });
+export const { PageBody, PageHeader, PageContent, PageFooter } = createPageBody({ Render, SiteProvider });

@@ -15,10 +15,13 @@ import {
 import { fileSystemSource, readMediaSizes } from "@goodfellow/core/node";
 import {
   applyPageEntry,
+  BodyCode,
   createPuckConfigs,
+  HeadCode,
   PageBody,
   PageContent,
-  PageLayout,
+  PageFooter,
+  PageHeader,
   prepareLayout,
   preparePage,
   type SiteComponents,
@@ -158,15 +161,13 @@ export function goodfellowPages(config: GoodfellowConfig, options: GoodfellowPag
       return (
         <>
           <Theme content={content} />
-          <PageLayout
-            site={layout.site}
-            layoutConfig={layout.layoutConfig}
-            header={layout.header}
-            footer={layout.footer}
-          >
-            {children}
-          </PageLayout>
+          {/* React moves the head's links, meta tags and loading scripts into the head; inline scripts run here. */}
+          <HeadCode code={content.code?.head} />
+          <PageHeader site={layout.site} layoutConfig={layout.layoutConfig} data={layout.header} />
+          {children}
+          <PageFooter site={layout.site} layoutConfig={layout.layoutConfig} data={layout.footer} />
           <CurrentMenuLinks basePath={basePath()} />
+          <BodyCode code={content.code?.body} />
         </>
       );
     },
@@ -194,6 +195,7 @@ export function goodfellowPages(config: GoodfellowConfig, options: GoodfellowPag
           {/* Next.js doesn't take metadata from not-found pages; React moves this into the head. */}
           <title>{getPageHead(content.settings, page).title}</title>
           <Theme content={content} />
+          <HeadCode code={content.code?.head} />
           <PageBody
             site={prepared.site}
             pageConfig={prepared.pageConfig}
@@ -202,6 +204,7 @@ export function goodfellowPages(config: GoodfellowConfig, options: GoodfellowPag
             header={prepared.header}
             footer={prepared.footer}
           />
+          <BodyCode code={content.code?.body} />
         </>
       );
     },

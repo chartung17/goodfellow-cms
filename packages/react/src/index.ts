@@ -1,3 +1,4 @@
+export { BodyCode, HeadCode } from "./custom-code.js";
 export { cx } from "./cx.js";
 export { applyEntry, placeholderValues } from "./entry.js";
 export { SiteImage, SiteLink } from "./links.js";
@@ -6,8 +7,9 @@ export {
   type PageBodyProps,
   PageContent,
   type PageContentProps,
-  PageLayout,
-  type PageLayoutProps,
+  PageFooter,
+  PageHeader,
+  type PageHeaderProps,
   siteMetadata,
 } from "./page-body.js";
 export {

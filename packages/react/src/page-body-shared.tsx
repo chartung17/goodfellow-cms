@@ -12,13 +12,11 @@ export interface PageBodyProps {
   footer: Data;
 }
 
-export interface PageLayoutProps {
+export interface PageHeaderProps {
   site: SiteContextValue;
   layoutConfig: Config;
-  header: Data;
-  footer: Data;
-  /** The page's content, between the header and footer: a `<PageContent>`. */
-  children: ReactNode;
+  /** The header's (or footer's) Puck data. */
+  data: Data;
 }
 
 export interface PageContentProps {
@@ -38,22 +36,27 @@ interface Renderers {
  * provider: the browser's, or the Server Components' versions.
  */
 export function createPageBody({ Render, SiteProvider }: Renderers) {
-  /** The site's header and footer, around a page's content. */
-  function PageLayout({ site, layoutConfig, header, footer, children }: PageLayoutProps) {
-    const metadata = siteMetadata(site);
+  // Separate, rather than one component around the page, so a layout can put the page between them.
+  /** The site's header, for layouts shared by every page, such as Next.js's. */
+  function PageHeader({ site, layoutConfig, data }: PageHeaderProps) {
+    if (data.content.length === 0) return null;
     return (
       <SiteProvider value={site}>
-        {header.content.length > 0 && (
-          <header className="gf-header">
-            <Render config={layoutConfig} data={header} metadata={metadata} site={site} />
-          </header>
-        )}
-        {children}
-        {footer.content.length > 0 && (
-          <footer className="gf-footer">
-            <Render config={layoutConfig} data={footer} metadata={metadata} site={site} />
-          </footer>
-        )}
+        <header className="gf-header">
+          <Render config={layoutConfig} data={data} metadata={siteMetadata(site)} site={site} />
+        </header>
+      </SiteProvider>
+    );
+  }
+
+  /** The site's footer, for layouts shared by every page. */
+  function PageFooter({ site, layoutConfig, data }: PageHeaderProps) {
+    if (data.content.length === 0) return null;
+    return (
+      <SiteProvider value={site}>
+        <footer className="gf-footer">
+          <Render config={layoutConfig} data={data} metadata={siteMetadata(site)} site={site} />
+        </footer>
       </SiteProvider>
     );
   }
@@ -78,11 +81,13 @@ export function createPageBody({ Render, SiteProvider }: Renderers) {
   /** A page's visible content: the site header, the page itself and the site footer. */
   function PageBody({ site, pageConfig, layoutConfig, page, header, footer }: PageBodyProps) {
     return (
-      <PageLayout site={site} layoutConfig={layoutConfig} header={header} footer={footer}>
+      <>
+        <PageHeader site={site} layoutConfig={layoutConfig} data={header} />
         <PageContent site={site} pageConfig={pageConfig} page={page} />
-      </PageLayout>
+        <PageFooter site={site} layoutConfig={layoutConfig} data={footer} />
+      </>
     );
   }
 
-  return { PageBody, PageLayout, PageContent };
+  return { PageBody, PageHeader, PageContent, PageFooter };
 }

@@ -1,8 +1,11 @@
 import {
   DEFAULT_THEME_COLORS,
   type FileChange,
+  HeadCodeError,
   type Menus,
   menusFileSchema,
+  parseHeadCode,
+  type SiteCode,
   type SiteSettings,
   serializeContent,
   siteSettingsSchema,
@@ -13,7 +16,7 @@ import { PageBody, type SiteContextValue } from "@goodfellow/react";
 import type { Data } from "@puckeditor/core";
 import { useCallback, useMemo, useState } from "react";
 import { useAdmin, useSiteContent } from "./admin-context.js";
-import { customCssFileChange, menusFileChange, siteSettingsFileChange, storedCss } from "./changes.js";
+import { codeFileChanges, customCssFileChange, menusFileChange, siteSettingsFileChange, storedCss } from "./changes.js";
 import { FontPicker } from "./font-picker.js";
 import { useHistory } from "./history.js";
 import { MediaField } from "./media-library.js";
@@ -23,15 +26,32 @@ import { useUnsavedChanges } from "./router.js";
 import { type StringKey, useStrings } from "./strings.js";
 import { Button, ErrorMessage, Field, TextField } from "./ui.js";
 
-export type SettingsTab = "general" | "theme" | "menus" | "css";
-export const SETTINGS_TABS: SettingsTab[] = ["general", "theme", "menus", "css"];
+export type SettingsTab = "general" | "theme" | "menus" | "css" | "code";
+export const SETTINGS_TABS: SettingsTab[] = ["general", "theme", "menus", "css", "code"];
 
 const tabLabels: Record<SettingsTab, StringKey> = {
   general: "settings.tab.general",
   theme: "settings.tab.theme",
   menus: "settings.tab.menus",
   css: "settings.tab.css",
+  code: "settings.tab.code",
 };
+
+const EMPTY_CODE: SiteCode = { head: "", body: "" };
+
+/** Why the head's code can't be published, in plain words, or `undefined` if it can. */
+function headCodeProblem(t: ReturnType<typeof useStrings>, head: string): string | undefined {
+  try {
+    parseHeadCode(head);
+    return undefined;
+  } catch (error) {
+    if (!(error instanceof HeadCodeError)) throw error;
+    const { problem } = error;
+    if (problem.code === "text") return t("code.error.text", { text: problem.text });
+    if (problem.code === "tag") return t("code.error.tag", { tag: problem.tag });
+    return t("code.error.unclosed", { tag: problem.tag === "!--" ? "<!--" : `<${problem.tag}>` });
+  }
+}
 
 /** Turns the form's values into settings: empty optional fields are left out rather than saved as "". */
 function cleanSettings(draft: SiteSettings): unknown {
@@ -228,22 +248,69 @@ function CssTab({ css, onChange }: { css: string; onChange: (css: string) => voi
   );
 }
 
-/** Site settings, theme, menus and custom CSS, with a live preview of the home page. Publishing saves every changed file in one go. */
+function CodeTab({
+  code,
+  headError,
+  onChange,
+}: {
+  code: SiteCode;
+  headError?: string;
+  onChange: (code: SiteCode) => void;
+}) {
+  const t = useStrings();
+  return (
+    <div className="gfa-form">
+      <p className="gfa-hint">{t("code.intro")}</p>
+      <Field label={t("code.head")} hint={t("code.headHint")} error={headError}>
+        {(props) => (
+          <textarea
+            {...props}
+            className="gfa-input gfa-code"
+            spellCheck={false}
+            rows={12}
+            value={code.head}
+            onChange={(event) => onChange({ ...code, head: event.target.value })}
+          />
+        )}
+      </Field>
+      <Field label={t("code.body")} hint={t("code.bodyHint")}>
+        {(props) => (
+          <textarea
+            {...props}
+            className="gfa-input gfa-code"
+            spellCheck={false}
+            rows={12}
+            value={code.body}
+            onChange={(event) => onChange({ ...code, body: event.target.value })}
+          />
+        )}
+      </Field>
+    </div>
+  );
+}
+
+/**
+ * Site settings, theme, menus, custom CSS and the site's own code, with a live
+ * preview of the home page (without the code, which never runs in the admin
+ * panel). Publishing saves every changed file in one go.
+ */
 export function SettingsScreen({ tab }: { tab: SettingsTab }) {
   const t = useStrings();
   const { pageConfig, layoutConfig, publish, reload } = useAdmin();
   const { content } = useSiteContent();
   // One history for every tab, so undo takes back the last change wherever it was made.
-  const history = useHistory<{ settings: SiteSettings; menus: Menus; css: string }>({
+  const history = useHistory<{ settings: SiteSettings; menus: Menus; css: string; code: SiteCode }>({
     settings: content.settings,
     menus: content.menus,
     css: content.customCss,
+    code: content.code ?? EMPTY_CODE,
   });
-  const { settings, menus, css } = history.present;
+  const { settings, menus, css, code } = history.present;
   const { update } = history;
   const setSettings = useCallback((settings: SiteSettings) => update((form) => ({ ...form, settings })), [update]);
   const setMenus = useCallback((menus: Menus) => update((form) => ({ ...form, menus })), [update]);
   const setCss = useCallback((css: string) => update((form) => ({ ...form, css })), [update]);
+  const setCode = useCallback((code: SiteCode) => update((form) => ({ ...form, code })), [update]);
   const [showErrors, setShowErrors] = useState(false);
   const [status, setStatus] = useState<
     | { type: "idle" | "publishing" | "done" | "invalid" }
@@ -251,6 +318,7 @@ export function SettingsScreen({ tab }: { tab: SettingsTab }) {
   >({ type: "idle" });
 
   const validation = useMemo(() => validate(settings), [settings]);
+  const headError = useMemo(() => headCodeProblem(t, code.head), [t, code.head]);
   const changes = useMemo(() => {
     const result: FileChange[] = [];
     if (validation.settings && serializeContent(validation.settings) !== serializeContent(content.settings)) {
@@ -258,15 +326,16 @@ export function SettingsScreen({ tab }: { tab: SettingsTab }) {
     }
     if (serializeContent(menus) !== serializeContent(content.menus)) result.push(menusFileChange(menus));
     if (storedCss(css) !== storedCss(content.customCss)) result.push(customCssFileChange(css));
+    result.push(...codeFileChanges(code, content.code));
     return result;
-  }, [validation, menus, css, content]);
+  }, [validation, menus, css, code, content]);
 
   const dirty = changes.length > 0 || !validation.settings;
   useUnsavedChanges(dirty);
 
   const onPublish = async () => {
     setShowErrors(true);
-    if (!validation.settings || !menusFileSchema.safeParse({ version: 1, menus }).success) {
+    if (!validation.settings || !menusFileSchema.safeParse({ version: 1, menus }).success || headError) {
       setStatus({ type: "invalid" });
       return;
     }
@@ -343,6 +412,7 @@ export function SettingsScreen({ tab }: { tab: SettingsTab }) {
         {tab === "theme" && <ThemeTab draft={settings} errors={errors} onChange={setSettings} />}
         {tab === "menus" && <MenusEditor menus={menus} onChange={setMenus} />}
         {tab === "css" && <CssTab css={css} onChange={setCss} />}
+        {tab === "code" && <CodeTab code={code} headError={showErrors ? headError : undefined} onChange={setCode} />}
       </div>
 
       <section className="gfa-split-preview" aria-label={t("settings.preview")}>

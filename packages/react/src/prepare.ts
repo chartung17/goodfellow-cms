@@ -89,7 +89,7 @@ function withBaseInHtml(value: unknown, base: string): unknown {
   return value;
 }
 
-/** Everything `<PageLayout>` needs to render the site's header and footer. */
+/** Everything `<PageHeader>` and `<PageFooter>` need to render the site's header and footer. */
 export interface PreparedLayout {
   /** The site, without a current page: a layout is shared by every page. */
   site: SiteContextValue;

@@ -108,6 +108,36 @@ test("chooses fonts from a searchable list of Google Fonts", async ({ page }) =>
   expect(readSiteFile("content/site.json")).not.toContain('"heading"');
 });
 
+test("adds the site's own code to every page, but never runs it in the admin panel", async ({ page }) => {
+  await page.goto("/admin#/settings/code");
+  const head = page.getByRole("textbox", { name: "In the page head" });
+  await head.fill("<div>Not for the head</div>");
+  await page.getByRole("button", { name: "Publish" }).click();
+  await expect(page.getByRole("alert")).toContainText("Fix the highlighted problems");
+  await expect(page.getByText("A <div> tag can't go in the page head.")).toBeVisible();
+
+  await head.fill('<meta name="gf-test" content="yes">\n<script>window.headRan = true;</script>');
+  await page
+    .getByRole("textbox", { name: "At the end of the page" })
+    .fill("<script>window.bodyRan = (window.bodyRan || 0) + 1;</script>");
+  await page.getByRole("button", { name: "Publish" }).click();
+  await expect(page.getByText("Published.", { exact: true })).toBeVisible();
+  expect(readSiteFile("content/code/head.html")).toBe(
+    '<meta name="gf-test" content="yes">\n<script>window.headRan = true;</script>\n',
+  );
+  expect(readSiteFile("content/code/body.html")).toBe("<script>window.bodyRan = (window.bodyRan || 0) + 1;</script>\n");
+
+  // The preview shows the site without its code.
+  for (const frame of page.frames()) {
+    expect(await frame.evaluate(() => "headRan" in window || "bodyRan" in window)).toBe(false);
+  }
+
+  await page.goto("/about");
+  await expect(page.locator('head meta[name="gf-test"]')).toHaveAttribute("content", "yes");
+  expect(await page.evaluate(() => (window as { headRan?: boolean }).headRan)).toBe(true);
+  expect(await page.evaluate(() => (window as { bodyRan?: number }).bodyRan)).toBe(1);
+});
+
 test("won't publish invalid settings", async ({ page }) => {
   await page.goto("/admin#/settings/general");
   const before = readSiteFile("content/site.json");
