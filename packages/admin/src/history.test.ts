@@ -53,6 +53,11 @@ describe("history", () => {
     expect(undo(history).present).toEqual(form("Hi!"));
   });
 
+  it("doesn't count a copy with the same values as a step", () => {
+    const history = record(createHistory(form("A")), form("B"), 0);
+    expect(record(history, form("B"), 5000)).toBe(history);
+  });
+
   it("starts a new step after undoing", () => {
     let history = createHistory(form("A"));
     history = record(history, form("AB"), 0);

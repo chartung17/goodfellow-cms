@@ -46,12 +46,15 @@ test("undoes and redoes changes on every tab, with typing undone as one step", a
   await color.fill("#7c2d12");
 
   await page.getByRole("link", { name: "Custom CSS" }).click();
-  const css = page.getByRole("textbox", { name: "Custom CSS" });
-  const cssBefore = await css.inputValue();
-  await css.press("ControlOrMeta+End");
-  await css.pressSequentially("h1 { color: red; }");
+  // The code editor, once it has loaded.
+  const css = page.locator(".gfa-code-editor .cm-content");
+  const cssBefore = readSiteFile("content/styles/custom.css").trimEnd();
+  await css.click();
+  await page.keyboard.press("ControlOrMeta+End");
+  await page.keyboard.type("h1 { color: red; }");
+  await expect.poll(() => css.innerText()).toContain("color: red");
   await undo.click();
-  await expect(css).toHaveValue(cssBefore);
+  await expect.poll(async () => (await css.innerText()).trimEnd()).toBe(cssBefore);
 
   await page.getByRole("link", { name: "Colors & fonts" }).click();
   await expect(color).toHaveValue("#7c2d12");
@@ -106,6 +109,26 @@ test("chooses fonts from a searchable list of Google Fonts", async ({ page }) =>
   await expect(page.getByText("Published.", { exact: true })).toBeVisible();
   expect(readJson("content/site.json")).toMatchObject({ theme: { fonts: { body: "Lora" } } });
   expect(readSiteFile("content/site.json")).not.toContain('"heading"');
+});
+
+test("edits custom CSS like a code editor: it indents, closes braces and suggests properties", async ({ page }) => {
+  await page.goto("/admin#/settings/css");
+  const editor = page.locator(".gfa-code-editor .cm-content");
+  await editor.click();
+  await page.keyboard.press("ControlOrMeta+a");
+  await page.keyboard.press("Delete");
+  await page.keyboard.type(".gf-main {");
+  await page.keyboard.press("Enter");
+  await page.keyboard.type("colo");
+  await expect(page.locator(".cm-tooltip-autocomplete")).toContainText("color");
+  // The editor takes a moment before Enter picks a suggestion, so typing quickly isn't caught by one.
+  await page.waitForTimeout(200);
+  await page.keyboard.press("Enter");
+  // The suggestion brings its colon.
+  await page.keyboard.type("red;");
+  await page.getByRole("button", { name: "Publish" }).click();
+  await expect(page.getByText("Published.", { exact: true })).toBeVisible();
+  expect(readSiteFile("content/styles/custom.css")).toBe(".gf-main {\n  color: red;\n}\n");
 });
 
 test("adds the site's own code to every page, but never runs it in the admin panel", async ({ page }) => {

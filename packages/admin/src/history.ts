@@ -55,7 +55,8 @@ export function changedField(before: unknown, after: unknown): string | undefine
 
 /** Records a change, joining it to the last step when it's more typing in the same field. */
 export function record<T>(history: History<T>, next: T, now: number): History<T> {
-  if (Object.is(next, history.present)) return history;
+  // A copy with the same values, such as a field reporting what it already had, isn't a step.
+  if (Object.is(next, history.present) || difference(history.present, next, "") === SAME) return history;
   const path = changedField(history.present, next);
   const group = path === undefined ? undefined : { path, at: now };
   const last = history.group;

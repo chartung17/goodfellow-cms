@@ -17,6 +17,7 @@ import type { Data } from "@puckeditor/core";
 import { useCallback, useMemo, useState } from "react";
 import { useAdmin, useSiteContent } from "./admin-context.js";
 import { codeFileChanges, customCssFileChange, menusFileChange, siteSettingsFileChange, storedCss } from "./changes.js";
+import { CodeEditor } from "./code-editor.js";
 import { FontPicker } from "./font-picker.js";
 import { useHistory } from "./history.js";
 import { MediaField } from "./media-library.js";
@@ -232,15 +233,14 @@ function CssTab({ css, onChange }: { css: string; onChange: (css: string) => voi
   return (
     <div className="gfa-form">
       <p className="gfa-hint">{t("css.intro")}</p>
-      <Field label={t("css.label")}>
+      <Field label={t("css.label")} hint={t("code.editorHint")}>
         {(props) => (
-          <textarea
-            {...props}
-            className="gfa-input gfa-code"
-            spellCheck={false}
-            rows={24}
+          <CodeEditor
+            label={t("css.label")}
+            language="css"
+            describedBy={props["aria-describedby"]}
             value={css}
-            onChange={(event) => onChange(event.target.value)}
+            onChange={onChange}
           />
         )}
       </Field>
@@ -263,25 +263,25 @@ function CodeTab({
       <p className="gfa-hint">{t("code.intro")}</p>
       <Field label={t("code.head")} hint={t("code.headHint")} error={headError}>
         {(props) => (
-          <textarea
-            {...props}
-            className="gfa-input gfa-code"
-            spellCheck={false}
-            rows={12}
+          <CodeEditor
+            label={t("code.head")}
+            language="html"
+            minHeight="12rem"
+            describedBy={props["aria-describedby"]}
             value={code.head}
-            onChange={(event) => onChange({ ...code, head: event.target.value })}
+            onChange={(head) => onChange({ ...code, head })}
           />
         )}
       </Field>
       <Field label={t("code.body")} hint={t("code.bodyHint")}>
         {(props) => (
-          <textarea
-            {...props}
-            className="gfa-input gfa-code"
-            spellCheck={false}
-            rows={12}
+          <CodeEditor
+            label={t("code.body")}
+            language="html"
+            minHeight="12rem"
+            describedBy={props["aria-describedby"]}
             value={code.body}
-            onChange={(event) => onChange({ ...code, body: event.target.value })}
+            onChange={(body) => onChange({ ...code, body })}
           />
         )}
       </Field>

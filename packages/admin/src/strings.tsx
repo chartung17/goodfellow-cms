@@ -454,6 +454,8 @@ export const defaultStrings = {
 
   "css.intro": "CSS here applies to every page and overrides the blocks' own styles. Tailwind's @apply works too.",
   "css.label": "Custom CSS",
+  "code.editorHint":
+    "Tab indents, and suggestions appear as you type. Press Escape, then Tab, to leave the editor. Ctrl+F finds and replaces.",
   "code.intro":
     "Code from services such as analytics or site verification, added to every page of the site. It never runs in the admin panel, so check it on the site once it's published. Paste only code you trust: it can change anything on the site.",
   "code.head": "In the page head",

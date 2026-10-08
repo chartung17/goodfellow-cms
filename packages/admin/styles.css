@@ -17,6 +17,8 @@
   --gfa-error-text: #991b1b;
   --gfa-radius: 6px;
   --gfa-topbar-height: 52px;
+  --gfa-code-active-line: rgb(37 99 235 / 0.06);
+  --gfa-code-selection: rgb(37 99 235 / 0.2);
 }
 
 html,
@@ -1106,4 +1108,8 @@ body,
 
 .gfa-block-pending-bar .gfa-dialog-actions {
   margin: 0;
+}
+
+.gfa-code-editor .cm-editor {
+  max-height: 70vh;
 }
