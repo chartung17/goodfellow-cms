@@ -93,9 +93,12 @@ export function collectionSettingsFile(collection: string): string {
   return `${COLLECTIONS_DIR}/${collection}/${COLLECTION_SETTINGS_FILE}`;
 }
 
-/** An entry's file: `("videos", "easter-vigil")` → `content/collections/videos/easter-vigil.json`. */
-export function entryFile(collection: string, slug: string): string {
-  return `${COLLECTIONS_DIR}/${collection}/${slug}.json`;
+/**
+ * An entry's file: `("videos", "easter-vigil")` → `content/collections/videos/easter-vigil.json`,
+ * or `easter-vigil.md` in a collection whose entries are Markdown files.
+ */
+export function entryFile(collection: string, slug: string, format: "json" | "markdown" = "json"): string {
+  return `${COLLECTIONS_DIR}/${collection}/${slug}${format === "markdown" ? ".md" : ".json"}`;
 }
 
 /** The placeholder an entry's address pattern must contain, such as `/videos/{slug}`. */

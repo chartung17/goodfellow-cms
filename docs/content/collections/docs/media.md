@@ -1,0 +1,22 @@
+---
+version: 1
+title: Images and files
+description: Upload, choose, replace and delete images and files in the media library.
+section: editors
+order: 4
+---
+
+The **Media** screen holds the site's images and files. They're saved in the repository's `public/media/` folder and served at `/media/`.
+
+## Upload
+
+Choose files, or drop them onto the Media screen. Wherever an image goes, such as an Image block, a section's background, the logo or a collection's image field, the **Choose image** button picks from the library or uploads a new one.
+
+- Large photos are made no bigger than 2400 pixels on their longest side, and JPEGs are re-saved, which removes details hidden in them such as where a photo was taken.
+- SVG images have anything that could run code removed.
+- Images, PDFs, office documents, MP3 audio and MP4 video can be uploaded, up to 25 MB each. Web pages, scripts and other files that could run code can't.
+- New uploads show in the editor straight away, even before the live site has been rebuilt with them.
+
+## Replace and delete
+
+Replacing a file keeps its address, so everything that uses it shows the new version. Deleting a file first lists everything that uses it.

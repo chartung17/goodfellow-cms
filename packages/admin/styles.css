@@ -1045,3 +1045,18 @@ body,
   font-size: 14px;
   font-weight: 600;
 }
+
+.gfa-markdown-tabs {
+  display: flex;
+  gap: 4px;
+  margin-bottom: 8px;
+}
+
+.gfa-markdown-source {
+  width: 100%;
+  min-height: 24rem;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-size: 13px;
+  line-height: 1.5;
+  resize: vertical;
+}

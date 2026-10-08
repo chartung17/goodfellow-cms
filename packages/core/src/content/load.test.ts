@@ -165,4 +165,54 @@ describe("collections", () => {
       { file: "content/collections/videos/old/nested.json", message: expect.stringMatching(/wrong place/) },
     ]);
   });
+
+  describe("stored as Markdown", () => {
+    const docs = {
+      ...collection,
+      name: "Docs",
+      path: "/docs/{slug}",
+      sort: undefined,
+      fields: [
+        { name: "title", label: "Title", type: "text" },
+        { name: "order", label: "Order", type: "number" },
+        { name: "body", label: "Text", type: "richtext" },
+      ],
+      markdown: { body: "body" },
+    };
+
+    it("reads entries' front matter as fields, and the rest as the body field", async () => {
+      const content = await loadSiteContent(
+        memorySource({
+          "content/collections/docs/_collection.json": docs,
+          "content/collections/docs/setup.md":
+            "---\nversion: 1\ntitle: Setting up\norder: 2\n---\n\n# Setting up\n\nRun it.\n",
+        }),
+      );
+      const entry = content.collections[0]?.entries[0];
+      expect(entry?.file).toBe("content/collections/docs/setup.md");
+      expect(entry?.path).toBe("/docs/setup");
+      expect(entry?.content.fields).toEqual({ title: "Setting up", order: 2, body: "# Setting up\n\nRun it." });
+    });
+
+    it("reports files in the wrong format, and fields that don't fit", async () => {
+      const error = await loadSiteContent(
+        memorySource({
+          "content/collections/docs/_collection.json": docs,
+          "content/collections/docs/json.json": entry("JSON"),
+          "content/collections/docs/bare.md": "# No front matter",
+          "content/collections/docs/count.md": "---\nversion: 1\ntitle: Count\norder: first\n---\n",
+          "content/collections/videos/_collection.json": collection,
+          "content/collections/videos/notes.md": "---\nversion: 1\ntitle: Notes\n---\n",
+          "content/collections/wrong/_collection.json": { ...docs, markdown: { body: "title" } },
+        }),
+      ).catch((caught: unknown) => caught);
+      expect((error as ContentError).problems).toEqual([
+        { file: "content/collections/docs/bare.md", message: expect.stringMatching(/must start with front matter/) },
+        { file: "content/collections/docs/count.md", message: "fields.order must be a number" },
+        { file: "content/collections/docs/json.json", message: expect.stringMatching(/entries are Markdown files/) },
+        { file: "content/collections/videos/notes.md", message: expect.stringMatching(/entries are JSON files/) },
+        { file: "content/collections/wrong/_collection.json", message: expect.stringMatching(/formatted-text fields/) },
+      ]);
+    });
+  });
 });

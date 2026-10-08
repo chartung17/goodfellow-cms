@@ -15,6 +15,11 @@ export async function waitForCode(page: Page, urls = ["/"], timeout = 30_000): P
     await expect(async () => {
       // In the browser, since `next dev` compiles a page's scripts when they're first loaded.
       expect((await page.goto(url, { timeout }))?.status()).toBe(200);
+      // The watcher reports changes in bursts, each reloading open pages, which would cut off
+      // the test's next navigation. Done once a page stays loaded for a while.
+      await page.evaluate(() => Object.assign(window, { codeSettled: true }));
+      await page.waitForTimeout(2_000);
+      expect(await page.evaluate(() => "codeSettled" in window).catch(() => false)).toBe(true);
     }).toPass({ timeout });
   }
 }

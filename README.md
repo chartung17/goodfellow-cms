@@ -4,7 +4,7 @@ A git-based website builder built on the [Puck](https://puckeditor.com) visual e
 
 Goodfellow gives non-technical site owners a drag-and-drop editor at `/admin` with no server, database or monthly hosting bill. Pages are stored as files in the site's own GitHub or GitLab repository. Every save is a commit, and a free static host (GitHub Pages, GitLab Pages or Vercel) rebuilds the site.
 
-> **Status: early development.** Static rendering, the admin panel, collections, the AI assistant, the media library, blocks from Goodfellow's shadcn/ui block registry, demo mode, publishing to GitHub or GitLab, `create-goodfellow` and the Next.js adapter work, with deploy setups for GitHub Pages, GitLab Pages and Vercel. Nothing is published to npm yet. This README describes what Goodfellow is meant to become; the [roadmap](#roadmap) shows what exists.
+> **Status: early development.** Static rendering, the admin panel, collections, the AI assistant, the media library, blocks from Goodfellow's shadcn/ui block registry, demo mode, Markdown collections, code highlighting and search, publishing to GitHub or GitLab, `create-goodfellow` and the Next.js adapter work, with deploy setups for GitHub Pages, GitLab Pages and Vercel. Nothing is published to npm yet. This README describes what Goodfellow is meant to become; the [roadmap](#roadmap) shows what exists. The [documentation site](docs/), built with Goodfellow, goes online in step 13.
 
 ## How it works
 
@@ -28,7 +28,8 @@ Planned for the first release:
 - **Visual page editing** with Puck, using layout blocks (Grid, Flex, Image, Video, Embed, Rich text and more) that work without any component library.
 - **Header and footer built in Puck**, with navigation menus stored separately so links survive a change of design.
 - **Site settings** in the admin panel: title, favicon, metadata, theme colors and fonts.
-- **Collections and templates.** Build a layout once (for example `/videos/{slug}`), then add entries by filling in a simple form.
+- **Collections and templates.** Build a layout once (for example `/videos/{slug}`), then add entries by filling in a simple form. A collection can store its items as Markdown files.
+- **Code and search.** A Code block highlights code when the site is built, and a Search block searches the whole site in the visitor's browser with [Pagefind](https://pagefind.app).
 - **AI assistant.** Describe what you want and AI writes it into the page, rewrites a block, or fills in an item's fields. Editors choose the AI service: Claude, OpenAI, a free service, or any chat app by copy and paste.
 - **Class names and custom CSS.** Any block can take Tailwind classes, and admins can write site-wide CSS. Classes appear in the editor preview immediately, before the site is rebuilt.
 - **More blocks without a developer.** Admins add blocks built with [shadcn/ui](https://ui.shadcn.com), such as an FAQ, tabs and a pricing table, from the admin panel, and remove them again. Developers can publish registries of blocks built with other libraries.
@@ -101,6 +102,7 @@ To put a site online, follow [the starter's README](templates/starter/README.md)
 - `<GoodfellowAdmin config={config} />` from `@goodfellow/next/admin` is the admin panel, in a Client Component at `app/admin/page.tsx`.
 - Pages render as Server Components. Blocks' links to the site's pages use `next/link`, so moving between pages doesn't reload, and the site's images use `next/image` with their sizes filled in. Images are served as they are unless the site sets a [custom image loader](https://nextjs.org/docs/app/api-reference/components/image#loader), since a static export can't resize them on request.
 - Blocks can render Client Components (`"use client"`) with any React hooks, and they run in the browser. They can read the site with `useSite()`.
+- The starter's build script runs `goodfellow-next index out` after `next build`, which writes the [search index](#search) if a page has a Search block.
 
 **Compared with `goodfellow build`:** interactive blocks work with both, but `goodfellow build` runs each Client Component as a separate [island](#interactive-blocks), which has limits that more interactive sites run into:
 
@@ -117,8 +119,9 @@ Next.js suits developers who want any of these, client-side navigation, their ow
 | Command | What it does |
 |---|---|
 | `goodfellow dev` | Serves the site, rendering each page from the files on disk and reloading it when content changes, plus the admin panel at `/admin`, which saves to those files |
-| `goodfellow build` | Writes one HTML file per page to `dist/`, builds the CSS and copies `public/`. Also writes `sitemap.xml` and `robots.txt` if the site's address is set, the admin panel at `/admin/` if the config has a `backend` or is a [demo](#demo-mode), and the JavaScript for [Client Components](#interactive-blocks) if blocks use any. |
+| `goodfellow build` | Writes one HTML file per page to `dist/`, builds the CSS and copies `public/`. Also writes `sitemap.xml` and `robots.txt` if the site's address is set, the admin panel at `/admin/` if the config has a `backend` or is a [demo](#demo-mode), the JavaScript for [Client Components](#interactive-blocks) if blocks use any, and a [search index](#search) if a page has a Search block. |
 | `goodfellow preview` | Serves `dist/`, including the 404 page |
+| `goodfellow index` | Writes the [search index](#search) for a site built another way |
 
 Options: `--root <dir>`, `--out <dir>`, `--port <port>`, and `--base <path>` for sites served from a subfolder, such as `/my-repo/` on GitHub Pages.
 
@@ -129,7 +132,7 @@ The base path comes from `--base`, then the `GOODFELLOW_BASE` environment variab
 The admin panel is at `/admin` on the live site, and while `goodfellow dev` is running. Everything there is written for people who have never used git.
 
 - **Pages:** create pages, edit them in Puck, change a page's address (updating menu links to it), and delete pages. The editor shows the site's header and footer around the page, styled exactly like the live site.
-- **Collections:** groups of similar items, such as videos, events or staff. Create a collection, choose its fields (short or long text, formatted text, numbers, dates, links, images and choices from a list), and design the page every item shares in Puck. Then add items by filling in their fields, with a live preview of the item's page. A link field can point to an uploaded file, such as a PDF. Removing a field removes it from every item in the same publish.
+- **Collections:** groups of similar items, such as videos, events or staff. Create a collection, choose its fields (short or long text, formatted text, numbers, dates, links, images and choices from a list), and design the page every item shares in Puck. Then add items by filling in their fields, with a live preview of the item's page. A link field can point to an uploaded file, such as a PDF. Removing a field removes it from every item in the same publish. A collection can store its items as Markdown files instead of JSON: its text is then edited in the formatted editor or as Markdown, and text the formatted editor can't show, such as a table, only as Markdown.
 - **Header & footer:** edit them in Puck, like pages.
 - **Blocks:** add blocks from [block registries](#blocks-from-block-registries) to the editor, and remove them. Blocks the site doesn't use can be removed; for one it does, the admin panel lists where it's used.
 - **Site settings:** the site's name, address, logo and icons; contact details; colors, fonts and corner rounding; menus; and custom CSS. A preview of the home page shows changes as you type, and Undo and Redo work across every tab. Fonts are chosen from a searchable list of Google Fonts, each shown in its own typeface.
@@ -172,11 +175,16 @@ In development, Publish writes straight to the files in `content/`, with no sign
 | Text | Formatted text: paragraphs, lists, links |
 | Button | A link styled as a button |
 | Image | An image with optional caption |
+| Code | Code with syntax highlighting (done when the site is built), an optional title and a copy button |
 | Menu | One of the site's menus, with dropdowns for submenus |
 | Site name and logo | The site's logo and name, linking home |
+| Search | A search box for the whole site, with results as visitors type |
+| Collection navigation | Links to every item of a collection, grouped by a choice field, such as a docs site's sidebar |
 | Contact details | The address, phone number and email address from Site settings, with the phone and email as links |
 | Collection list | A collection's items as a list or cards, with options such as newest first, upcoming only and how many to show |
 | Entry field | One of the item's fields, in a collection's page design only |
+| Previous and next | Links to the items before and after this one, in a page design only |
+| On this page | The headings of the item's Markdown text, linking to each, in a page design only |
 
 In a collection's page design, any text can also show an item's field by naming it in braces: a Heading with `{title}`, a Button linking to `{video}`. The page's title and description work the same way.
 
@@ -245,6 +253,16 @@ Developers can publish registries of Goodfellow blocks built with other componen
 registries: { "@acme": "https://acme.example/r/{name}.json" },
 ```
 
+### Markdown collections
+
+A collection can store its items as Markdown files: turn on **Store items as Markdown files** in its settings, and choose which formatted-text field is the text. Each item is then `content/collections/<id>/<slug>.md`, with the other fields as YAML front matter, which developers can edit and review like any text file. Changing the setting converts every item in the same publish.
+
+The Markdown is GitHub-flavored, with tables. HTML in it is shown as text rather than run, links and images can only use addresses that can't run code, headings get ids for linking, and code blocks are highlighted when the site is built. Goodfellow's own docs are stored this way.
+
+### Search
+
+The Search block searches the whole site in the visitor's browser with [Pagefind](https://pagefind.app), so no search service is needed. Builds index a site only when one of its pages has a Search block, which marks itself with `data-goodfellow-search`; a third-party block can use the same index by doing the same. `goodfellow build` indexes the site itself, and Next.js sites run `goodfellow-next index out` after `next build`. Pages' main content is indexed, so headers, footers and "Page not found" are left out.
+
 ### Demo mode
 
 To let anyone try the admin panel without signing in, for example from a product page or in a training session, set `demo: true` in `goodfellow.config.tsx`:
@@ -276,6 +294,7 @@ This is a pnpm workspace managed with Turborepo.
 | `packages/blocks` | `@goodfellow/blocks` | Built-in, library-agnostic blocks | Started |
 | `packages/cli` | `goodfellow` | `goodfellow dev`, `build` and `preview` | Started |
 | `packages/next` | `@goodfellow/next` | Next.js adapter: pages as Server Components, static export, the admin panel | Started |
+| `docs` | | Goodfellow's documentation site, built with Goodfellow | Started |
 | `packages/registry` | `@goodfellow/registry` | Goodfellow's block registry: blocks built with shadcn/ui, and the format for other registries | Started |
 | `packages/create-goodfellow` | `create-goodfellow` | Creates a new site from the starter or an example | Started |
 | `templates/starter` | | The starter site copied by `create-goodfellow` | Started |
@@ -320,17 +339,19 @@ my-site/
 7. **Starters** (done). `create-goodfellow`, which creates a site and sets up its storage and host, and an example parish site with collections and custom blocks.
 8. **Next.js adapter** (done). Goodfellow pages and the admin panel in a Next.js app, exported as static files, with a Next.js starter. Links use `next/link` and images `next/image`, sites can be served from a subfolder, and blocks can use Client Components.
 9. **Interactive blocks everywhere** (done). Client Components in blocks (`"use client"`) run in the browser on sites built with `goodfellow build` too, not only with Next.js.
-10. **shadcn blocks** (done). A registry of Goodfellow blocks built with [shadcn/ui](https://ui.shadcn.com), installed into the site without a developer. When creating a site, admins choose "Recommended" or "Built-in blocks only"; the admin panel lets them add and remove individual blocks. Others can publish registries of blocks built with other libraries, in a documented format. Updating installed blocks comes with step 15's automatic updates.
-11. **Demo mode** (done). A site whose config sets `demo: true` (it can only be turned on in the config, never from the admin panel) opens its admin panel to anyone, with no sign-in. Visitors can try everything, from editing pages and collections to the media library, settings and the AI assistant, but nothing is published: their changes stay in their own browser until they start over. The demo starts from a copy of the site's content that the build includes, so the repository can stay private. The documentation site will link to a demo.
-12. **Documentation site.** Guides for site owners and editors, plus reference docs for developers. Includes each host's rules for commercial sites on its free plan, kept up to date.
-13. **Site setup without a developer.** A web page where anyone can create a site from a starter, store it on GitHub or GitLab, and put it online with GitHub Pages, GitLab Pages or Vercel. It asks what the site is for and recommends a host whose free plan allows it, such as GitLab Pages for a business. Builds work out which repository they're in, so nobody has to edit the config.
-14. **Custom domains.** Connect a domain from the admin panel. Goodfellow sets the domain on the host where it can, lists the records to add at the domain's registrar, with guides for popular registrars, and shows when the domain is working.
-15. **Running a site without a developer.**
+10. **shadcn blocks** (done). A registry of Goodfellow blocks built with [shadcn/ui](https://ui.shadcn.com), installed into the site without a developer. When creating a site, admins choose "Recommended" or "Built-in blocks only"; the admin panel lets them add and remove individual blocks. Others can publish registries of blocks built with other libraries, in a documented format. Updating installed blocks comes with step 16's automatic updates.
+11. **Demo mode** (done). A site whose config sets `demo: true` (it can only be turned on in the config, never from the admin panel) opens its admin panel to anyone, with no sign-in. Visitors can try everything, from editing pages and collections to the media library, settings and the AI assistant, but nothing is published: their changes stay in their own browser until they start over. The demo starts from a copy of the site's content that the build includes, so the repository can stay private.
+12. **Documentation site.** A documentation site built with Goodfellow itself, in `docs/`, and the blocks it needs, which any site can use: code with syntax highlighting, search (with [Pagefind](https://pagefind.app), indexed only on sites that use a search block), navigation within a collection, previous and next links, and an "On this page" list. Collections can store their items as Markdown files, edited in the admin panel's formatted editor or as Markdown. The docs cover why Goodfellow exists and how it compares with alternatives such as WordPress and TinaCMS, guides for site owners and editors, reference docs for developers, and each host's rules for business sites on its free plan. Built and tested, but not yet online.
+13. **Going live.** Make the repository public, publish the packages to npm, and put the documentation site online with GitHub Pages. A demo site, made from the parish example in a repository of its own with the published packages, goes online with GitHub Pages too, and the docs link to it.
+14. **Site setup without a developer.** A web page where anyone can create a site from a starter, store it on GitHub or GitLab, and put it online with GitHub Pages, GitLab Pages or Vercel. It asks what the site is for and recommends a host whose free plan allows it, such as GitLab Pages for a business. Builds work out which repository they're in, so nobody has to edit the config.
+15. **Custom domains.** Connect a domain from the admin panel. Goodfellow sets the domain on the host where it can, lists the records to add at the domain's registrar, with guides for popular registrars, and shows when the domain is working.
+16. **Running a site without a developer.**
     - Invite and remove editors from the admin panel.
     - Version history, with a way to restore an earlier version of a page.
     - Automatic updates: a scheduled job updates Goodfellow, and blocks added from block registries, and publishes the update only if the site still builds. Block updates replace only files nobody has changed.
     - Plain-language explanations when a rebuild fails.
     - Contact forms, through a form service the site owner can set up without a developer.
+17. **Stock photos from the AI assistant.** When the media library has nothing that fits, the AI assistant can add free stock photos whose license allows it, such as from [Unsplash](https://unsplash.com), crediting the photographer as the license and the service require. A checkbox in the AI panel turns this on or off for each request and is remembered in the browser; a site's config can turn it off for everyone.
 
 ## Contributing
 

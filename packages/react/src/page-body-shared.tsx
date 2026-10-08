@@ -32,7 +32,11 @@ export function createPageBody({ Render, SiteProvider }: Renderers) {
             <Render config={layoutConfig} data={header} metadata={metadata} site={site} />
           </header>
         )}
-        <main className={cx("gf-main", typeof rootClassName === "string" && rootClassName)}>
+        {/* Search indexes only pages' own content, not their header and footer, and not "Page not found". */}
+        <main
+          className={cx("gf-main", typeof rootClassName === "string" && rootClassName)}
+          data-pagefind-body={site.path === "/404" ? undefined : ""}
+        >
           <Render config={pageConfig} data={page} metadata={metadata} site={site} />
         </main>
         {footer.content.length > 0 && (

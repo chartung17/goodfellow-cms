@@ -2,6 +2,7 @@ import type { z } from "zod";
 import { type ContentKind, migrateContent } from "../migrations/index.js";
 import { type Collection, type Entry, entryFieldProblems, sortCollectionEntries } from "./collections.js";
 import { ContentError, type ContentProblem } from "./errors.js";
+import { parseMarkdownEntry } from "./markdown.js";
 import {
   COLLECTION_SETTINGS_FILE,
   COLLECTIONS_DIR,
@@ -18,6 +19,7 @@ import {
 } from "./paths.js";
 import {
   collectionFileSchema,
+  type EntryFile,
   entryFileSchema,
   type LayoutFile,
   layoutFileSchema,
@@ -94,10 +96,19 @@ export function parseContentFile<S extends z.ZodType>(
   if (raw === null || typeof raw !== "object" || Array.isArray(raw)) {
     return { ok: false, problem: { file, message: "must contain a JSON object." } };
   }
+  return checkContentFile(kind, schema, file, raw as Record<string, unknown>);
+}
 
+/** Migrates a parsed content file to the current version, then validates it. */
+function checkContentFile<S extends z.ZodType>(
+  kind: ContentKind,
+  schema: S,
+  file: string,
+  raw: Record<string, unknown>,
+): { ok: true; value: z.output<S> } | { ok: false; problem: ContentProblem } {
   let migrated: Record<string, unknown>;
   try {
-    migrated = migrateContent(kind, raw as Record<string, unknown>);
+    migrated = migrateContent(kind, raw);
   } catch (error) {
     return { ok: false, problem: { file, message: (error as Error).message } };
   }
@@ -210,6 +221,21 @@ export async function loadSiteContent(source: ContentSource): Promise<SiteConten
   return { settings, menus: menusFile.menus, header, footer, pages, collections, customCss: customCss ?? "" };
 }
 
+/** Reads a Markdown entry like a JSON one: migrated to the current version, then checked. */
+function parseMarkdownContent(
+  file: string,
+  text: string,
+  body: string,
+): { ok: true; value: EntryFile } | { ok: false; problem: ContentProblem } {
+  let raw: Record<string, unknown>;
+  try {
+    raw = parseMarkdownEntry(text, body);
+  } catch (error) {
+    return { ok: false, problem: { file, message: (error as Error).message } };
+  }
+  return checkContentFile("entry", entryFileSchema, file, raw);
+}
+
 /** Loads every collection's settings and entries, adding any problems found to `problems`. */
 async function loadCollections(
   source: ContentSource,
@@ -218,7 +244,7 @@ async function loadCollections(
 ): Promise<Collection[]> {
   const folders = new Map<string, { settings?: string; entries: string[] }>();
   for (const file of files) {
-    if (!file.endsWith(".json")) continue;
+    if (!file.endsWith(".json") && !file.endsWith(".md")) continue;
     const parts = file.slice(COLLECTIONS_DIR.length + 1).split("/");
     const [id, name] = parts;
     if (parts.length !== 2 || id === undefined || name === undefined) {
@@ -263,7 +289,17 @@ async function loadCollections(
 
       const entries = await Promise.all(
         folder.entries.map(async (file): Promise<Entry | undefined> => {
-          const slug = file.slice(file.lastIndexOf("/") + 1, -".json".length);
+          const markdown = file.endsWith(".md");
+          const slug = file.slice(file.lastIndexOf("/") + 1, markdown ? -".md".length : -".json".length);
+          if (markdown !== Boolean(settings.markdown)) {
+            problems.push({
+              file,
+              message: markdown
+                ? `is a Markdown file, but this collection's entries are JSON files. Rename it to ${slug}.json and write it as JSON, or turn on Markdown in the collection's settings.`
+                : `is a JSON file, but this collection's entries are Markdown files (${slug}.md).`,
+            });
+            return undefined;
+          }
           if (!isAddressSegment(slug)) {
             problems.push({
               file,
@@ -273,7 +309,9 @@ async function loadCollections(
           }
           const entryText = await source.read(file);
           if (entryText === undefined) return undefined;
-          const entry = parseContentFile("entry", entryFileSchema, file, entryText);
+          const entry = settings.markdown
+            ? parseMarkdownContent(file, entryText, settings.markdown.body)
+            : parseContentFile("entry", entryFileSchema, file, entryText);
           if (!entry.ok) {
             problems.push(entry.problem);
             return undefined;

@@ -1,0 +1,11 @@
+@import "tailwindcss";
+@import "@goodfellow/react/theme.css";
+@import "@goodfellow/blocks/styles.css";
+
+/* Lets Tailwind find class names typed into the editor. */
+@source "../content";
+
+/* Headings linked from "On this page" stay clear of the top of the window. */
+.gf-prose :is(h2, h3) {
+  scroll-margin-top: 1.5rem;
+}

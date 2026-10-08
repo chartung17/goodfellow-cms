@@ -24,6 +24,20 @@ export {
   type SiteContent,
 } from "./content/load.js";
 export {
+  canFormatMarkdown,
+  headingSlug,
+  isSafeUrl,
+  type MarkdownHeading,
+  type MarkdownOptions,
+  type MarkdownPart,
+  markdownHeadings,
+  markdownParts,
+  markdownText,
+  markdownToHtml,
+  parseMarkdownEntry,
+  serializeMarkdownEntry,
+} from "./content/markdown.js";
+export {
   addressPatternProblem,
   COLLECTION_SETTINGS_FILE,
   COLLECTIONS_DIR,
@@ -159,4 +173,5 @@ export {
   registryItemSchema,
   SHADCN_REGISTRY,
 } from "./registry.js";
+export { SEARCH_ATTRIBUTE, SEARCH_INDEX_DIR } from "./search.js";
 export { DEFAULT_RADIUS, DEFAULT_THEME_COLORS, escapeStyleText, googleFontsUrl, themeToCss } from "./theme.js";

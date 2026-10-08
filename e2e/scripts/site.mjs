@@ -33,9 +33,14 @@ function resetEditable(root, from) {
   const hadBlocks = existsSync(join(root, "blocks/installed/installed.json"));
   const resetCode = hadBlocks || !existsSync(join(root, "blocks/installed/index.ts"));
   for (const dir of ["content", "public", ...(resetCode ? ["blocks/installed", ...INSTALLED_CODE] : [])]) {
-    rmSync(join(root, dir), { recursive: true, force: true });
+    // Empties folders rather than removing them: a dev server's watcher can miss later changes in a
+    // folder that was removed and made again.
+    const target = join(root, dir);
+    if (existsSync(target)) {
+      for (const name of readdirSync(target)) rmSync(join(target, name), { recursive: true, force: true });
+    }
     // Some sites have files of their own there, such as the Next.js starter's lib/site.ts.
-    if (existsSync(join(from, dir))) cpSync(join(from, dir), join(root, dir), { recursive: true });
+    if (existsSync(join(from, dir))) cpSync(join(from, dir), target, { recursive: true });
   }
   return hadBlocks;
 }

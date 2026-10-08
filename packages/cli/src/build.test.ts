@@ -8,6 +8,7 @@ import { build } from "./build.js";
 const fixture = resolve(import.meta.dirname, "../test/fixtures/site");
 const starter = resolve(import.meta.dirname, "../../../templates/starter");
 const parish = resolve(import.meta.dirname, "../../../examples/parish");
+const docs = resolve(import.meta.dirname, "../../../docs");
 
 describe("build", () => {
   let outDir: string;
@@ -137,17 +138,59 @@ describe("build", () => {
 describe.each([
   ["starter template", starter],
   ["parish example", parish],
+  ["documentation site", docs],
 ])("%s", (_name, root) => {
   it("stores content files in the canonical format the admin panel writes", async () => {
-    const { serializeContent } = await import("@goodfellow/core");
+    const { collectionFileSchema, parseMarkdownEntry, serializeContent, serializeMarkdownEntry } = await import(
+      "@goodfellow/core"
+    );
     const contentDir = join(root, "content");
-    const files = (await readdir(contentDir, { recursive: true })).filter((file) => file.endsWith(".json"));
-    expect(files.length).toBeGreaterThan(0);
-    for (const file of files) {
+    const files = (await readdir(contentDir, { recursive: true })).map((file) => file.split("\\").join("/"));
+    expect(files.filter((file) => file.endsWith(".json")).length).toBeGreaterThan(0);
+    for (const file of files.filter((name) => name.endsWith(".json") || name.endsWith(".md"))) {
       const text = await readFile(join(contentDir, file), "utf8");
-      expect(text, file).toBe(serializeContent(JSON.parse(text)));
+      if (file.endsWith(".json")) expect(text, file).toBe(serializeContent(JSON.parse(text)));
+      if (file.endsWith(".md")) {
+        const folder = file.slice(0, file.lastIndexOf("/"));
+        const settings = collectionFileSchema.parse(
+          JSON.parse(await readFile(join(contentDir, folder, "_collection.json"), "utf8")),
+        );
+        const { fields } = parseMarkdownEntry(text, settings.markdown?.body ?? "");
+        expect(text, file).toBe(serializeMarkdownEntry(settings, fields as Record<string, unknown>));
+      }
     }
   });
+});
+
+describe("documentation site", () => {
+  it("builds, with a search index, and every link and heading link between its pages goes somewhere", async () => {
+    const out = await mkdtemp(join(tmpdir(), "goodfellow-docs-"));
+    try {
+      const result = await build({ root: docs, outDir: out, base: "/" });
+      expect(result.searchIndexed).toBe(result.pages.length - 1);
+      // Each page's address, from its file: docs/intro/index.html → /docs/intro.
+      const pages = new Map<string, string>();
+      const files = (await readdir(out, { recursive: true })).map((file) => file.split("\\").join("/"));
+      for (const file of files.filter((name) => name.endsWith(".html") && !name.startsWith("admin/"))) {
+        const path = `/${file.replace(/(^|\/)index\.html$/, "").replace(/\.html$/, "")}`;
+        pages.set(path, await readFile(join(out, file), "utf8"));
+      }
+      const broken: string[] = [];
+      for (const [from, html] of pages) {
+        for (const [, href] of html.matchAll(/href="(\/[^"]*)"/g)) {
+          const [path = "", hash] = (href ?? "").split("#");
+          const target = path.replace(/\/$/, "") || "/";
+          if (target.startsWith("/assets/") || target.startsWith("/media/")) continue;
+          const page = pages.get(target);
+          if (!page) broken.push(`${from} → ${href}`);
+          else if (hash && !page.includes(`id="${hash}"`)) broken.push(`${from} → ${href} (no such heading)`);
+        }
+      }
+      expect(broken).toEqual([]);
+    } finally {
+      await rm(out, { recursive: true, force: true });
+    }
+  }, 120_000);
 });
 
 describe.each([

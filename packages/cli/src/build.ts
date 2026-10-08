@@ -11,6 +11,7 @@ import {
   pageOutputFile,
 } from "@goodfellow/core";
 import { fileSystemSource } from "@goodfellow/core/node";
+import { writeSearchIndex } from "@goodfellow/core/search-index";
 import { createServer, build as viteBuild } from "vite";
 import { ADMIN_ENTRY, adminEntryPlugin, adminHtml } from "./admin-entry.js";
 import { type ClientModules, ISLANDS_ENTRY } from "./islands.js";
@@ -29,6 +30,8 @@ export interface BuildResult {
   outDir: string;
   /** Repo-relative paths of the HTML files written. */
   pages: string[];
+  /** How many pages the search index has, if the site has a search block. */
+  searchIndexed?: number;
 }
 
 interface ManifestChunk {
@@ -190,7 +193,9 @@ async function buildSite(options: BuildOptions): Promise<BuildResult> {
       );
     }
 
-    return { outDir, pages: written };
+    // Last, once every page is written: the index is made from the finished HTML.
+    const searchIndexed = await writeSearchIndex(outDir);
+    return { outDir, pages: written, ...(searchIndexed !== undefined && { searchIndexed }) };
   } finally {
     await server.close();
   }

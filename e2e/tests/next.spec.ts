@@ -6,10 +6,10 @@ import { nextSite, resetNextContent } from "../scripts/site.mjs";
 // The Next.js template under `next dev`: see playwright.config.ts.
 const BASE = "http://localhost:4403";
 
-// `next dev` compiles each page the first time it's opened, which can take a while.
-const expect = baseExpect.configure({ timeout: 30_000 });
+// `next dev` compiles each page the first time it's opened, which can take most of a minute on CI.
+const expect = baseExpect.configure({ timeout: 60_000 });
 
-base.describe.configure({ timeout: 90_000 });
+base.describe.configure({ timeout: 150_000 });
 
 const test = base.extend({
   page: async ({ page }, use) => {
