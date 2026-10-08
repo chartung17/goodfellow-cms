@@ -7,14 +7,13 @@ import {
   INSTALLED_RECORD_FILE,
   type InstalledRecord,
   parseInstalledRecord,
-  planInstall,
-  planRemove,
+  planBlockChanges,
   RegistryError,
   type RegistryProblem,
 } from "@goodfellow/core";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useAdmin, useSiteContent } from "./admin-context.js";
-import { type Failure, PublishFailure } from "./publish-failure.js";
+import { useUnsavedChanges } from "./router.js";
 import { type StringKey, type Translate, useStrings } from "./strings.js";
 import { Button, Dialog, ErrorMessage } from "./ui.js";
 
@@ -43,58 +42,21 @@ function placesText(t: Translate, uses: BlockUse[]): string {
     .join(", ");
 }
 
-type Notice = { type: "added" | "removed"; name: string } | { type: "failed"; message: string; error?: unknown };
+type Notice = { type: "published" } | { type: "failed"; message: string; error?: unknown };
 
-function RemoveBlockDialog({
-  name,
-  title,
-  record,
-  onDone,
-  onClose,
-}: {
-  name: string;
-  title: string;
-  record: InstalledRecord;
-  onDone: () => void;
-  onClose: () => void;
-}) {
+/** A block to add or remove when the changes are published. */
+type Pending = { kind: "add"; block: AvailableBlock } | { kind: "remove"; name: string; title: string };
+
+/** Says why a block that's in use can't be removed yet. */
+function InUseDialog({ name, title, onClose }: { name: string; title: string; onClose: () => void }) {
   const t = useStrings();
-  const { publish, readFile } = useAdmin();
   const { content } = useSiteContent();
-  const [busy, setBusy] = useState(false);
-  const [failure, setFailure] = useState<Failure>(null);
-  const [error, setError] = useState<string>();
   const uses = useMemo(() => blockUses(content, name), [content, name]);
-
-  const onRemove = async () => {
-    setBusy(true);
-    try {
-      const plan = await planRemove({ name, record, readFile, content });
-      const result = await publish(plan.changes, t("blocks.removeMessage", { name: title }));
-      if (result.ok) onDone();
-      else setFailure(result);
-    } catch (caught) {
-      setError(caught instanceof RegistryError ? problemText(t, caught.problem, title) : t("publish.error"));
-    }
-    setBusy(false);
-  };
-
   return (
-    <Dialog title={t("blocks.removeTitle", { name: title })} onClose={onClose}>
-      <p>
-        {uses.length > 0
-          ? t("blocks.inUse", { name: title, places: placesText(t, uses) })
-          : t("blocks.removeBody", { name: title })}
-      </p>
-      {error && <ErrorMessage message={error} />}
-      <PublishFailure failure={failure} />
+    <Dialog title={t("blocks.inUseTitle", { name: title })} onClose={onClose}>
+      <p>{t("blocks.inUse", { name: title, places: placesText(t, uses) })}</p>
       <div className="gfa-dialog-actions">
-        <Button onClick={onClose}>{t("action.cancel")}</Button>
-        {uses.length === 0 && (
-          <Button variant="danger" disabled={busy} onClick={() => void onRemove()}>
-            {busy ? t("publish.publishing") : t("blocks.remove")}
-          </Button>
-        )}
+        <Button onClick={onClose}>{t("action.close")}</Button>
       </div>
     </Dialog>
   );
@@ -103,13 +65,17 @@ function RemoveBlockDialog({
 function BlockCard({
   block,
   installed,
-  busy,
+  pending,
+  disabled,
   onAdd,
+  onUndo,
 }: {
   block: AvailableBlock;
   installed: boolean;
-  busy: boolean;
+  pending: boolean;
+  disabled: boolean;
   onAdd: () => void;
+  onUndo: () => void;
 }) {
   const t = useStrings();
   return (
@@ -124,8 +90,20 @@ function BlockCard({
       </div>
       {installed ? (
         <span className="gfa-block-added">{t("blocks.added")}</span>
+      ) : pending ? (
+        <span className="gfa-block-pending">
+          <span className="gfa-block-added">{t("blocks.willAdd")}</span>
+          <Button
+            variant="ghost"
+            disabled={disabled}
+            onClick={onUndo}
+            aria-label={t("blocks.undoAddLabel", { name: block.title })}
+          >
+            {t("blocks.undo")}
+          </Button>
+        </span>
       ) : (
-        <Button disabled={busy} onClick={onAdd} aria-label={t("blocks.addLabel", { name: block.title })}>
+        <Button disabled={disabled} onClick={onAdd} aria-label={t("blocks.addLabel", { name: block.title })}>
           {t("blocks.add")}
         </Button>
       )}
@@ -133,22 +111,43 @@ function BlockCard({
   );
 }
 
+/** The publish's description: the one block's, or every change's. */
+function publishMessage(t: Translate, pending: Pending[]): string {
+  const [only] = pending;
+  if (pending.length === 1 && only) {
+    return only.kind === "add"
+      ? t("blocks.addMessage", { name: only.block.title })
+      : t("blocks.removeMessage", { name: only.title });
+  }
+  const added = pending.flatMap((change) => (change.kind === "add" ? [change.block.title] : []));
+  const removed = pending.flatMap((change) => (change.kind === "remove" ? [change.title] : []));
+  return t("blocks.changeMessage", {
+    changes: [
+      ...(added.length > 0 ? [t("blocks.addPart", { names: added.join(", ") })] : []),
+      ...(removed.length > 0 ? [t("blocks.removePart", { names: removed.join(", ") })] : []),
+    ].join("; "),
+  });
+}
+
 /**
- * Adds blocks from block registries to the site, and removes them. Adding
- * writes the block's code into the site in one publish; the editor offers it
- * once the site has been rebuilt with it.
+ * Adds blocks from block registries to the site, and removes them. Blocks are
+ * marked to add or remove, then published together in one save, which writes
+ * their code into the site; the editor offers them once the site has been
+ * rebuilt with it.
  */
 export function BlocksScreen() {
   const t = useStrings();
   const { config, registries, readFile, publish, demo } = useAdmin();
-  const { revision } = useSiteContent();
+  const { content, revision } = useSiteContent();
   const [record, setRecord] = useState<InstalledRecord>();
   const [available, setAvailable] = useState<AvailableBlock[]>();
   const [recordError, setRecordError] = useState<unknown>();
   const [loadError, setLoadError] = useState<unknown>();
-  const [busy, setBusy] = useState<string>();
+  const [publishing, setPublishing] = useState(false);
   const [notice, setNotice] = useState<Notice>();
-  const [removing, setRemoving] = useState<{ name: string; title: string }>();
+  const [inUse, setInUse] = useState<{ name: string; title: string }>();
+  const [pending, setPending] = useState<Pending[]>([]);
+  useUnsavedChanges(pending.length > 0);
 
   // The record is read again after each publish, which changes the revision.
   useEffect(() => {
@@ -172,43 +171,71 @@ export function BlocksScreen() {
   }, [registries]);
   useEffect(loadAvailable, [loadAvailable]);
 
-  const onAdd = async (block: AvailableBlock) => {
-    if (!record) return;
-    setBusy(block.ref);
+  const isPendingAdd = (block: AvailableBlock) =>
+    pending.some((change) => change.kind === "add" && change.block.ref === block.ref);
+  const isPendingRemove = (name: string) => pending.some((change) => change.kind === "remove" && change.name === name);
+  const change = (next: Pending[]) => {
     setNotice(undefined);
+    setPending(next);
+  };
+
+  const onRemove = (name: string, title: string) => {
+    if (blockUses(content, name).length > 0) setInUse({ name, title });
+    else change([...pending, { kind: "remove", name, title }]);
+  };
+
+  const onPublish = async () => {
+    if (!record || pending.length === 0) return;
+    setPublishing(true);
+    setNotice(undefined);
+    const failedTitle = (error: unknown) => {
+      if (!(error instanceof RegistryError)) return "";
+      const problem = error.problem;
+      if ("name" in problem) {
+        const match = pending.find((item) =>
+          item.kind === "add" ? item.block.name === problem.name : item.name === problem.name,
+        );
+        if (match) return match.kind === "add" ? match.block.title : match.title;
+      }
+      return pending.length === 1 && pending[0]?.kind === "add" ? pending[0].block.title : "";
+    };
     try {
-      const plan = await planInstall({
-        ref: block.ref,
+      const plan = await planBlockChanges({
+        changes: pending.map((item) => (item.kind === "add" ? { add: item.block.ref } : { remove: item.name })),
         registries,
         fetchJson,
         readFile,
         record,
         blocks: Object.keys(config.blocks),
+        content,
       });
-      const result = await publish(plan.changes, t("blocks.addMessage", { name: block.title }));
-      setNotice(
-        result.ok
-          ? { type: "added", name: block.title }
-          : {
-              type: "failed",
-              message: t(result.reason === "conflict" ? "publish.conflict" : "publish.error"),
-              error: result.error,
-            },
-      );
+      const result = await publish(plan.changes, publishMessage(t, pending));
+      if (result.ok) {
+        setPending([]);
+        setNotice({ type: "published" });
+      } else {
+        setNotice({
+          type: "failed",
+          message: t(result.reason === "conflict" ? "publish.conflict" : "publish.error"),
+          error: result.error,
+        });
+      }
     } catch (error) {
       setNotice({
         type: "failed",
-        message: error instanceof RegistryError ? problemText(t, error.problem, block.title) : t("publish.error"),
+        message:
+          error instanceof RegistryError ? problemText(t, error.problem, failedTitle(error)) : t("publish.error"),
         error,
       });
     }
-    setBusy(undefined);
+    setPublishing(false);
   };
 
   const installed = record ? Object.entries(record.blocks).sort(([, a], [, b]) => a.title.localeCompare(b.title)) : [];
   const categories = new Map<string, AvailableBlock[]>();
   for (const block of available ?? [])
     categories.set(block.category, [...(categories.get(block.category) ?? []), block]);
+  const locked = publishing || !record || Boolean(demo);
 
   return (
     <div className="gfa-screen">
@@ -222,14 +249,34 @@ export function BlocksScreen() {
         </p>
       )}
 
-      {notice?.type === "added" && (
-        <p className="gfa-notice gfa-notice-success" role="status">
-          {t("blocks.addedNotice", { name: notice.name })}
-        </p>
+      {pending.length > 0 && (
+        <section className="gfa-block-pending-bar" aria-label={t("blocks.pendingTitle")}>
+          <div>
+            <strong>{t("blocks.pendingTitle")}</strong>
+            <ul>
+              {pending.map((item) => (
+                <li key={item.kind === "add" ? `add:${item.block.ref}` : `remove:${item.name}`}>
+                  {item.kind === "add"
+                    ? t("blocks.pendingAdd", { name: item.block.title })
+                    : t("blocks.pendingRemove", { name: item.title })}
+                </li>
+              ))}
+            </ul>
+          </div>
+          <div className="gfa-dialog-actions">
+            <Button variant="ghost" disabled={publishing} onClick={() => change([])}>
+              {t("blocks.discard")}
+            </Button>
+            <Button variant="primary" disabled={locked} onClick={() => void onPublish()}>
+              {publishing ? t("publish.publishing") : t("blocks.publish")}
+            </Button>
+          </div>
+        </section>
       )}
-      {notice?.type === "removed" && (
+
+      {notice?.type === "published" && (
         <p className="gfa-notice gfa-notice-success" role="status">
-          {t("blocks.removedNotice", { name: notice.name })}
+          {t("blocks.publishedNotice")}
         </p>
       )}
       {notice?.type === "failed" && <ErrorMessage message={notice.message} error={notice.error} />}
@@ -244,14 +291,28 @@ export function BlocksScreen() {
               <span>
                 <strong>{block.title}</strong> <span className="gfa-hint">{block.category}</span>
               </span>
-              <Button
-                variant="ghost"
-                disabled={Boolean(demo)}
-                aria-label={t("blocks.removeLabel", { name: block.title })}
-                onClick={() => setRemoving({ name, title: block.title })}
-              >
-                {t("blocks.remove")}
-              </Button>
+              {isPendingRemove(name) ? (
+                <span className="gfa-block-pending">
+                  <span className="gfa-block-added">{t("blocks.willRemove")}</span>
+                  <Button
+                    variant="ghost"
+                    disabled={publishing}
+                    aria-label={t("blocks.undoRemoveLabel", { name: block.title })}
+                    onClick={() => change(pending.filter((item) => !(item.kind === "remove" && item.name === name)))}
+                  >
+                    {t("blocks.undo")}
+                  </Button>
+                </span>
+              ) : (
+                <Button
+                  variant="ghost"
+                  disabled={locked}
+                  aria-label={t("blocks.removeLabel", { name: block.title })}
+                  onClick={() => onRemove(name, block.title)}
+                >
+                  {t("blocks.remove")}
+                </Button>
+              )}
             </li>
           ))}
         </ul>
@@ -277,26 +338,17 @@ export function BlocksScreen() {
                 key={block.ref}
                 block={block}
                 installed={Boolean(record?.blocks[block.name])}
-                busy={busy !== undefined || !record || Boolean(demo)}
-                onAdd={() => void onAdd(block)}
+                pending={isPendingAdd(block)}
+                disabled={locked}
+                onAdd={() => change([...pending, { kind: "add", block }])}
+                onUndo={() => change(pending.filter((item) => !(item.kind === "add" && item.block.ref === block.ref)))}
               />
             ))}
           </ul>
         </section>
       ))}
 
-      {removing && record && (
-        <RemoveBlockDialog
-          name={removing.name}
-          title={removing.title}
-          record={record}
-          onClose={() => setRemoving(undefined)}
-          onDone={() => {
-            setNotice({ type: "removed", name: removing.title });
-            setRemoving(undefined);
-          }}
-        />
-      )}
+      {inUse && <InUseDialog name={inUse.name} title={inUse.title} onClose={() => setInUse(undefined)} />}
     </div>
   );
 }

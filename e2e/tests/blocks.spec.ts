@@ -30,6 +30,11 @@ const faqPage = {
 
 const onDisk = (path: string) => existsSync(join(site as string, path));
 
+/** Publishes the blocks marked to add or remove, all together. */
+async function publishBlocks(page: Page) {
+  await page.getByRole("region", { name: "Changes to publish" }).getByRole("button", { name: "Publish" }).click();
+}
+
 async function addFaq(page: Page) {
   await page.goto("/admin#/blocks");
   await expect(page.getByRole("heading", { name: "Interactive" })).toBeVisible();
@@ -37,6 +42,7 @@ async function addFaq(page: Page) {
   // The dev server reloads the admin panel once the block's code is on disk, which clears this.
   await page.evaluate(() => Object.assign(window, { beforeAdding: true }));
   await page.getByRole("button", { name: "Add FAQ" }).click();
+  await publishBlocks(page);
   await expect.poll(() => onDisk("blocks/installed/installed.json")).toBe(true);
   await expect.poll(() => page.evaluate(() => "beforeAdding" in window).catch(() => true)).toBe(false);
 }
@@ -81,13 +87,16 @@ test("won't remove a block that's in use, and removes it once it isn't", async (
   await page.getByRole("button", { name: "Remove FAQ" }).click();
   const dialog = page.getByRole("dialog");
   await expect(dialog).toContainText("FAQ is used in: Help (/help)");
-  await expect(dialog.getByRole("button", { name: "Remove" })).toBeHidden();
-  await dialog.getByRole("button", { name: "Cancel" }).click();
+  await dialog.getByRole("button", { name: "Close" }).click();
+  await expect(page.getByRole("region", { name: "Changes to publish" })).toBeHidden();
 
   rmSync(join(site as string, "content/pages/help.json"));
   await page.reload();
   await page.getByRole("button", { name: "Remove FAQ" }).click();
-  await page.getByRole("dialog").getByRole("button", { name: "Remove" }).click();
+  await expect(page.getByRole("region", { name: "Changes to publish" })).toContainText("Remove FAQ");
+  // Nothing changes until it's published.
+  expect(onDisk("blocks/installed/shadcn-faq/block.tsx")).toBe(true);
+  await publishBlocks(page);
   await expect.poll(() => onDisk("blocks/installed/shadcn-faq/block.tsx")).toBe(false);
   expect(onDisk("components/ui/accordion.tsx")).toBe(false);
   expect(readFileSync(join(site as string, "blocks/installed/index.ts"), "utf8")).not.toContain("shadcn-faq");
@@ -116,22 +125,31 @@ baseTest("adds a block to a site on GitHub in one publish", async ({ page }) => 
   await page.getByLabel("Access token").fill("good-token");
   await page.getByRole("button", { name: "Sign in" }).click();
   await page.getByRole("link", { name: "Blocks", exact: true }).click();
+  const before = fake.repo.head();
   await page.getByRole("button", { name: "Add Tabs" }).click();
-  await baseExpect(page.getByText("Tabs was added.")).toBeVisible();
+  await page.getByRole("button", { name: "Add FAQ" }).click();
+  await baseExpect(page.getByRole("region", { name: "Changes to publish" })).toContainText("Add Tabs");
+  await publishBlocks(page);
+  await baseExpect(page.getByText("Published. Added blocks will be in the editor")).toBeVisible();
 
+  // Both in one save.
   const commit = fake.repo.commitAt(fake.repo.head());
-  baseExpect(commit?.message).toBe("Add the Tabs block");
+  baseExpect(commit?.message).toBe("Change blocks: add Tabs, FAQ");
+  baseExpect(commit?.parent).toBe(before);
   const repoFiles = fake.repo.files();
   for (const path of [
     "blocks/installed/shadcn-tabs/block.tsx",
     "blocks/installed/shadcn-tabs/tabs-view.tsx",
     "components/ui/tabs.tsx",
+    "blocks/installed/shadcn-faq/block.tsx",
+    "components/ui/accordion.tsx",
     "blocks/installed/installed.json",
     "blocks/installed/index.ts",
   ]) {
     baseExpect(repoFiles.has(path), path).toBe(true);
   }
   await baseExpect(page.locator(".gfa-block-list")).toContainText("Tabs");
+  await baseExpect(page.locator(".gfa-block-list")).toContainText("FAQ");
 });
 
 baseTest("adds a block to a Next.js site, which then runs it", async ({ page }) => {
@@ -142,6 +160,7 @@ baseTest("adds a block to a Next.js site, which then runs it", async ({ page }) 
   try {
     await page.goto("http://localhost:4403/admin/#/blocks");
     await page.getByRole("button", { name: "Add FAQ" }).click({ timeout: 60_000 });
+    await publishBlocks(page);
     await expect.poll(() => existsSync(join(root, "blocks/installed/installed.json")), { timeout: 60_000 }).toBe(true);
 
     writeFileSync(join(root, "content/pages/help.json"), `${JSON.stringify(faqPage, null, 2)}\n`);

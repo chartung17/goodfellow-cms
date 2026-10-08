@@ -145,6 +145,8 @@ export {
 export {
   type AvailableBlock,
   availableBlocks,
+  type BlockChange,
+  type BlockChangesOptions,
   type BlockMeta,
   type BlockUse,
   blockUses,
@@ -161,6 +163,7 @@ export {
   itemUrl,
   type Plan,
   parseInstalledRecord,
+  planBlockChanges,
   planInstall,
   planRemove,
   REGISTRY_PACKAGES,

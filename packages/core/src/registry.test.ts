@@ -11,6 +11,7 @@ import {
   installedIndex,
   itemUrl,
   parseInstalledRecord,
+  planBlockChanges,
   planInstall,
   planRemove,
   RegistryError,
@@ -296,6 +297,60 @@ describe("planRemove", () => {
     expect(
       await problem(planRemove({ name: "nothing", record: faq.record, readFile: site.readFile, content: used })),
     ).toEqual({ code: "not-installed", name: "nothing" });
+  });
+});
+
+describe("planBlockChanges", () => {
+  const plan = (
+    site: ReturnType<typeof siteFiles>,
+    changes: Parameters<typeof planBlockChanges>[0]["changes"],
+    record = EMPTY_RECORD,
+  ) =>
+    planBlockChanges({
+      changes,
+      registries,
+      fetchJson,
+      readFile: site.readFile,
+      record,
+      blocks: ["Heading"],
+      // Without the footer's Tabs, so they can be removed.
+      content: { ...content(), footer: { version: 1, data: { root: {}, content: [] } } },
+    });
+
+  it("adds several blocks in one set of changes, as if each had been published in turn", async () => {
+    const together = siteFiles();
+    const combined = await plan(together, [{ add: "@goodfellow/shadcn-faq" }, { add: "@goodfellow/shadcn-tabs" }]);
+
+    const oneByOne = siteFiles();
+    const faq = await install(oneByOne, "@goodfellow/shadcn-faq");
+    oneByOne.apply(faq.changes);
+    const tabs = await install(oneByOne, "@goodfellow/shadcn-tabs", faq.record);
+    oneByOne.apply(tabs.changes);
+
+    together.apply(combined.changes);
+    expect(Object.fromEntries(together.files)).toEqual(Object.fromEntries(oneByOne.files));
+    expect(combined.record).toEqual(tabs.record);
+    // Each file is written once.
+    const paths = combined.changes.map((change) => change.path);
+    expect(new Set(paths).size).toBe(paths.length);
+  });
+
+  it("adds and removes blocks together, leaving out files added and removed again", async () => {
+    const site = siteFiles();
+    const faq = await install(site, "@goodfellow/shadcn-faq");
+    site.apply(faq.changes);
+
+    const swapped = await plan(site, [{ remove: "shadcn-faq" }, { add: "@goodfellow/shadcn-tabs" }], faq.record);
+    site.apply(swapped.changes);
+    expect(Object.keys(swapped.record.blocks)).toEqual(["shadcn-tabs"]);
+    expect(site.files.has("blocks/installed/shadcn-faq/block.tsx")).toBe(false);
+    expect(site.files.has("blocks/installed/shadcn-tabs/block.tsx")).toBe(true);
+    expect(site.files.get("lib/utils.ts")).toBe("utils\n");
+
+    const fresh = siteFiles();
+    const nothing = await plan(fresh, [{ add: "@goodfellow/shadcn-tabs" }, { remove: "shadcn-tabs" }]);
+    expect(nothing.changes.filter((change) => "delete" in change)).toEqual([]);
+    expect(nothing.record.blocks).toEqual({});
   });
 });
 

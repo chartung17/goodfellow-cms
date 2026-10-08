@@ -491,3 +491,52 @@ export async function planRemove({ name, record, readFile, content }: RemoveOpti
   const next: InstalledRecord = { version: 1, blocks: rest };
   return { changes: [...changes, ...recordChanges(next)], record: next };
 }
+
+/** One block to add, by its registry reference, or to remove, by its name. */
+export type BlockChange = { add: string } | { remove: string };
+
+export interface BlockChangesOptions extends Omit<InstallOptions, "ref"> {
+  changes: readonly BlockChange[];
+  content: SiteContent;
+}
+
+/**
+ * Works out the files for several blocks added and removed at once, so they can
+ * be published together: each is planned with `planInstall()` or `planRemove()`
+ * as if the ones before it had been published, and the result is every file's
+ * final state.
+ */
+export async function planBlockChanges(options: BlockChangesOptions): Promise<Plan> {
+  const { readFile, content } = options;
+  // Each file's state after the changes so far: its new text, or `null` once it's deleted.
+  const pending = new Map<string, string | null>();
+  const readPending = async (path: string) => {
+    const state = pending.get(path);
+    if (state === null) return undefined;
+    return state ?? readFile(path);
+  };
+  let record = options.record;
+  for (const change of options.changes) {
+    const plan =
+      "add" in change
+        ? await planInstall({ ...options, ref: change.add, readFile: readPending, record })
+        : await planRemove({ name: change.remove, record, readFile: readPending, content });
+    for (const file of plan.changes) {
+      if ("bytes" in file) throw new Error(`Blocks are text, but ${file.path} isn't.`);
+      pending.set(file.path, "delete" in file ? null : file.content);
+    }
+    record = plan.record;
+  }
+
+  const changes: FileChange[] = [];
+  for (const [path, state] of pending) {
+    const existing = await readFile(path);
+    if (state === null) {
+      // A file added and removed again in the same publish was never there.
+      if (existing !== undefined) changes.push({ path, delete: true });
+    } else if (state !== existing) {
+      changes.push({ path, content: state });
+    }
+  }
+  return { changes, record };
+}
