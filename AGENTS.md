@@ -74,6 +74,7 @@ Content files are the product's data format; treat changes to them like API chan
 - **Testing Puck:** Puck renders hidden copies of its fields, so tests select visible ones (`:visible`) and click blocks through their `[data-puck-component]` handle.
 - **Fonts:** Site settings offers the families in `src/google-fonts.ts`, which `pnpm --filter @goodfellow/admin update-fonts` (`scripts/google-fonts.mjs`) writes from Google Fonts' list; commit what it writes. The list is loaded only when a font picker opens.
 - **Undo:** forms with their own history use `useHistory()` from `history.ts`, which joins typing in one field into one step and handles Ctrl+Z outside text fields.
+- **Colors:** style the admin panel with its `--gfa-*` tokens, each written `light-dark(light, dark)` in `styles.css`, never fixed colors, so dark mode works. `theme.ts` keeps the editor's choice (`data-gfa-theme` on the page, or the computer's setting); `styles.css` gives Puck's palette dark values too. Code editors use `CodeEditor` (CodeMirror, loaded when shown). Site previews keep the site's own colors.
 - **Dev server watching:** `content/` and `public/media/` are excluded from Vite's watcher, because Tailwind's Vite plugin reloads every open page when a file it scans changes. That would reload the admin panel on every publish. `content/` is watched separately, and `goodfellow dev` serves `/media/` from disk itself.
 
 ## Next.js

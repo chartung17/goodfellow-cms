@@ -217,3 +217,29 @@ test("isn't reachable from other websites", async ({ request }) => {
   });
   expect(outside.status()).toBe(400);
 });
+
+test("shows the admin panel light or dark, following the computer unless an editor chooses", async ({ page }) => {
+  const background = () => page.locator(".gfa-app").evaluate((app) => getComputedStyle(app).backgroundColor);
+  await page.emulateMedia({ colorScheme: "light" });
+  await page.goto("/admin#/pages");
+  await expect.poll(background).toBe("rgb(248, 250, 252)");
+
+  const menu = page.getByRole("combobox", { name: "Colors of the admin panel" });
+  await menu.selectOption({ label: "Dark" });
+  await expect.poll(background).toBe("rgb(11, 17, 32)");
+  // Puck's own colors follow.
+  await page.goto(`/admin#/pages/edit?path=${encodeURIComponent("/about")}`);
+  await expect(canvas(page).getByRole("heading", { name: "About us" })).toBeVisible();
+  const sidebar = page.locator('[class*="_Sidebar--right_"]');
+  await expect.poll(() => sidebar.evaluate((el) => getComputedStyle(el).backgroundColor)).toBe("rgb(17, 24, 39)");
+
+  // Remembered in this browser.
+  await page.reload();
+  await expect(menu).toHaveValue("dark");
+  await expect.poll(background).toBe("rgb(11, 17, 32)");
+
+  await menu.selectOption({ label: "Match my computer" });
+  await expect.poll(background).toBe("rgb(248, 250, 252)");
+  await page.emulateMedia({ colorScheme: "dark" });
+  await expect.poll(background).toBe("rgb(11, 17, 32)");
+});

@@ -1,19 +1,26 @@
+import type { Compartment, Extension } from "@codemirror/state";
 import type { EditorView } from "@codemirror/view";
 import { useEffect, useRef, useState } from "react";
+import { useDarkMode } from "./theme.js";
 
 export type CodeLanguage = "css" | "html";
 
 /** CodeMirror and its languages, loaded the first time a code editor is shown. */
 async function loadCodeMirror(language: CodeLanguage) {
-  const [{ basicSetup }, view, commands, languageSupport] = await Promise.all([
+  const [{ basicSetup }, view, commands, state, highlighting, oneDark, languageSupport] = await Promise.all([
     import("codemirror"),
     import("@codemirror/view"),
     import("@codemirror/commands"),
+    import("@codemirror/state"),
+    import("@codemirror/language"),
+    import("@codemirror/theme-one-dark"),
     language === "css"
       ? import("@codemirror/lang-css").then((m) => m.css())
       : import("@codemirror/lang-html").then((m) => m.html()),
   ]);
-  return { basicSetup, view, commands, languageSupport };
+  // Code colors that read well on a dark background; light mode keeps the default ones.
+  const darkColors = highlighting.syntaxHighlighting(oneDark.oneDarkHighlightStyle);
+  return { basicSetup, view, commands, Compartment: state.Compartment, darkColors, languageSupport };
 }
 
 /** Colors and type from the admin panel's theme, so the editor follows its light and dark modes. */
@@ -80,19 +87,26 @@ export function CodeEditor({
   const replacing = useRef(false);
   const [ready, setReady] = useState(false);
   const [failed, setFailed] = useState(false);
+  const dark = useDarkMode();
+  const colors = useRef<{ compartment: Compartment; dark: Extension } | undefined>(undefined);
+  const darkNow = useRef(dark);
+  darkNow.current = dark;
 
   useEffect(() => {
     let cancelled = false;
     let created: EditorView | undefined;
     loadCodeMirror(language).then(
-      ({ basicSetup, view, commands, languageSupport }) => {
+      ({ basicSetup, view, commands, Compartment, darkColors, languageSupport }) => {
         if (cancelled || !host.current) return;
+        const compartment = new Compartment();
+        colors.current = { compartment, dark: darkColors };
         created = new view.EditorView({
           parent: host.current,
           doc: latest.current.value,
           extensions: [
             basicSetup,
             languageSupport,
+            compartment.of(darkNow.current ? darkColors : []),
             view.keymap.of([commands.indentWithTab]),
             editorTheme(view),
             view.EditorView.theme({ ".cm-content, .cm-gutter": { minHeight } }),
@@ -121,6 +135,14 @@ export function CodeEditor({
       setReady(false);
     };
   }, [language, label, describedBy, minHeight]);
+
+  // Switching between light and dark changes the code's colors.
+  useEffect(() => {
+    const view = editor.current;
+    if (view && colors.current) {
+      view.dispatch({ effects: colors.current.compartment.reconfigure(dark ? colors.current.dark : []) });
+    }
+  }, [dark]);
 
   // Changes made elsewhere, such as Undo above the form, replace what the editor shows.
   useEffect(() => {

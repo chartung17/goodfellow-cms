@@ -377,6 +377,10 @@ export const defaultStrings = {
   "ai.error.service": "{service} reported a problem. Try again in a moment.",
 
   "settings.title": "Site settings",
+  "appearance.choice": "Colors of the admin panel",
+  "appearance.system": "Match my computer",
+  "appearance.light": "Light",
+  "appearance.dark": "Dark",
   "settings.tab.general": "General",
   "settings.tab.theme": "Colors & fonts",
   "settings.tab.menus": "Menus",
