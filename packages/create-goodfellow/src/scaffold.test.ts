@@ -102,7 +102,7 @@ describe("scaffold", () => {
     await scaffold({ template: next, target, versions: { ...versions, "@goodfellow/next": "1.2.3" }, host: "vercel" });
     const pkg = JSON.parse(await readFile(join(target, "package.json"), "utf8"));
     expect(pkg.dependencies["@goodfellow/next"]).toBe("^1.2.3");
-    expect(existsSync(join(target, "app/[[...path]]/page.tsx"))).toBe(true);
+    expect(existsSync(join(target, "app/(site)/[[...path]]/page.tsx"))).toBe(true);
     expect(existsSync(join(target, "next.config.ts"))).toBe(true);
     for (const skipped of ["out", ".next", "next-env.d.ts", "turbo.json"]) {
       expect(existsSync(join(target, skipped)), skipped).toBe(false);

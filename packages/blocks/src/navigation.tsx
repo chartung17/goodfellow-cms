@@ -14,7 +14,10 @@ function isCurrent(href: string, path: string): boolean {
 
 /**
  * Shows one of the site's menus (edited in Site settings → Menus). Submenus open
- * on hover or keyboard focus, without JavaScript.
+ * on hover or keyboard focus, without JavaScript. The current page's link, and
+ * the section it's in, have `data-current`; renderers that share one header
+ * between pages, such as a Next.js layout, set it in the browser
+ * (`data-gf-menu` marks the menu for them).
  */
 function MenuView({ menu, orientation, className }: MenuProps) {
   const { menus, path } = useSite();
@@ -22,16 +25,18 @@ function MenuView({ menu, orientation, className }: MenuProps) {
   if (items.length === 0) return null;
 
   const vertical = orientation === "vertical";
-  const linkClass = "block rounded-md px-3 py-2 hover:bg-accent hover:text-accent-foreground";
+  const linkClass =
+    "block rounded-md px-3 py-2 hover:bg-accent hover:text-accent-foreground data-current:font-semibold";
 
   return (
-    <nav aria-label={menu} className={className || undefined}>
+    <nav aria-label={menu} className={className || undefined} data-gf-menu="">
       <ul className={cx("flex", vertical ? "flex-col gap-1" : "flex-wrap items-center gap-1")}>
         {items.map((item) => (
           <li key={`${item.label}-${item.href}`} className="group relative">
             <SiteLink
               href={item.href}
-              className={cx(linkClass, isCurrent(item.href, path) && "font-semibold")}
+              className={linkClass}
+              data-current={isCurrent(item.href, path) ? "" : undefined}
               aria-current={item.href === path ? "page" : undefined}
             >
               {item.label}
@@ -49,6 +54,7 @@ function MenuView({ menu, orientation, className }: MenuProps) {
                     <SiteLink
                       href={child.href}
                       className={linkClass}
+                      data-current={isCurrent(child.href, path) ? "" : undefined}
                       aria-current={child.href === path ? "page" : undefined}
                     >
                       {child.label}

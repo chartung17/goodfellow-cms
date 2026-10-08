@@ -2,12 +2,22 @@
 export { cx } from "./cx.js";
 export { applyEntry, placeholderValues } from "./entry.js";
 export { SiteImage, SiteLink } from "./links.server.js";
-export { PageBody, type PageBodyProps, siteMetadata } from "./page-body.server.js";
+export {
+  PageBody,
+  type PageBodyProps,
+  PageContent,
+  type PageContentProps,
+  PageLayout,
+  type PageLayoutProps,
+  siteMetadata,
+} from "./page-body.server.js";
 export {
   applyPageEntry,
   createPuckConfigs,
+  type PreparedLayout,
   type PreparedPage,
   type PuckConfigs,
+  prepareLayout,
   preparePage,
   type RenderOptions,
 } from "./prepare.js";

@@ -13,11 +13,20 @@ import {
   withBase,
 } from "@goodfellow/core";
 import { fileSystemSource, readMediaSizes } from "@goodfellow/core/node";
-import { applyPageEntry, createPuckConfigs, PageBody, preparePage, type SiteComponents } from "@goodfellow/react";
+import {
+  applyPageEntry,
+  createPuckConfigs,
+  PageBody,
+  PageContent,
+  PageLayout,
+  prepareLayout,
+  preparePage,
+  type SiteComponents,
+} from "@goodfellow/react";
 import type { Metadata, MetadataRoute } from "next";
 import { notFound } from "next/navigation";
-import { cache } from "react";
-import { NextImage, NextLink } from "./components.js";
+import { cache, type ReactNode } from "react";
+import { CurrentMenuLinks, NextImage, NextLink } from "./components.js";
 
 export interface GoodfellowPagesOptions {
   /** The site's folder, holding `content/`. Defaults to the folder Next.js runs in. */
@@ -93,8 +102,9 @@ export function pageMetadata(content: SiteContent, page: Page, basePath = config
  * Renders the site's pages in a Next.js App Router site, as Server Components.
  * Blocks' links to the site's pages use `next/link`, and their images
  * `next/image`, through `<SiteLink>` and `<SiteImage>`; Client Components in
- * blocks run in the browser. Use the results in `app/[[...path]]/page.tsx`
- * and `app/not-found.tsx`.
+ * blocks run in the browser. Use the results in `app/(site)/layout.tsx`,
+ * which shows the header and footer once for every page, in
+ * `app/(site)/[[...path]]/page.tsx`, and in `app/not-found.tsx`.
  */
 export function goodfellowPages(config: GoodfellowConfig, options: GoodfellowPagesOptions = {}) {
   const configs = createPuckConfigs(config);
@@ -103,16 +113,13 @@ export function goodfellowPages(config: GoodfellowConfig, options: GoodfellowPag
   const site = () => loadSite(options.root);
   const basePath = () => options.basePath ?? configuredBasePath();
 
-  async function render(content: SiteContent, page: Page) {
-    const prepared = await preparePage(configs, content, page, {
-      base: basePath(),
-      components,
-      media: await readMediaSizes(root),
-    });
+  const renderOptions = async () => ({ base: basePath(), components, media: await readMediaSizes(root) });
+
+  /** The site's theme and fonts, which React moves into the document's head. themeToCss escapes its output. */
+  function Theme({ content }: { content: SiteContent }) {
     const fontsUrl = googleFontsUrl(content.settings.theme);
     return (
       <>
-        {/* React moves these into the document's head. themeToCss escapes its output. */}
         <style href="goodfellow-theme" precedence="default">
           {themeToCss(content.settings.theme)}
         </style>
@@ -123,14 +130,6 @@ export function goodfellowPages(config: GoodfellowConfig, options: GoodfellowPag
             <link rel="stylesheet" href={fontsUrl} precedence="default" />
           </>
         )}
-        <PageBody
-          site={prepared.site}
-          pageConfig={prepared.pageConfig}
-          layoutConfig={prepared.layoutConfig}
-          page={prepared.data}
-          header={prepared.header}
-          footer={prepared.footer}
-        />
       </>
     );
   }
@@ -149,23 +148,60 @@ export function goodfellowPages(config: GoodfellowConfig, options: GoodfellowPag
       return page ? pageMetadata(content, applyPageEntry(configs, content, page), basePath()) : {};
     },
 
-    /** The page at the route's address: its header, content and footer. */
+    /**
+     * For `app/(site)/layout.tsx`: the site's header and footer around every page, kept as
+     * they are when moving between pages. Menus mark the current page in the browser.
+     */
+    async Layout({ children }: { children: ReactNode }) {
+      const content = await site();
+      const layout = await prepareLayout(configs, content, await renderOptions());
+      return (
+        <>
+          <Theme content={content} />
+          <PageLayout
+            site={layout.site}
+            layoutConfig={layout.layoutConfig}
+            header={layout.header}
+            footer={layout.footer}
+          >
+            {children}
+          </PageLayout>
+          <CurrentMenuLinks basePath={basePath()} />
+        </>
+      );
+    },
+
+    /** The page at the route's address, inside `Layout`'s header and footer. */
     async Page({ params }: PageProps) {
       const content = await site();
       const page = findPage(content, pathOf((await params).path));
       if (!page || page.path === "/404") notFound();
-      return render(content, page);
+      const prepared = await preparePage(configs, content, page, await renderOptions());
+      return <PageContent site={prepared.site} pageConfig={prepared.pageConfig} page={prepared.data} />;
     },
 
-    /** The site's "Page not found" page (`content/pages/404.json`), for `app/not-found.tsx`. */
+    /**
+     * The site's "Page not found" page (`content/pages/404.json`), for `app/not-found.tsx`,
+     * with the header and footer, since Next.js shows it outside the `(site)` layout.
+     */
     async NotFound() {
       const content = await site();
       const page = findPage(content, "/404");
+      if (!page) return <h1>Page not found</h1>;
+      const prepared = await preparePage(configs, content, page, await renderOptions());
       return (
         <>
           {/* Next.js doesn't take metadata from not-found pages; React moves this into the head. */}
-          <title>{page ? getPageHead(content.settings, page).title : "Page not found"}</title>
-          {page ? render(content, page) : <h1>Page not found</h1>}
+          <title>{getPageHead(content.settings, page).title}</title>
+          <Theme content={content} />
+          <PageBody
+            site={prepared.site}
+            pageConfig={prepared.pageConfig}
+            layoutConfig={prepared.layoutConfig}
+            page={prepared.data}
+            header={prepared.header}
+            footer={prepared.footer}
+          />
         </>
       );
     },
