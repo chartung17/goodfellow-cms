@@ -2,7 +2,14 @@ import { mkdir, mkdtemp, rm, symlink, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
-import { blockPackages, type ClientModuleExports, clientModuleExports, islandModule } from "./islands.js";
+import {
+  blockPackages,
+  type ClientModuleExports,
+  clientModuleExports,
+  inNodeModules,
+  insideDir,
+  islandModule,
+} from "./islands.js";
 
 /** Runs an island module with stand-ins for the client module and `island()`, and returns its exports. */
 async function exportsOf(module: Record<string, unknown>, exports: ClientModuleExports) {
@@ -57,6 +64,25 @@ describe("islandModule", () => {
     expect(exports["Tab item"]).toEqual({ value: Counter, module: "blocks/a.tsx", name: "Tab item" });
     expect(exports.default).toEqual({ value: Counter, module: "blocks/a.tsx", name: "default" });
     expect(islandModule("/a.tsx", "a.tsx", { names: [], star: true })).toContain('export * from "/a.tsx";');
+  });
+});
+
+describe("insideDir and inNodeModules", () => {
+  it("compare Vite's module ids with Node's paths on Windows, where one has forward slashes and the other backslashes", () => {
+    const dir = "C:\\Users\\me\\site\\node_modules\\@goodfellow\\react";
+    expect(insideDir("C:/Users/me/site/node_modules/@goodfellow/react/dist/site-context.js", dir)).toBe(true);
+    expect(insideDir("c:/Users/me/site/node_modules/@goodfellow/react/dist/site-context.js", dir)).toBe(true);
+    expect(insideDir("C:/Users/me/site/node_modules/@goodfellow/react-extra/index.js", dir)).toBe(false);
+    expect(insideDir("C:/Users/me/site/blocks/counter.tsx", dir)).toBe(false);
+    expect(inNodeModules("C:/Users/me/site/node_modules/radix-ui/dist/index.mjs")).toBe(true);
+    expect(inNodeModules("C:\\Users\\me\\site\\node_modules\\radix-ui\\dist\\index.mjs")).toBe(true);
+    expect(inNodeModules("C:/Users/me/site/blocks/counter.tsx")).toBe(false);
+  });
+
+  it("work with paths on other systems", () => {
+    expect(insideDir("/home/me/site/blocks/counter.tsx", "/home/me/site/blocks")).toBe(true);
+    expect(insideDir("/home/me/site/blocks-extra/counter.tsx", "/home/me/site/blocks")).toBe(false);
+    expect(inNodeModules("/home/me/site/node_modules/radix-ui/dist/index.mjs")).toBe(true);
   });
 });
 

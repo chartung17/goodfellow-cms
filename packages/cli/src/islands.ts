@@ -1,6 +1,6 @@
 import { readFileSync, realpathSync, statSync } from "node:fs";
 import { createRequire } from "node:module";
-import { dirname, extname, join, relative, sep } from "node:path";
+import { dirname, extname, join, relative } from "node:path";
 import { type Plugin, parseAst } from "vite";
 
 /** The browser's entry for pages with Client Components: it loads each one a page uses and runs it. */
@@ -23,6 +23,26 @@ const RENDERERS = ["@goodfellow/react", "@puckeditor/core", "react", "react-dom"
 const NOT_BLOCK_PACKS = new Set(["@goodfellow/react", "@goodfellow/admin", "@goodfellow/next", "goodfellow"]);
 
 const SCRIPT = /\.[cm]?[jt]sx?$/;
+
+/** A path with forward slashes, as Vite writes module ids on Windows too (`C:/site/blocks/a.tsx`). */
+function slashes(path: string): string {
+  return path.replaceAll("\\", "/");
+}
+
+/** A path to compare: forward slashes, and a Windows drive letter in lowercase, since tools differ in both. */
+function comparable(path: string): string {
+  return slashes(path).replace(/^[A-Za-z]:/, (drive) => drive.toLowerCase());
+}
+
+/** Whether a file is inside a folder, whichever slashes either path uses. */
+export function insideDir(file: string, dir: string): boolean {
+  return comparable(file).startsWith(`${comparable(dir).replace(/\/$/, "")}/`);
+}
+
+/** Whether a file is in an installed package, whichever slashes it uses. */
+export function inNodeModules(file: string): boolean {
+  return slashes(file).split("/").includes("node_modules");
+}
 
 function packageDir(root: string, name: string): string | undefined {
   try {
@@ -182,14 +202,13 @@ export function islandsPlugin(root: string, modules: ClientModules): Plugin {
   const blockPacks = blockPackages(root)
     .map((name) => packageDir(root, name))
     .filter((dir) => dir !== undefined);
-  const inside = (file: string, dir: string) => file.startsWith(`${dir}${sep}`);
   /** Each file's exports if it's a Client Component's module, read again when the file changes. */
   const cache = new Map<string, { mtime: number; exports: ClientModuleExports | undefined }>();
   let invalidateEntry = () => {};
 
   function clientExports(file: string): ClientModuleExports | undefined {
-    if (!SCRIPT.test(file) || renderers.some((dir) => inside(file, dir))) return undefined;
-    if (file.split(sep).includes("node_modules") && !blockPacks.some((dir) => inside(file, dir))) return undefined;
+    if (!SCRIPT.test(file) || renderers.some((dir) => insideDir(file, dir))) return undefined;
+    if (inNodeModules(file) && !blockPacks.some((dir) => insideDir(file, dir))) return undefined;
     let mtime: number;
     try {
       mtime = statSync(file).mtimeMs;
@@ -253,7 +272,7 @@ export function islandsPlugin(root: string, modules: ClientModules): Plugin {
       // Changes to the module's exports change this one.
       this.addWatchFile(file);
       if (!exports) return `export * from ${JSON.stringify(file)};\n`;
-      const name = relative(root, file).split(sep).join("/");
+      const name = slashes(relative(root, file));
       if (modules.get(name) !== file) {
         modules.set(name, file);
         invalidateEntry();
