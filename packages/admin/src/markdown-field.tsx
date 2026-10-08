@@ -87,16 +87,18 @@ export function MarkdownField({
         ))}
       </div>
       {current === "formatted" ? (
-        <AutoField
-          id={id}
-          field={formattedField}
-          value={html}
-          onChange={(next: unknown) => {
-            const nextHtml = typeof next === "string" ? next : "";
-            setHtml(nextHtml);
-            onChange(editedMarkdown(start.current, nextHtml));
-          }}
-        />
+        <div className="gfa-markdown-formatted">
+          <AutoField
+            id={id}
+            field={formattedField}
+            value={html}
+            onChange={(next: unknown) => {
+              const nextHtml = typeof next === "string" ? next : "";
+              setHtml(nextHtml);
+              onChange(editedMarkdown(start.current, nextHtml));
+            }}
+          />
+        </div>
       ) : (
         <>
           <textarea

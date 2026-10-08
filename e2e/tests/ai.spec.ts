@@ -84,7 +84,7 @@ test("fills in an item's fields with a free service that needs no key", async ({
   });
   await routeToFake(page, "https://oai.endpoints.kepler.ai.cloud.ovh.net", fake.handle);
   await page.goto("/admin#/collections/news/edit?slug=open-house");
-  const panel = page.locator(".gfa-ai");
+  const panel = await openAiPanel(page);
   await expect(panel.getByText("Describe this news story, or paste your notes")).toBeVisible();
 
   await panel

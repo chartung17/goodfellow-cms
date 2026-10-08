@@ -34,6 +34,9 @@ import { AppLink } from "./use-link.js";
 
 const usePuck = createUsePuck();
 const entryPlugins = [legacySideBarPlugin()];
+const entryUi = { leftSideBarVisible: false, plugin: { current: "ai" } };
+/** The item editor's fields sidebar, wider than other editors', with its own remembered width. */
+const ENTRY_SIDEBAR = { key: "goodfellow-entry-sidebar-width", width: 520 };
 
 function Hint({ text }: { text?: string }) {
   return text ? <p className="gfa-puck-hint">{text}</p> : null;
@@ -295,14 +298,11 @@ function EntryEditor({ collection, entry }: { collection: Collection; entry: Ent
       data={data}
       collection={collection}
       config={config}
-      // Entries have no blocks to add, so instead of the block list the left side has the AI
-      // assistant, open at the start. Without it, there's nothing on the left at all.
-      ui={
-        siteConfig.ai === false
-          ? { leftSideBarVisible: false }
-          : { leftSideBarVisible: true, plugin: { current: "ai" } }
-      }
+      // Items have no blocks, so the left side only has the AI assistant, closed at the start, and
+      // nothing at all without it. Their fields are on the right, which starts wider.
+      ui={siteConfig.ai === false ? { leftSideBarVisible: false } : entryUi}
       plugins={siteConfig.ai === false ? entryPlugins : undefined}
+      rightSideBar={ENTRY_SIDEBAR}
       validate={(next) => {
         const values: Record<string, unknown> = next.root.props ?? {};
         const missing = fields.filter((field) => field.required && isEmptyValue(values[field.name]));
