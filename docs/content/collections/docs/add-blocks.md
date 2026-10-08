@@ -27,7 +27,7 @@ The admin panel's **Blocks** screen adds more blocks to the editor, from Goodfel
 
 FAQ, Tabs and Image carousel are interactive. The FAQ's answers and the tabs' content are in the page even when hidden, so search engines and search boxes find them.
 
-Custom HTML used exactly as written runs its scripts on the site, but in the editor it's shown in a sealed-off frame, where it can't reach the admin panel. Only use HTML you trust that way. On a Next.js site, its scripts run when the page is first opened, not when visitors move to it from another page.
+Custom HTML used exactly as written runs its scripts on the site, but in the editor it's shown in a sealed-off frame, where it can't reach the admin panel. Only use HTML you trust that way. Its scripts run whenever its page is shown, also when visitors move to it from another page of a Next.js site. A page with such scripts loads React, as pages with interactive blocks do.
 
 ## Removing a block
 
