@@ -5,7 +5,7 @@
 //   node scripts/release.mjs publish [--dry-run] [--yes] [--ci]
 //                                               Publishes the versions npm doesn't have yet, then tags them.
 //                                               The release workflow runs it with --ci once CI passes on master.
-import { execFileSync, spawnSync } from "node:child_process";
+import { spawnSync } from "node:child_process";
 import { appendFileSync, mkdtempSync, readdirSync, readFileSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
@@ -16,21 +16,36 @@ const root = fileURLToPath(new URL("..", import.meta.url));
 
 class ReleaseError extends Error {}
 
+/** On Windows, pnpm and npm are .cmd files, which Node only starts through a shell. */
+const windows = process.platform === "win32";
+
+/** An argument as cmd.exe reads it: quoted unless it's plain. */
+function quote(arg) {
+  return /^[\w@+=:,./\\-]+$/.test(arg) ? arg : `"${arg.replace(/"/g, '""')}"`;
+}
+
+function spawn(command, args, options) {
+  return windows
+    ? spawnSync([command, ...args.map(quote)].join(" "), { cwd: root, shell: true, ...options })
+    : spawnSync(command, args, { cwd: root, ...options });
+}
+
 /** Runs a command, showing its output. Throws if it fails. */
 function run(command, args, options = {}) {
   console.log(`\n$ ${[command, ...args].join(" ")}`);
-  const result = spawnSync(command, args, { cwd: root, stdio: "inherit", ...options });
+  const result = spawn(command, args, { stdio: "inherit", ...options });
+  if (result.error) throw new ReleaseError(`Couldn't run ${command}: ${result.error.message}`);
   if (result.status !== 0) throw new ReleaseError(`${command} ${args.join(" ")} failed.`);
 }
 
 /** Runs a command and returns what it printed. */
 function read(command, args, options = {}) {
-  return execFileSync(command, args, {
-    cwd: root,
-    encoding: "utf8",
-    stdio: ["ignore", "pipe", "pipe"],
-    ...options,
-  }).trim();
+  const result = spawn(command, args, { encoding: "utf8", stdio: ["ignore", "pipe", "pipe"], ...options });
+  if (result.error) throw new ReleaseError(`Couldn't run ${command}: ${result.error.message}`);
+  if (result.status !== 0) {
+    throw new ReleaseError(`${command} ${args.join(" ")} failed:\n${result.stderr?.trim() ?? ""}`);
+  }
+  return result.stdout.trim();
 }
 
 /** The packages that are published: every package in packages/ that isn't private. */
@@ -89,10 +104,13 @@ function sharedVersion(list) {
 
 /** Whether this exact version is already on npm. */
 function isPublished(name, version) {
-  const result = spawnSync("npm", ["view", `${name}@${version}`, "version", "--json"], { cwd: root, encoding: "utf8" });
+  const result = spawn("npm", ["view", `${name}@${version}`, "version", "--json"], { encoding: "utf8" });
+  if (result.error) throw new ReleaseError(`Couldn't run npm: ${result.error.message}`);
   if (result.status === 0) return result.stdout.trim() !== "";
-  if (/E404|404 Not Found/.test(result.stderr)) return false;
-  throw new ReleaseError(`Couldn't ask npm about ${name}@${version}:\n${result.stderr.trim()}`);
+  // npm reports a version it doesn't have as E404, on stdout with --json and on stderr.
+  const output = `${result.stdout ?? ""}${result.stderr ?? ""}`;
+  if (/E404|404 Not Found/.test(output)) return false;
+  throw new ReleaseError(`Couldn't ask npm about ${name}@${version}:\n${output.trim()}`);
 }
 
 async function confirm(question) {
@@ -146,9 +164,14 @@ async function publish({ ci, dryRun, yes }) {
 
   const list = inDependencyOrder(packages());
   const next = sharedVersion(list);
-  const toPublish = list.filter((pkg) => !isPublished(pkg.name, pkg.version));
   setOutput("version", next);
   setOutput("published", "false");
+  // 0.0.0 is the version before the first release, never one to publish.
+  if (next === "0.0.0") {
+    console.log("\nThe packages haven't been given a version yet. Run `pnpm release:version` first.");
+    return;
+  }
+  const toPublish = list.filter((pkg) => !isPublished(pkg.name, pkg.version));
   if (toPublish.length === 0) {
     const waiting = pendingChangesets().length;
     console.log(
@@ -162,7 +185,8 @@ async function publish({ ci, dryRun, yes }) {
   }
 
   if (!ci) {
-    const whoami = spawnSync("npm", ["whoami"], { cwd: root, encoding: "utf8" });
+    const whoami = spawn("npm", ["whoami"], { encoding: "utf8" });
+    if (whoami.error) throw new ReleaseError(`Couldn't run npm: ${whoami.error.message}`);
     if (whoami.status === 0) console.log(`\nSigned in to npm as ${whoami.stdout.trim()}.`);
     else if (dryRun) console.log("\nNot signed in to npm; a dry run doesn't need it.");
     else throw new ReleaseError("You aren't signed in to npm. Run `npm login`, then try again.");
