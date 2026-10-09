@@ -15,6 +15,8 @@ order: 5
 
 Options: `--root <dir>`, `--out <dir>`, `--port <port>`, and `--base <path>`.
 
+`goodfellow dev` uses port 4321, or the next free one if another program has it, and `goodfellow preview` uses 4322. Each prints its address when it starts.
+
 ## Serving from a subfolder
 
 Some hosts serve a site from a subfolder, such as `/my-repo/` on GitHub Pages. The base path comes from `--base`, then the `GOODFELLOW_BASE` environment variable, then `base` in `goodfellow.config.tsx`. Every root-relative link and image in the built pages is adjusted to match, including links inside formatted and Markdown text.

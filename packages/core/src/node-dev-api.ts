@@ -106,7 +106,8 @@ export async function handleDevApi(
 ): Promise<boolean> {
   const url = new URL(req.url ?? "/", "http://localhost");
   if (!url.pathname.startsWith(`${DEV_API_PREFIX}/`)) return false;
-  const endpoint = url.pathname.slice(DEV_API_PREFIX.length + 1);
+  // Without a trailing slash: Next.js redirects `/revision` to `/revision/` in sites with `trailingSlash`.
+  const endpoint = url.pathname.slice(DEV_API_PREFIX.length + 1).replace(/\/+$/, "");
 
   if (req.method === "GET" && endpoint.startsWith("registry/")) {
     await sendRegistryFile(res, options.registryDir, endpoint.slice("registry/".length));
