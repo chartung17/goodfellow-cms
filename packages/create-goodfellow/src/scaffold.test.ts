@@ -1,14 +1,18 @@
+import { execFileSync } from "node:child_process";
 import { existsSync } from "node:fs";
 import { mkdir, mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
-import { afterEach, beforeEach, describe, expect, it } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import {
+  commitAll,
   configureBackend,
   copyTemplate,
   hostsFor,
+  initGitRepository,
   packageName,
   parseRepo,
+  remoteUrl,
   ScaffoldError,
   scaffold,
   sitePackageJson,
@@ -145,6 +149,61 @@ describe("scaffold", () => {
     await expect(scaffold({ template: starter, target: join(dir, "site"), versions: {} })).rejects.toThrow(
       "No version of @goodfellow-cms/admin",
     );
+  });
+});
+
+describe("initGitRepository", () => {
+  const git = (cwd: string, ...args: string[]) => execFileSync("git", args, { cwd, encoding: "utf8" }).trim();
+
+  it("makes the site a repository on main, with origin set to the site's repository", () => {
+    expect(initGitRepository(dir, { host: "github", repo: "your-name/your-site" })).toEqual({
+      created: true,
+      remote: "https://github.com/your-name/your-site.git",
+    });
+    expect(git(dir, "symbolic-ref", "HEAD")).toBe("refs/heads/main");
+    expect(git(dir, "remote", "get-url", "origin")).toBe("https://github.com/your-name/your-site.git");
+    // Nothing is committed yet: that waits for npm install's package-lock.json.
+    expect(() => git(dir, "rev-parse", "--verify", "-q", "HEAD")).toThrow();
+  });
+
+  it("leaves out origin when the site's repository isn't known", () => {
+    expect(initGitRepository(dir)).toEqual({ created: true });
+    expect(git(dir, "remote")).toBe("");
+  });
+
+  it("leaves a folder inside another repository as it is", async () => {
+    git(dir, "init", "-q");
+    const site = join(dir, "sites/new");
+    await mkdir(site, { recursive: true });
+    expect(initGitRepository(site)).toEqual({ created: false, reason: "inside-repository" });
+    expect(existsSync(join(site, ".git"))).toBe(false);
+  });
+
+  it("commits everything but what .gitignore leaves out", async () => {
+    for (const [name, value] of Object.entries({
+      GIT_AUTHOR_NAME: "Test",
+      GIT_AUTHOR_EMAIL: "test@example.org",
+      GIT_COMMITTER_NAME: "Test",
+      GIT_COMMITTER_EMAIL: "test@example.org",
+    })) {
+      vi.stubEnv(name, value);
+    }
+    try {
+      initGitRepository(dir);
+      await writeFile(join(dir, ".gitignore"), "node_modules\n");
+      await writeFile(join(dir, "package-lock.json"), "{}\n");
+      await mkdir(join(dir, "node_modules/react"), { recursive: true });
+      await writeFile(join(dir, "node_modules/react/index.js"), "");
+      expect(commitAll(dir, "Create the site")).toBe("committed");
+      expect(git(dir, "log", "--format=%s")).toBe("Create the site");
+      expect(git(dir, "ls-files").split("\n")).toEqual([".gitignore", "package-lock.json"]);
+    } finally {
+      vi.unstubAllEnvs();
+    }
+  });
+
+  it("knows where GitLab projects are pushed to, subgroups included", () => {
+    expect(remoteUrl({ host: "gitlab", repo: "parish/web/site" })).toBe("https://gitlab.com/parish/web/site.git");
   });
 });
 

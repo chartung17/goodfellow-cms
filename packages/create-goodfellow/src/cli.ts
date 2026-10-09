@@ -8,9 +8,14 @@ import {
   type Backend,
   BLOCK_CHOICES,
   type BlockChoice,
+  type CommitResult,
+  commitAll,
+  type GitResult,
   HOSTS,
   type Host,
   hostsFor,
+  initGitRepository,
+  installPackages,
   parseRepo,
   ScaffoldError,
   scaffold,
@@ -28,6 +33,8 @@ Options:
   --gitlab <project>  The GitLab project the site will be stored in, such as your-group/your-site
   --host <host>       github-pages, gitlab-pages or vercel. Keeps only that host's setup file.
   --blocks <choice>   recommended (the default) to add the recommended blocks, or built-in for Goodfellow's own only
+  --no-install        Don't run npm install
+  --no-git            Don't make the site a git repository, or commit it
   -y, --yes           Don't ask anything: use the options given, and defaults for the rest
   -h, --help          Show this help
 `;
@@ -102,6 +109,8 @@ async function main(): Promise<void> {
       gitlab: { type: "string" },
       host: { type: "string" },
       blocks: { type: "string" },
+      "no-git": { type: "boolean" },
+      "no-install": { type: "boolean" },
       yes: { type: "boolean", short: "y" },
       help: { type: "boolean", short: "h" },
     },
@@ -186,14 +195,29 @@ async function main(): Promise<void> {
     ...((blocks ?? "recommended") === "recommended" && { registryDir: join(templatesDir, "registry") }),
   });
 
+  const git = values["no-git"] ? undefined : initGitRepository(target, backend);
+  let installed = false;
+  if (!values["no-install"]) {
+    stdout.write("\nInstalling the site's packages with npm...\n\n");
+    installed = installPackages(target);
+  }
+  // The first commit includes package-lock.json, which the deploy setups need, so it waits for npm install.
+  const commit: CommitResult | undefined =
+    git?.created && (installed || values["no-install"]) ? commitAll(target, "Create the site") : undefined;
+
   const where = relative(process.cwd(), target) || ".";
+  const cd = where === "." ? [] : [`  cd ${/\s/.test(where) ? JSON.stringify(where) : where}`];
   const lines = [
     "",
     `Created a new site in ${where}.`,
+    ...(git ? gitLines(git, commit, installed) : []),
+    ...(!installed && !values["no-install"]
+      ? ["npm install didn't finish, so run it again in the site's folder."]
+      : []),
     "",
     "Next:",
-    ...(where === "." ? [] : [`  cd ${/\s/.test(where) ? JSON.stringify(where) : where}`]),
-    "  npm install",
+    ...cd,
+    ...(installed ? [] : ["  npm install"]),
     "  npm run dev",
     "",
     "Then open http://localhost:4321/admin to start editing. README.md explains how to put the site online.",
@@ -202,6 +226,36 @@ async function main(): Promise<void> {
     lines.push("Before you do, say where the site is stored in goodfellow.config.tsx; README.md shows how.");
   }
   stdout.write(`${lines.join("\n")}\n`);
+}
+
+/** What happened with git, and what's left to do. */
+function gitLines(git: GitResult, commit: CommitResult | undefined, installed: boolean): string[] {
+  if (!git.created) {
+    return [
+      git.reason === "inside-repository"
+        ? "It's inside another git repository, so it isn't one of its own."
+        : "Git isn't installed, so it isn't a git repository yet: once it is, run git init -b main in it, then commit.",
+    ];
+  }
+  const repository = "It's a git repository on the branch main";
+  const origin = git.remote ? [`Its origin is ${git.remote}.`] : [];
+  if (commit === "committed") {
+    return [
+      `${repository}, with everything in its first commit.`,
+      ...origin,
+      ...(installed ? [] : ["Commit package-lock.json after npm install: the deploy setups need it."]),
+    ];
+  }
+  if (commit === "no-identity") {
+    return [
+      `${repository}, but git doesn't know your name and email yet, so nothing is committed. Tell it, then commit:`,
+      '  git config --global user.name "Your Name"',
+      "  git config --global user.email you@example.com",
+      '  git add -A && git commit -m "Create the site"',
+      ...origin,
+    ];
+  }
+  return [`${repository}. Nothing is committed yet: commit everything once npm install has run.`, ...origin];
 }
 
 async function chooseHost(rl: Interface, storage: Backend["host"] | undefined): Promise<Host | undefined> {

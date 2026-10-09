@@ -1,5 +1,5 @@
-import { readdir, readFile, rm } from "node:fs/promises";
-import { join } from "node:path";
+import { mkdir, readdir, readFile, rm, writeFile } from "node:fs/promises";
+import { dirname, join } from "node:path";
 import { SEARCH_ATTRIBUTE, SEARCH_INDEX_DIR } from "./search.js";
 
 /** Whether any built page has a search block, which marks itself with `SEARCH_ATTRIBUTE`. */
@@ -31,10 +31,18 @@ export async function writeSearchIndex(outDir: string): Promise<number | undefin
     // Pages mark the content to index with data-pagefind-body, so headers, footers and "Page not found" are left out.
     const added = await index.addDirectory({ path: outDir, glob: `{${pages.join(",")}}` });
     if (added.errors.length > 0) throw new Error(`Pagefind couldn't index the site: ${added.errors.join("; ")}`);
-    const written = await index.writeFiles({ outputPath: indexDir });
-    if (written.errors.length > 0) throw new Error(`Pagefind couldn't write the index: ${written.errors.join("; ")}`);
+    // Pagefind's writeFiles can answer before every file is on disk, so the index is written here instead.
+    const built = await index.getFiles();
+    if (built.errors.length > 0) throw new Error(`Pagefind couldn't write the index: ${built.errors.join("; ")}`);
+    for (const file of built.files) {
+      const path = join(indexDir, file.path);
+      await mkdir(dirname(path), { recursive: true });
+      await writeFile(path, file.content);
+    }
     // The pages indexed, which leaves out those without content marked for it.
-    const entry = JSON.parse(await readFile(join(indexDir, "pagefind-entry.json"), "utf8")) as {
+    const entryFile = built.files.find((file) => file.path === "pagefind-entry.json");
+    if (!entryFile) throw new Error("Pagefind didn't make pagefind-entry.json");
+    const entry = JSON.parse(new TextDecoder().decode(entryFile.content)) as {
       languages: Record<string, { page_count: number }>;
     };
     return Object.values(entry.languages).reduce((total, language) => total + language.page_count, 0);

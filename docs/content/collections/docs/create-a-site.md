@@ -21,6 +21,8 @@ It asks:
 - **Where it will be hosted:** GitHub Pages, GitLab Pages or Vercel, with each host's rules for business sites. Only that host's setup file is kept.
 - **Which blocks to start with:** the recommended blocks from Goodfellow's [block registry](/docs/add-blocks), such as an FAQ and tabs, or the built-in blocks only. Either way, blocks can be added and removed later in the admin panel.
 
+It then runs `npm install`, and makes the new folder a git repository on the branch `main`, with everything, `package-lock.json` included, in its first commit and `origin` set when you gave it the repository. `--no-install` and `--no-git` leave those out; it also doesn't make a repository inside another git repository.
+
 To skip the questions, give the answers as options:
 
 ```sh
@@ -33,10 +35,9 @@ Run it with `--help` for every option.
 
 ## Try it on your computer
 
-In the new site's folder:
+In the new site's folder, where `npm create goodfellow` has already run `npm install`:
 
 ```sh
-npm install
 npm run dev
 ```
 

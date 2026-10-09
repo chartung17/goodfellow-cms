@@ -14,7 +14,8 @@ export default defineConfig({ blocks, demo: true });
 
 The site's `/admin` then opens straight away, with a banner saying it's a demo. Visitors can try everything editors can: pages, collections, the header and footer, the media library, site settings and the AI assistant (with their own key or a free service).
 
-- **Nothing is published.** Publish saves the changes, uploads included, in the visitor's own browser, so they're still there after reloading. **Start over** in the banner undoes them all. The live site and the repository never change.
+- **Nothing is published.** Publish saves the changes, uploads included, in the visitor's own browser, so they're still there after reloading. **Start over** in the banner undoes them all.
+- **Changes show only in the admin panel.** Its editors and previews show what the visitor changed, but the site's pages are the files the last build made, so **View site** shows the site as it was built. The repository never changes either.
 - **It starts from the site as last built.** The build puts a copy of the content at `/admin/demo-content.json`. The repository can stay private, and `backend` is ignored.
 - **Blocks** can be browsed but not added or removed, since adding one changes the site's code.
 - **Only the config turns it on.** The admin panel never changes `goodfellow.config.tsx`, so editors can't turn a real site into a demo or back.
@@ -35,22 +36,20 @@ A demo is best kept as a site of its own, separate from any real site, so trying
 
    ```sh
    cd goodfellow-demo
-   npm install
    npm run build
    npm run preview
    ```
 
    The demo is at <http://localhost:4322/admin> (`npm run preview` prints the address), with the banner saying it's a demo.
-4. Create an empty public repository on GitHub, such as `your-name/goodfellow-demo`, without a README. Then push the site to it, `package-lock.json` included:
+4. Create an empty public repository on GitHub, such as `your-name/goodfellow-demo`, without a README. Then commit the change to the config and push the site to it:
 
    ```sh
-   git init
-   git add .
-   git commit -m "Demo site"
-   git branch -M main
+   git commit -am "Turn on demo mode"
    git remote add origin https://github.com/your-name/goodfellow-demo.git
    git push -u origin main
    ```
+
+   `npm create goodfellow` already ran `npm install` and made the folder a git repository on the branch `main`, with everything in its first commit.
 
 5. In the repository on GitHub, go to **Settings → Pages** and set **Source** to **GitHub Actions**. Then, under **Actions**, open **Deploy to GitHub Pages** and choose **Run workflow**, since its first run started before Pages was turned on.
 

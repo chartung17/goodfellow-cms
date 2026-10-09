@@ -72,7 +72,7 @@ Create a new site with Node 22 or later:
 npm create goodfellow@latest my-site
 ```
 
-It asks which site to start from, where the site will be stored (GitHub or GitLab), where it will be hosted, with each host's rules for business sites, and whether to start with the recommended [shadcn blocks](#blocks-from-block-registries) or the built-in blocks only, and sets the site up to match. Three sites are available:
+It asks which site to start from, where the site will be stored (GitHub or GitLab), where it will be hosted, with each host's rules for business sites, and whether to start with the recommended [shadcn blocks](#blocks-from-block-registries) or the built-in blocks only, and sets the site up to match. It then runs `npm install` and makes the new folder a git repository on the branch `main`, with everything in its first commit and `origin` set when it's given the repository (`--no-install` and `--no-git` leave those out). Three sites are available:
 
 - **Starter** (`templates/starter`): a home page, an about page and a news section.
 - **Parish example** (`examples/parish`): a made-up parish with Mass times, events, news, bulletins and staff, and blocks of its own. It shows what a complete site looks like and how a developer adds blocks.

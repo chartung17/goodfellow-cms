@@ -10,7 +10,14 @@ Setup takes four steps, done once by whoever sets up the site.
 
 ## 1. Store the site on GitHub or GitLab
 
-Create a repository and push the site's folder to it, including `package-lock.json`.
+Create an empty repository on GitHub or GitLab, without a README, and push the site's folder to it:
+
+```sh
+git remote add origin https://github.com/your-name/your-site.git   # unless origin is already set
+git push -u origin main
+```
+
+`create-goodfellow` makes the new site a git repository on the branch `main`, with everything, `package-lock.json` included, in its first commit, and sets `origin` when it's given the repository. Commit any changes since (`git add -A` and `git commit`) before pushing.
 
 ## 2. Tell Goodfellow where it's stored
 
@@ -38,6 +45,7 @@ Each host's free plan has its own rules about business use; read [Hosts and busi
 
 1. In the repository on GitHub, go to **Settings → Pages** and set **Source** to **GitHub Actions**.
 2. Push. `.github/workflows/deploy.yml` builds and publishes the site on every change and once a night. If your main branch isn't called `main`, change it in that file.
+3. If a run fails with "Branch … is not allowed to deploy to github-pages due to environment protection rules", GitHub Pages expects another branch. Under **Settings → Environments → github-pages → Deployment branches and tags**, add the branch the site is built from, then run **Deploy to GitHub Pages** again under **Actions**.
 
 **GitLab Pages**, free for public and private projects:
 
