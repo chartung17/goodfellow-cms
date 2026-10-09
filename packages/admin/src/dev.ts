@@ -5,12 +5,22 @@ import { ConflictError, type ContentStore, decodeBase64, encodeBase64Bytes } fro
  * `goodfellow dev`. For local development only: it is never part of a built site.
  */
 export function localStore(apiBase = "/__goodfellow/api"): ContentStore {
-  async function request(path: string, init: RequestInit = {}): Promise<Response> {
-    const response = await fetch(`${apiBase}/${path}`, {
+  /** Calls the development API. A 404 means "no such file" only where `missingIsFine` says so. */
+  async function request(path: string, init: RequestInit = {}, missingIsFine = false): Promise<Response> {
+    // With a trailing slash, as in `revision/` and `files/?dir=…`, so a Next.js site with `trailingSlash` has
+    // nothing to redirect: browsers keep its 308 redirects, and later send them to whatever runs on this port.
+    const [endpoint, query] = path.split("?", 2);
+    const response = await fetch(`${apiBase}/${endpoint}/${query === undefined ? "" : `?${query}`}`, {
       ...init,
       headers: { "x-goodfellow-request": "1", ...init.headers },
     });
     if (response.status === 409) throw new ConflictError();
+    if (response.status === 404 && !missingIsFine) {
+      // Another server on this address, such as one that isn't `goodfellow dev` or `next dev`.
+      throw new Error(
+        `The development server's API isn't at ${new URL(apiBase, location.href).href} (it answered 404). Open the admin panel at the address \`goodfellow dev\` printed when it started.`,
+      );
+    }
     if (!response.ok && response.status !== 404) {
       const body = (await response.json().catch(() => ({}))) as { message?: string; error?: string };
       throw new Error(body.message ?? `The development server answered ${response.status} (${body.error ?? "error"}).`);
@@ -20,12 +30,12 @@ export function localStore(apiBase = "/__goodfellow/api"): ContentStore {
 
   return {
     async read(path) {
-      const response = await request(`file?path=${encodeURIComponent(path)}`);
+      const response = await request(`file?path=${encodeURIComponent(path)}`, {}, true);
       if (response.status === 404) return undefined;
       return ((await response.json()) as { content: string }).content;
     },
     async readBytes(path) {
-      const response = await request(`file?path=${encodeURIComponent(path)}&as=bytes`);
+      const response = await request(`file?path=${encodeURIComponent(path)}&as=bytes`, {}, true);
       if (response.status === 404) return undefined;
       return decodeBase64(((await response.json()) as { base64: string }).base64);
     },

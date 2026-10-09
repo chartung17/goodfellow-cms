@@ -40,7 +40,7 @@ A demo is best kept as a site of its own, separate from any real site, so trying
    npm run preview
    ```
 
-   The demo is at <http://localhost:4321/admin>, with the banner saying it's a demo.
+   The demo is at <http://localhost:4322/admin> (`npm run preview` prints the address), with the banner saying it's a demo.
 4. Create an empty public repository on GitHub, such as `your-name/goodfellow-demo`, without a README. Then push the site to it, `package-lock.json` included:
 
    ```sh

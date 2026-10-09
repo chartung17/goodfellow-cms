@@ -40,7 +40,7 @@ npm install
 npm run dev
 ```
 
-The site is at <http://localhost:4321>, and the admin panel at <http://localhost:4321/admin>. On your own computer the admin panel saves straight to the files in `content/`, with no sign-in, and pages show your changes when you reload them.
+The site is at <http://localhost:4321>, and the admin panel at <http://localhost:4321/admin>, unless another program already uses that port: `npm run dev` prints the address it uses. On your own computer the admin panel saves straight to the files in `content/`, with no sign-in, and pages show your changes when you reload them.
 
 ```sh
 npm run build    # writes the finished site to dist/

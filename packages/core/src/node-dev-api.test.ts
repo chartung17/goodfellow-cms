@@ -82,6 +82,13 @@ describe("handleDevApi", () => {
     expect((await fetch(`${base}/file?path=content/missing.json`, { headers })).status).toBe(404);
   });
 
+  it("answers with or without a trailing slash, which Next.js adds", async () => {
+    expect((await fetch(`${base}/revision/`, { headers })).status).toBe(200);
+    expect(await (await fetch(`${base}/files/?dir=content`, { headers })).json()).toEqual({
+      files: ["content/site.json"],
+    });
+  });
+
   it("answers 409 when the site changed since the given revision", async () => {
     const response = await fetch(`${base}/write`, {
       method: "POST",
