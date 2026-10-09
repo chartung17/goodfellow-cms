@@ -10,7 +10,14 @@ Setup takes four steps, done once by whoever sets up the site.
 
 ## 1. Store the site on GitHub or GitLab
 
-Create a repository and push the site's folder to it, including `package-lock.json`.
+Create an empty repository on GitHub or GitLab, without a README, and push the site's folder to it:
+
+```sh
+git remote add origin https://github.com/your-name/your-site.git   # unless origin is already set
+git push -u origin main
+```
+
+`create-goodfellow` makes the new site a git repository on the branch `main`, with everything, `package-lock.json` included, in its first commit, and sets `origin` when it's given the repository. Commit any changes since (`git add -A` and `git commit`) before pushing.
 
 ## 2. Tell Goodfellow where it's stored
 

@@ -1,3 +1,4 @@
+import { spawnSync } from "node:child_process";
 import { cp, mkdir, readdir, readFile, rename, rm, rmdir, writeFile } from "node:fs/promises";
 import { basename, dirname, join, relative, resolve, sep } from "node:path";
 import {
@@ -232,6 +233,61 @@ async function isEmptyFolder(path: string): Promise<boolean> {
     if ((error as NodeJS.ErrnoException).code === "ENOENT") return true;
     throw error;
   }
+}
+
+/** What `initGitRepository()` did: made a repository, or why it didn't. */
+export type GitResult = { created: true; remote?: string } | { created: false; reason: "no-git" | "inside-repository" };
+
+/** Where a backend's repository is pushed to, over HTTPS. */
+export function remoteUrl(backend: Backend): string {
+  const host = backend.host === "github" ? "github.com" : "gitlab.com";
+  return `https://${host}/${backend.repo}.git`;
+}
+
+/**
+ * Makes the new site a git repository on the branch `main`, which the deploy
+ * setups build from, with `origin` set when the site's repository is known.
+ * A folder inside another repository, such as a monorepo, is left as it is.
+ */
+export function initGitRepository(target: string, backend?: Backend): GitResult {
+  const git = (...args: string[]) => spawnSync("git", args, { cwd: target, encoding: "utf8" });
+  const inside = git("rev-parse", "--is-inside-work-tree");
+  if (inside.error) return { created: false, reason: "no-git" };
+  if (inside.status === 0) return { created: false, reason: "inside-repository" };
+  // `-b` needs git 2.28 or later; older ones start on their default branch, which is then renamed.
+  if (git("init", "-q", "-b", "main").status !== 0) {
+    if (git("init", "-q").status !== 0) return { created: false, reason: "no-git" };
+    git("symbolic-ref", "HEAD", "refs/heads/main");
+  }
+  if (!backend) return { created: true };
+  const remote = remoteUrl(backend);
+  git("remote", "add", "origin", remote);
+  return { created: true, remote };
+}
+
+/**
+ * Runs `npm install` in the new site, showing its output. Its `package-lock.json`
+ * goes in the first commit, since the deploy setups install with `npm ci`.
+ */
+export function installPackages(target: string): boolean {
+  // npm is a .cmd file on Windows, which Node only starts through a shell.
+  const result =
+    process.platform === "win32"
+      ? spawnSync("npm install", { cwd: target, stdio: "inherit", shell: true })
+      : spawnSync("npm", ["install"], { cwd: target, stdio: "inherit" });
+  return result.status === 0;
+}
+
+/** How the first commit went: made, or not because git doesn't know who's committing yet, or failed. */
+export type CommitResult = "committed" | "no-identity" | "failed";
+
+/** Commits everything in the new site, which `.gitignore` doesn't leave out. */
+export function commitAll(target: string, message: string): CommitResult {
+  const git = (...args: string[]) => spawnSync("git", args, { cwd: target, encoding: "utf8" });
+  if (git("add", "-A").status !== 0) return "failed";
+  const commit = git("commit", "-q", "-m", message);
+  if (commit.status === 0) return "committed";
+  return /user\.(name|email)|tell me who you are|identity/i.test(commit.stderr) ? "no-identity" : "failed";
 }
 
 /** Creates a new site in `target` from a template. */

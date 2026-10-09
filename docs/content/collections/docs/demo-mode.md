@@ -35,22 +35,20 @@ A demo is best kept as a site of its own, separate from any real site, so trying
 
    ```sh
    cd goodfellow-demo
-   npm install
    npm run build
    npm run preview
    ```
 
    The demo is at <http://localhost:4322/admin> (`npm run preview` prints the address), with the banner saying it's a demo.
-4. Create an empty public repository on GitHub, such as `your-name/goodfellow-demo`, without a README. Then push the site to it, `package-lock.json` included:
+4. Create an empty public repository on GitHub, such as `your-name/goodfellow-demo`, without a README. Then commit the change to the config and push the site to it:
 
    ```sh
-   git init
-   git add .
-   git commit -m "Demo site"
-   git branch -M main
+   git commit -am "Turn on demo mode"
    git remote add origin https://github.com/your-name/goodfellow-demo.git
    git push -u origin main
    ```
+
+   `npm create goodfellow` already ran `npm install` and made the folder a git repository on the branch `main`, with everything in its first commit.
 
 5. In the repository on GitHub, go to **Settings → Pages** and set **Source** to **GitHub Actions**. Then, under **Actions**, open **Deploy to GitHub Pages** and choose **Run workflow**, since its first run started before Pages was turned on.
 
