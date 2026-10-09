@@ -1,0 +1,33 @@
+# @goodfellow-cms/ai
+
+## 0.1.0
+
+### Minor Changes
+
+- 1414af7: The AI assistant. A new **AI** tab in every editor writes with AI: it adds blocks to a page, changes the selected block, or fills in a collection item's fields, and its answer goes straight into the editor to check, change or undo. Editors choose the service and use their own key, kept only in their browser: Claude through the official SDK with structured outputs, OpenAI, Gemini, Groq, Mistral, OpenRouter, the keyless OVHcloud AI Endpoints, any OpenAI-compatible service, or any chat app by copy and paste. The new `@goodfellow-cms/ai` package builds the requests, checks answers against the site's blocks and fields, and talks to the services; `@goodfellow-cms/ai/testing` fakes them. Sites can limit the services with `ai: { providers }` or remove the assistant with `ai: false`.
+- ece9ba5: The media library. A new **Media** screen uploads, replaces and deletes images and files in `public/media/`, saying where a file is used before deleting it. Image fields in blocks, page settings, collection items and site settings get a **Choose image** button that picks from the library or uploads a new file. Large photos are shrunk, JPEGs lose hidden details such as location, SVGs lose scripts, and only file types that can't run code are accepted. Previews show new uploads straight away, and add the site's base path to media addresses. `FileChange` can now carry `bytes`, and every store implements `readBytes()`, with both backends, their fakes and the development server supporting uploads. `@goodfellow-cms/react` adds `mediaField()`, used by the Image and Section blocks, and the AI assistant is told which images the site has.
+- 8c69eb5: Add `create-goodfellow`, which creates a new site from the starter or the parish example (`npm create goodfellow@latest my-site`), and can set up where the site is stored and hosted. Sites can now keep their contact details (address, phone and email) in Site settings, shown wherever the new Contact details block is placed. A collection's link fields can choose an uploaded file, such as a PDF.
+
+### Patch Changes
+
+- 4ca2dc1: Every package has a README, keywords and links to its documentation, repository and issues, for its page on npm. All the packages are released together with the same version.
+- d91eea1: The packages are published under the `@goodfellow-cms` scope on npm, such as `@goodfellow-cms/core` and `@goodfellow-cms/react`, since `@goodfellow` was taken. `goodfellow` and `create-goodfellow` keep their names, and the block registry's name in `components.json` and refs such as `@goodfellow/shadcn-faq` stays `@goodfellow`.
+- Updated dependencies [1414af7]
+- Updated dependencies [fd6f851]
+- Updated dependencies [b4b80a6]
+- Updated dependencies [5492e22]
+- Updated dependencies [2af75b7]
+- Updated dependencies [ce5faee]
+- Updated dependencies [88ac239]
+- Updated dependencies [652b180]
+- Updated dependencies [1bfecf7]
+- Updated dependencies [405de70]
+- Updated dependencies [809001e]
+- Updated dependencies [ece9ba5]
+- Updated dependencies [536f2a8]
+- Updated dependencies [de03c18]
+- Updated dependencies [4ca2dc1]
+- Updated dependencies [d91eea1]
+- Updated dependencies [8c69eb5]
+- Updated dependencies [cff2c58]
+  - @goodfellow-cms/core@0.1.0
