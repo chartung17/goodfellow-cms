@@ -1,4 +1,4 @@
-import { fakeAi } from "@goodfellow/ai/testing";
+import { fakeAi } from "@goodfellow-cms/ai/testing";
 import type { Page } from "@playwright/test";
 import { routeToFake } from "./backends.js";
 import { canvas, expect, openPageEditor, publishInEditor, readJson, readSiteFile, test } from "./helpers.js";

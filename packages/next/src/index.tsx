@@ -11,8 +11,8 @@ import {
   type SiteContent,
   themeToCss,
   withBase,
-} from "@goodfellow/core";
-import { fileSystemSource, readMediaSizes } from "@goodfellow/core/node";
+} from "@goodfellow-cms/core";
+import { fileSystemSource, readMediaSizes } from "@goodfellow-cms/core/node";
 import {
   applyPageEntry,
   BodyCode,
@@ -25,7 +25,7 @@ import {
   prepareLayout,
   preparePage,
   type SiteComponents,
-} from "@goodfellow/react";
+} from "@goodfellow-cms/react";
 import type { Metadata, MetadataRoute } from "next";
 import { notFound } from "next/navigation";
 import { cache, type ReactNode } from "react";

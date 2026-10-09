@@ -1,5 +1,5 @@
 {
-  "name": "@goodfellow/blocks",
+  "name": "@goodfellow-cms/blocks",
   "version": "0.0.0",
   "description": "Goodfellow's built-in blocks. Styled with Tailwind and the site theme only.",
   "keywords": [
@@ -40,8 +40,8 @@
     "test": "vitest run"
   },
   "dependencies": {
-    "@goodfellow/core": "workspace:*",
-    "@goodfellow/react": "workspace:*",
+    "@goodfellow-cms/core": "workspace:*",
+    "@goodfellow-cms/react": "workspace:*",
     "shiki": "4.5.0"
   },
   "peerDependencies": {

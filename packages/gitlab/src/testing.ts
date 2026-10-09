@@ -1,9 +1,9 @@
 /**
- * A fake of the parts of GitLab's API that `@goodfellow/gitlab` uses, backed by
+ * A fake of the parts of GitLab's API that `@goodfellow-cms/gitlab` uses, backed by
  * an in-memory repository, including OAuth with PKCE. For tests only.
  */
-import { decodeBase64, type FileChange } from "@goodfellow/core";
-import { FakeRepo, fakeFileBytes } from "@goodfellow/core/testing";
+import { decodeBase64, type FileChange } from "@goodfellow-cms/core";
+import { FakeRepo, fakeFileBytes } from "@goodfellow-cms/core/testing";
 
 export interface FakeGitLabUser {
   username: string;

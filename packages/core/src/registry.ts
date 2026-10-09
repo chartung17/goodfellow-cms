@@ -30,7 +30,7 @@ export const GOODFELLOW_REGISTRY = "@goodfellow";
 
 /** Goodfellow's registry for one release, from npm through jsDelivr, so a version always means the same files. */
 export function goodfellowRegistryUrl(version: string): string {
-  return `https://cdn.jsdelivr.net/npm/@goodfellow/registry@${version}/r/{name}.json`;
+  return `https://cdn.jsdelivr.net/npm/@goodfellow-cms/registry@${version}/r/{name}.json`;
 }
 
 /**
@@ -376,7 +376,7 @@ export async function planInstall(options: InstallOptions): Promise<Plan & { ite
     ...(options.packages ?? REGISTRY_PACKAGES),
     "react",
     "react-dom",
-    "@goodfellow/react",
+    "@goodfellow-cms/react",
     "@puckeditor/core",
   ]);
   const missing = [

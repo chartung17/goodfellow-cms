@@ -1,8 +1,8 @@
 #!/usr/bin/env node
 // After `next build`: `goodfellow-next finish out` fixes the export's prefetch files on Windows
 // and writes the search index for sites with a search block. `index` only writes the index.
-import { writeSearchIndex } from "@goodfellow/core/search-index";
-import { fixSegmentFiles } from "@goodfellow/next/export";
+import { writeSearchIndex } from "@goodfellow-cms/core/search-index";
+import { fixSegmentFiles } from "@goodfellow-cms/next/export";
 
 const [command, dir = "out"] = process.argv.slice(2);
 if (command !== "finish" && command !== "index") {

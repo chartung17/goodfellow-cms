@@ -1,7 +1,7 @@
 import { existsSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { fileURLToPath } from "node:url";
-import { fakeGitHub } from "@goodfellow/github/testing";
+import { fakeGitHub } from "@goodfellow-cms/github/testing";
 import { expect as baseExpect, test as baseTest, type Page } from "@playwright/test";
 import { nextSite, resetNextContent, site } from "../scripts/site.mjs";
 import { files, GITHUB_SITE, routeToFake } from "./backends.js";
@@ -159,7 +159,7 @@ test("won't remove a block that's in use, and removes it once it isn't", async (
 });
 
 // The built site's admin panel installs from the registry's release on jsDelivr; tests serve the built registry instead.
-const registryDir = fileURLToPath(new URL("../node_modules/@goodfellow/registry/r/", import.meta.url));
+const registryDir = fileURLToPath(new URL("../node_modules/@goodfellow-cms/registry/r/", import.meta.url));
 
 baseTest("adds a block to a site on GitHub in one publish", async ({ page }) => {
   const fake = fakeGitHub({
@@ -169,12 +169,14 @@ baseTest("adds a block to a site on GitHub in one publish", async ({ page }) => 
     deployAfterChecks: 0,
   });
   await routeToFake(page, "https://api.github.com", fake.handle);
-  await page.route(/^https:\/\/cdn\.jsdelivr\.net\/npm\/@goodfellow\/registry@[^/]+\/r\/([a-z0-9-]+\.json)$/, (route) =>
-    route.fulfill({
-      contentType: "application/json",
-      headers: { "access-control-allow-origin": "*" },
-      body: readFileSync(join(registryDir, new URL(route.request().url()).pathname.split("/").at(-1) ?? ""), "utf8"),
-    }),
+  await page.route(
+    /^https:\/\/cdn\.jsdelivr\.net\/npm\/@goodfellow-cms\/registry@[^/]+\/r\/([a-z0-9-]+\.json)$/,
+    (route) =>
+      route.fulfill({
+        contentType: "application/json",
+        headers: { "access-control-allow-origin": "*" },
+        body: readFileSync(join(registryDir, new URL(route.request().url()).pathname.split("/").at(-1) ?? ""), "utf8"),
+      }),
   );
 
   await page.goto(`${GITHUB_SITE}/admin/`);

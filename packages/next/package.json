@@ -1,5 +1,5 @@
 {
-  "name": "@goodfellow/next",
+  "name": "@goodfellow-cms/next",
   "version": "0.0.0",
   "description": "Goodfellow pages and the admin panel in a Next.js site.",
   "keywords": [
@@ -58,18 +58,18 @@
     "test": "node scripts/embed.mjs && vitest run"
   },
   "dependencies": {
-    "@goodfellow/core": "workspace:*",
-    "@goodfellow/react": "workspace:*"
+    "@goodfellow-cms/core": "workspace:*",
+    "@goodfellow-cms/react": "workspace:*"
   },
   "peerDependencies": {
-    "@goodfellow/admin": "workspace:*",
+    "@goodfellow-cms/admin": "workspace:*",
     "@puckeditor/core": "0.23.0",
     "next": "^16.0.0",
     "react": "^19.0.0",
     "react-dom": "^19.0.0"
   },
   "devDependencies": {
-    "@goodfellow/admin": "workspace:*",
+    "@goodfellow-cms/admin": "workspace:*",
     "@puckeditor/core": "0.23.0",
     "@tailwindcss/browser": "4.3.3",
     "@types/react": "^19.2.0",

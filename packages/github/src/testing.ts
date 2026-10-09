@@ -1,10 +1,10 @@
 /**
- * A fake of the parts of GitHub's API that `@goodfellow/github` uses, backed by
+ * A fake of the parts of GitHub's API that `@goodfellow-cms/github` uses, backed by
  * an in-memory repository. For tests only: pass `fake.fetch` as the backend's
  * `fetch`, or route browser requests to `fake.handle` in end-to-end tests.
  */
-import { decodeBase64, encodeBase64Bytes, type FileChange } from "@goodfellow/core";
-import { FakeConflictError, FakeRepo, fakeFileBytes } from "@goodfellow/core/testing";
+import { decodeBase64, encodeBase64Bytes, type FileChange } from "@goodfellow-cms/core";
+import { FakeConflictError, FakeRepo, fakeFileBytes } from "@goodfellow-cms/core/testing";
 
 export interface FakeGitHubUser {
   login: string;

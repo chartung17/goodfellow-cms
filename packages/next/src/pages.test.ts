@@ -1,6 +1,6 @@
 import { resolve } from "node:path";
-import { allPages, loadSiteContent, parseDemoContent } from "@goodfellow/core";
-import { fileSystemSource } from "@goodfellow/core/node";
+import { allPages, loadSiteContent, parseDemoContent } from "@goodfellow-cms/core";
+import { fileSystemSource } from "@goodfellow-cms/core/node";
 import { describe, expect, it } from "vitest";
 import { goodfellowPages, pageMetadata } from "./index.js";
 

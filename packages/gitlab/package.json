@@ -1,5 +1,5 @@
 {
-  "name": "@goodfellow/gitlab",
+  "name": "@goodfellow-cms/gitlab",
   "version": "0.0.0",
   "description": "Edit a Goodfellow site stored on GitLab, straight from the browser.",
   "keywords": [
@@ -40,7 +40,7 @@
     "test": "vitest run"
   },
   "dependencies": {
-    "@goodfellow/core": "workspace:*"
+    "@goodfellow-cms/core": "workspace:*"
   },
   "devDependencies": {
     "@puckeditor/core": "0.23.0"

@@ -1,4 +1,4 @@
-import type { MenuItem, Menus } from "@goodfellow/core";
+import type { MenuItem, Menus } from "@goodfellow-cms/core";
 import { useState } from "react";
 import { useStrings } from "./strings.js";
 import { Button, TextField } from "./ui.js";

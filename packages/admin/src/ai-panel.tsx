@@ -13,8 +13,8 @@ import {
   type SiteSummary,
   toContent,
   toValues,
-} from "@goodfellow/ai";
-import { allPages, type Collection, entryTitle, type SiteContent } from "@goodfellow/core";
+} from "@goodfellow-cms/ai";
+import { allPages, type Collection, entryTitle, type SiteContent } from "@goodfellow-cms/core";
 import { type ComponentData, createUsePuck, type Fields, type Plugin, useGetPuck } from "@puckeditor/core";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useAdmin, useSiteContent } from "./admin-context.js";

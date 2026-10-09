@@ -1,4 +1,4 @@
-import { type SiteContent, siteSettingsSchema } from "@goodfellow/core";
+import { type SiteContent, siteSettingsSchema } from "@goodfellow-cms/core";
 import { describe, expect, it } from "vitest";
 import { formatSize, mediaKind, mediaPath, mediaUrl, mediaUsage, uploadName } from "./media.js";
 

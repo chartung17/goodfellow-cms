@@ -10,8 +10,8 @@ import {
   registryItemSchema,
   type SiteContent,
   siteSettingsSchema,
-} from "@goodfellow/core";
-import { createPageRenderer } from "@goodfellow/react/server";
+} from "@goodfellow-cms/core";
+import { createPageRenderer } from "@goodfellow-cms/react/server";
 import type { ComponentConfig } from "@puckeditor/core";
 import { describe, expect, it } from "vitest";
 import registry from "../registry.json" with { type: "json" };

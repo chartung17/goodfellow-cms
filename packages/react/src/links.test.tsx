@@ -1,4 +1,4 @@
-import { siteSettingsSchema } from "@goodfellow/core";
+import { siteSettingsSchema } from "@goodfellow-cms/core";
 import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it } from "vitest";
 import { SiteImage, SiteLink } from "./links.js";

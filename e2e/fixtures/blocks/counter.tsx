@@ -1,4 +1,4 @@
-import { classNameField } from "@goodfellow/react";
+import { classNameField } from "@goodfellow-cms/react";
 import type { ComponentConfig } from "@puckeditor/core";
 import { CounterButton } from "./counter-button";
 import { Disclosure as DisclosureView } from "./disclosure";

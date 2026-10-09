@@ -1,4 +1,4 @@
-import { credentialStorage, GitApiError, type GitHost, SignInError, type StorageLike } from "@goodfellow/core";
+import { credentialStorage, GitApiError, type GitHost, SignInError, type StorageLike } from "@goodfellow-cms/core";
 import { type ApiOptions, gitlabJson } from "./api.js";
 import { GitLabBackend } from "./backend.js";
 import { codeChallenge, type OAuthTokens, randomString, redirectUri, type TokenResponse, toTokens } from "./oauth.js";

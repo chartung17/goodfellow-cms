@@ -32,16 +32,16 @@ importers:
 
   docs:
     dependencies:
-      '@goodfellow/admin':
+      '@goodfellow-cms/admin':
         specifier: workspace:*
         version: link:../packages/admin
-      '@goodfellow/blocks':
+      '@goodfellow-cms/blocks':
         specifier: workspace:*
         version: link:../packages/blocks
-      '@goodfellow/core':
+      '@goodfellow-cms/core':
         specifier: workspace:*
         version: link:../packages/core
-      '@goodfellow/react':
+      '@goodfellow-cms/react':
         specifier: workspace:*
         version: link:../packages/react
       '@puckeditor/core':
@@ -66,28 +66,28 @@ importers:
 
   e2e:
     dependencies:
-      '@goodfellow/admin':
+      '@goodfellow-cms/admin':
         specifier: workspace:*
         version: link:../packages/admin
-      '@goodfellow/ai':
+      '@goodfellow-cms/ai':
         specifier: workspace:*
         version: link:../packages/ai
-      '@goodfellow/blocks':
+      '@goodfellow-cms/blocks':
         specifier: workspace:*
         version: link:../packages/blocks
-      '@goodfellow/core':
+      '@goodfellow-cms/core':
         specifier: workspace:*
         version: link:../packages/core
-      '@goodfellow/github':
+      '@goodfellow-cms/github':
         specifier: workspace:*
         version: link:../packages/github
-      '@goodfellow/gitlab':
+      '@goodfellow-cms/gitlab':
         specifier: workspace:*
         version: link:../packages/gitlab
-      '@goodfellow/react':
+      '@goodfellow-cms/react':
         specifier: workspace:*
         version: link:../packages/react
-      '@goodfellow/registry':
+      '@goodfellow-cms/registry':
         specifier: workspace:*
         version: link:../packages/registry
       '@puckeditor/core':
@@ -139,22 +139,22 @@ importers:
 
   examples/parish:
     dependencies:
-      '@goodfellow/admin':
+      '@goodfellow-cms/admin':
         specifier: workspace:*
         version: link:../../packages/admin
-      '@goodfellow/blocks':
+      '@goodfellow-cms/blocks':
         specifier: workspace:*
         version: link:../../packages/blocks
-      '@goodfellow/core':
+      '@goodfellow-cms/core':
         specifier: workspace:*
         version: link:../../packages/core
-      '@goodfellow/github':
+      '@goodfellow-cms/github':
         specifier: workspace:*
         version: link:../../packages/github
-      '@goodfellow/gitlab':
+      '@goodfellow-cms/gitlab':
         specifier: workspace:*
         version: link:../../packages/gitlab
-      '@goodfellow/react':
+      '@goodfellow-cms/react':
         specifier: workspace:*
         version: link:../../packages/react
       '@puckeditor/core':
@@ -224,16 +224,16 @@ importers:
       '@codemirror/view':
         specifier: 6.43.14
         version: 6.43.14
-      '@goodfellow/ai':
+      '@goodfellow-cms/ai':
         specifier: workspace:*
         version: link:../ai
-      '@goodfellow/core':
+      '@goodfellow-cms/core':
         specifier: workspace:*
         version: link:../core
-      '@goodfellow/react':
+      '@goodfellow-cms/react':
         specifier: workspace:*
         version: link:../react
-      '@goodfellow/registry':
+      '@goodfellow-cms/registry':
         specifier: workspace:*
         version: link:../registry
       codemirror:
@@ -270,14 +270,14 @@ importers:
       '@anthropic-ai/sdk':
         specifier: 0.131.0
         version: 0.131.0(zod@4.6.5)
-      '@goodfellow/core':
+      '@goodfellow-cms/core':
         specifier: workspace:*
         version: link:../core
     devDependencies:
-      '@goodfellow/blocks':
+      '@goodfellow-cms/blocks':
         specifier: workspace:*
         version: link:../blocks
-      '@goodfellow/react':
+      '@goodfellow-cms/react':
         specifier: workspace:*
         version: link:../react
       '@puckeditor/core':
@@ -292,10 +292,10 @@ importers:
 
   packages/blocks:
     dependencies:
-      '@goodfellow/core':
+      '@goodfellow-cms/core':
         specifier: workspace:*
         version: link:../core
-      '@goodfellow/react':
+      '@goodfellow-cms/react':
         specifier: workspace:*
         version: link:../react
       shiki:
@@ -320,7 +320,7 @@ importers:
 
   packages/cli:
     dependencies:
-      '@goodfellow/core':
+      '@goodfellow-cms/core':
         specifier: workspace:*
         version: link:../core
       '@tailwindcss/browser':
@@ -336,13 +336,13 @@ importers:
         specifier: 8.3.2
         version: 8.3.2(@types/node@22.20.5)(jiti@2.7.0)(yaml@2.9.1)
     devDependencies:
-      '@goodfellow/admin':
+      '@goodfellow-cms/admin':
         specifier: workspace:*
         version: link:../admin
-      '@goodfellow/blocks':
+      '@goodfellow-cms/blocks':
         specifier: workspace:*
         version: link:../blocks
-      '@goodfellow/react':
+      '@goodfellow-cms/react':
         specifier: workspace:*
         version: link:../react
       '@puckeditor/core':
@@ -388,26 +388,26 @@ importers:
 
   packages/create-goodfellow:
     dependencies:
-      '@goodfellow/core':
+      '@goodfellow-cms/core':
         specifier: workspace:*
         version: link:../core
     devDependencies:
-      '@goodfellow/example-parish':
+      '@goodfellow-cms/example-parish':
         specifier: workspace:*
         version: link:../../examples/parish
-      '@goodfellow/registry':
+      '@goodfellow-cms/registry':
         specifier: workspace:*
         version: link:../registry
-      '@goodfellow/template-next':
+      '@goodfellow-cms/template-next':
         specifier: workspace:*
         version: link:../../templates/next
-      '@goodfellow/template-starter':
+      '@goodfellow-cms/template-starter':
         specifier: workspace:*
         version: link:../../templates/starter
 
   packages/github:
     dependencies:
-      '@goodfellow/core':
+      '@goodfellow-cms/core':
         specifier: workspace:*
         version: link:../core
     devDependencies:
@@ -417,7 +417,7 @@ importers:
 
   packages/gitlab:
     dependencies:
-      '@goodfellow/core':
+      '@goodfellow-cms/core':
         specifier: workspace:*
         version: link:../core
     devDependencies:
@@ -427,14 +427,14 @@ importers:
 
   packages/next:
     dependencies:
-      '@goodfellow/core':
+      '@goodfellow-cms/core':
         specifier: workspace:*
         version: link:../core
-      '@goodfellow/react':
+      '@goodfellow-cms/react':
         specifier: workspace:*
         version: link:../react
     devDependencies:
-      '@goodfellow/admin':
+      '@goodfellow-cms/admin':
         specifier: workspace:*
         version: link:../admin
       '@puckeditor/core':
@@ -461,7 +461,7 @@ importers:
 
   packages/react:
     dependencies:
-      '@goodfellow/core':
+      '@goodfellow-cms/core':
         specifier: workspace:*
         version: link:../core
       tailwind-merge:
@@ -486,10 +486,10 @@ importers:
 
   packages/registry:
     devDependencies:
-      '@goodfellow/core':
+      '@goodfellow-cms/core':
         specifier: workspace:*
         version: link:../core
-      '@goodfellow/react':
+      '@goodfellow-cms/react':
         specifier: workspace:*
         version: link:../react
       '@puckeditor/core':
@@ -525,25 +525,25 @@ importers:
 
   templates/next:
     dependencies:
-      '@goodfellow/admin':
+      '@goodfellow-cms/admin':
         specifier: workspace:*
         version: link:../../packages/admin
-      '@goodfellow/blocks':
+      '@goodfellow-cms/blocks':
         specifier: workspace:*
         version: link:../../packages/blocks
-      '@goodfellow/core':
+      '@goodfellow-cms/core':
         specifier: workspace:*
         version: link:../../packages/core
-      '@goodfellow/github':
+      '@goodfellow-cms/github':
         specifier: workspace:*
         version: link:../../packages/github
-      '@goodfellow/gitlab':
+      '@goodfellow-cms/gitlab':
         specifier: workspace:*
         version: link:../../packages/gitlab
-      '@goodfellow/next':
+      '@goodfellow-cms/next':
         specifier: workspace:*
         version: link:../../packages/next
-      '@goodfellow/react':
+      '@goodfellow-cms/react':
         specifier: workspace:*
         version: link:../../packages/react
       '@puckeditor/core':
@@ -604,22 +604,22 @@ importers:
 
   templates/starter:
     dependencies:
-      '@goodfellow/admin':
+      '@goodfellow-cms/admin':
         specifier: workspace:*
         version: link:../../packages/admin
-      '@goodfellow/blocks':
+      '@goodfellow-cms/blocks':
         specifier: workspace:*
         version: link:../../packages/blocks
-      '@goodfellow/core':
+      '@goodfellow-cms/core':
         specifier: workspace:*
         version: link:../../packages/core
-      '@goodfellow/github':
+      '@goodfellow-cms/github':
         specifier: workspace:*
         version: link:../../packages/github
-      '@goodfellow/gitlab':
+      '@goodfellow-cms/gitlab':
         specifier: workspace:*
         version: link:../../packages/gitlab
-      '@goodfellow/react':
+      '@goodfellow-cms/react':
         specifier: workspace:*
         version: link:../../packages/react
       '@puckeditor/core':

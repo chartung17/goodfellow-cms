@@ -1,4 +1,4 @@
-import { entryTitle, MEDIA_DIR, type SiteContent } from "@goodfellow/core";
+import { entryTitle, MEDIA_DIR, type SiteContent } from "@goodfellow-cms/core";
 import { pageTitle, slugify, uniqueName } from "./changes.js";
 
 /** Files in `public/media/` are served from `/media/` on the site. */

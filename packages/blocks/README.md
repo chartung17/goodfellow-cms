@@ -1,4 +1,4 @@
-# @goodfellow/blocks
+# @goodfellow-cms/blocks
 
 The built-in blocks: sections, grids and spacing; headings, text, buttons, images, code and contact details; menus, the site's logo and search; and blocks that list and show collections. They're styled with Tailwind and the site's theme only.
 

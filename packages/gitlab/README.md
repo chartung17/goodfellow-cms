@@ -1,9 +1,9 @@
-# @goodfellow/gitlab
+# @goodfellow-cms/gitlab
 
 Edit a Goodfellow site stored on GitLab, straight from the browser: sign-in with an access token, publishing as single commits, conflict checks and deploy status.
 
 ```tsx
-import { gitlab } from "@goodfellow/gitlab";
+import { gitlab } from "@goodfellow-cms/gitlab";
 
 export default defineConfig({ blocks, backend: gitlab({ project: "your-name/your-site" }) });
 ```

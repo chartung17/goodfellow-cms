@@ -1,4 +1,4 @@
-import { allPages, type Collection, type Entry, entryAddress, entryTitle } from "@goodfellow/core";
+import { allPages, type Collection, type Entry, entryAddress, entryTitle } from "@goodfellow-cms/core";
 import type { Data } from "@puckeditor/core";
 import { type FormEvent, type ReactNode, useState } from "react";
 import { useAdmin, useSiteContent } from "./admin-context.js";

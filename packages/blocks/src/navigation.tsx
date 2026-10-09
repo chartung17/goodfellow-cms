@@ -1,4 +1,4 @@
-import { classNameField, cx, SiteImage, SiteLink, useSite } from "@goodfellow/react";
+import { classNameField, cx, SiteImage, SiteLink, useSite } from "@goodfellow-cms/react";
 import type { ComponentConfig } from "@puckeditor/core";
 import { options } from "./options.js";
 

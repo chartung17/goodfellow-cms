@@ -1,4 +1,4 @@
-# @goodfellow/react
+# @goodfellow-cms/react
 
 Renders Goodfellow pages with React, and gives blocks what they need: `useSite()`, `SiteLink`, `SiteImage`, `cx()`, CSS class and media fields, and Client Components that run in the browser.
 

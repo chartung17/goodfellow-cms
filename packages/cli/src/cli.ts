@@ -1,6 +1,6 @@
 import { parseArgs } from "node:util";
-import { ContentError } from "@goodfellow/core";
-import { writeSearchIndex } from "@goodfellow/core/search-index";
+import { ContentError } from "@goodfellow-cms/core";
+import { writeSearchIndex } from "@goodfellow-cms/core/search-index";
 import { build } from "./build.js";
 import { dev } from "./dev.js";
 import { preview } from "./preview.js";

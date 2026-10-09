@@ -1,9 +1,9 @@
-# @goodfellow/github
+# @goodfellow-cms/github
 
 Edit a Goodfellow site stored on GitHub, straight from the browser: sign-in with an access token, publishing as single commits, conflict checks and deploy status.
 
 ```tsx
-import { github } from "@goodfellow/github";
+import { github } from "@goodfellow-cms/github";
 
 export default defineConfig({ blocks, backend: github({ repo: "your-name/your-site" }) });
 ```

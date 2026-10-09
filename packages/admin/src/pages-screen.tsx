@@ -1,4 +1,4 @@
-import { allPages, type Page } from "@goodfellow/core";
+import { allPages, type Page } from "@goodfellow-cms/core";
 import { type FormEvent, useState } from "react";
 import { useAdmin, useSiteContent } from "./admin-context.js";
 import {

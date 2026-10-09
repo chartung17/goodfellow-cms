@@ -1,6 +1,6 @@
 "use client";
 
-import { SiteLink, useSite } from "@goodfellow/react";
+import { SiteLink, useSite } from "@goodfellow-cms/react";
 import { type ReactNode, useState } from "react";
 import { useShout } from "./shout";
 

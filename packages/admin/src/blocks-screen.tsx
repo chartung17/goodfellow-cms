@@ -10,7 +10,7 @@ import {
   planBlockChanges,
   RegistryError,
   type RegistryProblem,
-} from "@goodfellow/core";
+} from "@goodfellow-cms/core";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useAdmin, useSiteContent } from "./admin-context.js";
 import { useUnsavedChanges } from "./router.js";

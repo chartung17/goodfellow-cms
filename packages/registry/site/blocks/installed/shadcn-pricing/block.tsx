@@ -1,4 +1,4 @@
-import { classNameField, cx, SiteLink } from "@goodfellow/react";
+import { classNameField, cx, SiteLink } from "@goodfellow-cms/react";
 import type { ComponentConfig } from "@puckeditor/core";
 import { CheckIcon } from "lucide-react";
 import { Badge } from "@/components/ui/badge";

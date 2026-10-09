@@ -1,4 +1,4 @@
-import { type GoodfellowConfig, type Page, type SiteContent, siteSettingsSchema } from "@goodfellow/core";
+import { type GoodfellowConfig, type Page, type SiteContent, siteSettingsSchema } from "@goodfellow-cms/core";
 import { createContext, memo, type ReactNode, useId, useState } from "react";
 import { describe, expect, it } from "vitest";
 import { fillSlots, island } from "./island.js";

@@ -1,7 +1,7 @@
-import { blocks, categories } from "@goodfellow/blocks";
-import { defineConfig } from "@goodfellow/core";
-// import { github } from "@goodfellow/github";
-// import { gitlab } from "@goodfellow/gitlab";
+import { blocks, categories } from "@goodfellow-cms/blocks";
+import { defineConfig } from "@goodfellow-cms/core";
+// import { github } from "@goodfellow-cms/github";
+// import { gitlab } from "@goodfellow-cms/gitlab";
 import { installedBlocks, installedCategories } from "./blocks/installed";
 import { MassTimes } from "./blocks/mass-times";
 import { Notice } from "./blocks/notice";

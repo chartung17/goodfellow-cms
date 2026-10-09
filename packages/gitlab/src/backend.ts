@@ -9,7 +9,7 @@ import {
   type GitUser,
   SignInError,
   type WriteOptions,
-} from "@goodfellow/core";
+} from "@goodfellow-cms/core";
 import { type ApiOptions, gitlabJson, gitlabRequest } from "./api.js";
 
 const PAGE_SIZE = 100;

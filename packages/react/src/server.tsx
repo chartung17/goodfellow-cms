@@ -6,7 +6,7 @@ import {
   type Page,
   type SiteContent,
   themeToCss,
-} from "@goodfellow/core";
+} from "@goodfellow-cms/core";
 import { prerender } from "react-dom/static";
 import { BodyCode, HeadCode } from "./custom-code.js";
 import { fillSlots } from "./island.js";

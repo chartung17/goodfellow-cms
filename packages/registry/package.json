@@ -1,5 +1,5 @@
 {
-  "name": "@goodfellow/registry",
+  "name": "@goodfellow-cms/registry",
   "version": "0.0.0",
   "description": "Goodfellow's block registry: blocks built with shadcn/ui, which sites install from the admin panel.",
   "keywords": [
@@ -34,8 +34,8 @@
     "update-shadcn": "node scripts/snapshot.mjs"
   },
   "devDependencies": {
-    "@goodfellow/core": "workspace:*",
-    "@goodfellow/react": "workspace:*",
+    "@goodfellow-cms/core": "workspace:*",
+    "@goodfellow-cms/react": "workspace:*",
     "@puckeditor/core": "0.23.0",
     "@types/react": "^19.2.0",
     "@types/react-dom": "^19.2.0",

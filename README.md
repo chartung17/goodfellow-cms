@@ -95,11 +95,11 @@ To put a site online, follow [the starter's README](templates/starter/README.md)
 
 ### Next.js
 
-`@goodfellow/next` puts a Goodfellow site in a Next.js app (App Router, Next.js 16), exported as static files so the same free hosts serve it. [The Next.js starter](templates/next/README.md) has it all set up:
+`@goodfellow-cms/next` puts a Goodfellow site in a Next.js app (App Router, Next.js 16), exported as static files so the same free hosts serve it. [The Next.js starter](templates/next/README.md) has it all set up:
 
 - `withGoodfellow()` in `next.config.ts` exports static files with a folder per page, serves the site from `basePath` (or the `GOODFELLOW_BASE` environment variable, as `goodfellow build` does), and in `next dev` runs the admin panel's local backend, which saves to the files on disk. The local backend is never part of a build.
 - `goodfellowPages(config)` gives the routes their parts: `Layout` for `app/(site)/layout.tsx`, which shows the header and footer once around every page, so they stay as they are when moving between pages (menus mark the current page in the browser, since a layout doesn't know it); `Page`, `generateStaticParams` and `generateMetadata` for `app/(site)/[[...path]]/page.tsx`; `NotFound` for `app/not-found.tsx`, with the header and footer of its own, since Next.js shows it outside the layout; `sitemap` and `robots`, and `demoContent` for `app/admin/demo-content.json/route.ts`, which serves a [demo's](#demo-mode) copy of the content (an empty file on other sites, since a static export can't leave a route out).
-- `<GoodfellowAdmin config={config} />` from `@goodfellow/next/admin` is the admin panel, in a Client Component at `app/admin/page.tsx`.
+- `<GoodfellowAdmin config={config} />` from `@goodfellow-cms/next/admin` is the admin panel, in a Client Component at `app/admin/page.tsx`.
 - Pages render as Server Components. Blocks' links to the site's pages use `next/link`, so moving between pages doesn't reload, and the site's images use `next/image` with their sizes filled in. Images are served as they are unless the site sets a [custom image loader](https://nextjs.org/docs/app/api-reference/components/image#loader), since a static export can't resize them on request.
 - Blocks can render Client Components (`"use client"`) with any React hooks, and they run in the browser. They can read the site with `useSite()`.
 - The starter's build script runs `goodfellow-next finish out` after `next build`. It writes the [search index](#search) if a page has a Search block, and on Windows it moves Next.js's prefetch files to where browsers look for them (Next.js 16 writes them into folders there, so moving between pages would fetch files that don't exist). `goodfellow-next index out` only writes the index.
@@ -224,7 +224,7 @@ They run in the browser however the site is built. With `goodfellow build` and `
 - **Props** must be plain values: text, numbers, `true` and `false`, and lists and objects of these. A block can't pass a function, such as an `onClick` handler, so handlers go inside the Client Component.
 - **Content** passed as `children` (or any prop holding JSX) is rendered by the block, and stays as it is in the browser. Client Components in it run on their own.
 - **`useSite()`** works in Client Components, so pages with them include the site's settings, menus and collections for the browser. Use `SiteLink` and `SiteImage` for links and images, as in any block.
-- **Packages:** Client Components from packages of blocks (packages that use `@goodfellow/react`) become islands like the site's own. To use another package's Client Component in a block, re-export it from a `"use client"` file of the site's: `"use client"; export { Carousel } from "some-carousel";`.
+- **Packages:** Client Components from packages of blocks (packages that use `@goodfellow-cms/react`) become islands like the site's own. To use another package's Client Component in a block, re-export it from a `"use client"` file of the site's: `"use client"; export { Carousel } from "some-carousel";`.
 
 Each page with a Client Component loads React, so use HTML and CSS where they're enough: `<details>` for something that opens and closes, `:hover` and `:focus-within` for menus. Islands also have [limits](#nextjs) that Next.js doesn't, such as not sharing React context with each other.
 
@@ -249,7 +249,7 @@ Admins mark blocks to add and remove, then publish them together in one save, wh
 
 Since the blocks' code is in the site, a developer can change it like any other code. Removing a block keeps files someone has changed.
 
-Developers can publish registries of Goodfellow blocks built with other component libraries, in the format [described in `@goodfellow/registry`](packages/registry/README.md#publishing-your-own-registry). A site offers blocks only from Goodfellow's registry and the registries its `goodfellow.config.tsx` lists, since a block's code runs in the admin panel:
+Developers can publish registries of Goodfellow blocks built with other component libraries, in the format [described in `@goodfellow-cms/registry`](packages/registry/README.md#publishing-your-own-registry). A site offers blocks only from Goodfellow's registry and the registries its `goodfellow.config.tsx` lists, since a block's code runs in the admin panel:
 
 ```tsx
 registries: { "@acme": "https://acme.example/r/{name}.json" },
@@ -287,17 +287,17 @@ This is a pnpm workspace managed with Turborepo.
 
 | Path | Package | Purpose | Status |
 |---|---|---|---|
-| `packages/core` | `@goodfellow/core` | Config, content model, collections, migrations, the `GitBackend` interface and, later, Puck data diff and merge. No React or DOM. `@goodfellow/core/node` reads sites from disk and runs the local backend. | Started |
-| `packages/github` | `@goodfellow/github` | GitHub backend and token sign-in | Started |
-| `packages/gitlab` | `@goodfellow/gitlab` | GitLab backend, with OAuth (PKCE) and token sign-in | Started |
-| `packages/react` | `@goodfellow/react` | Page renderer: layout, class names, theme and collection templates | Started |
-| `packages/admin` | `@goodfellow/admin` | The `<Admin>` editor app | Started |
-| `packages/ai` | `@goodfellow/ai` | The AI assistant's requests, answer checking and AI service clients. No React. | Started |
-| `packages/blocks` | `@goodfellow/blocks` | Built-in, library-agnostic blocks | Started |
+| `packages/core` | `@goodfellow-cms/core` | Config, content model, collections, migrations, the `GitBackend` interface and, later, Puck data diff and merge. No React or DOM. `@goodfellow-cms/core/node` reads sites from disk and runs the local backend. | Started |
+| `packages/github` | `@goodfellow-cms/github` | GitHub backend and token sign-in | Started |
+| `packages/gitlab` | `@goodfellow-cms/gitlab` | GitLab backend, with OAuth (PKCE) and token sign-in | Started |
+| `packages/react` | `@goodfellow-cms/react` | Page renderer: layout, class names, theme and collection templates | Started |
+| `packages/admin` | `@goodfellow-cms/admin` | The `<Admin>` editor app | Started |
+| `packages/ai` | `@goodfellow-cms/ai` | The AI assistant's requests, answer checking and AI service clients. No React. | Started |
+| `packages/blocks` | `@goodfellow-cms/blocks` | Built-in, library-agnostic blocks | Started |
 | `packages/cli` | `goodfellow` | `goodfellow dev`, `build` and `preview` | Started |
-| `packages/next` | `@goodfellow/next` | Next.js adapter: pages as Server Components, static export, the admin panel | Started |
+| `packages/next` | `@goodfellow-cms/next` | Next.js adapter: pages as Server Components, static export, the admin panel | Started |
 | `docs` | | Goodfellow's documentation site, built with Goodfellow | Started |
-| `packages/registry` | `@goodfellow/registry` | Goodfellow's block registry: blocks built with shadcn/ui, and the format for other registries | Started |
+| `packages/registry` | `@goodfellow-cms/registry` | Goodfellow's block registry: blocks built with shadcn/ui, and the format for other registries | Started |
 | `packages/create-goodfellow` | `create-goodfellow` | Creates a new site from the starter or an example | Started |
 | `templates/starter` | | The starter site copied by `create-goodfellow` | Started |
 | `templates/next` | | The starter as a Next.js app | Started |

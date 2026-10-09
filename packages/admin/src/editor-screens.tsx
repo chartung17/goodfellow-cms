@@ -1,4 +1,4 @@
-import { FOOTER_FILE, HEADER_FILE } from "@goodfellow/core";
+import { FOOTER_FILE, HEADER_FILE } from "@goodfellow-cms/core";
 import type { Data } from "@puckeditor/core";
 import { useSiteContent } from "./admin-context.js";
 import { layoutFileChange, pageFileChange, pageTitle } from "./changes.js";

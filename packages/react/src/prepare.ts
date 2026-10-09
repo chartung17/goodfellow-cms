@@ -5,7 +5,7 @@ import {
   normalizeBase,
   type Page,
   type SiteContent,
-} from "@goodfellow/core";
+} from "@goodfellow-cms/core";
 import type { Config, Data, Metadata } from "@puckeditor/core";
 // The server entry works everywhere and has no browser-only code, so Server Components can prepare pages too.
 import { migrate, resolveAllData } from "@puckeditor/core/rsc";

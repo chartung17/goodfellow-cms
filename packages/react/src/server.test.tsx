@@ -5,7 +5,7 @@ import {
   type Page,
   type SiteContent,
   siteSettingsSchema,
-} from "@goodfellow/core";
+} from "@goodfellow-cms/core";
 import type { ComponentConfig } from "@puckeditor/core";
 import { describe, expect, it } from "vitest";
 import { createPageRenderer } from "./server.js";

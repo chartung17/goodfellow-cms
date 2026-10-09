@@ -1,6 +1,6 @@
 "use client";
 
-import { SiteImage } from "@goodfellow/react";
+import { SiteImage } from "@goodfellow-cms/react";
 import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious } from "@/components/ui/carousel";
 
 /** The pictures, one at a time, with previous and next buttons. */

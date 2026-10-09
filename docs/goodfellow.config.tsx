@@ -1,5 +1,5 @@
-import { blocks, categories } from "@goodfellow/blocks";
-import { defineConfig } from "@goodfellow/core";
+import { blocks, categories } from "@goodfellow-cms/blocks";
+import { defineConfig } from "@goodfellow-cms/core";
 import { DocsLayout } from "./blocks/docs-layout";
 
 export default defineConfig({

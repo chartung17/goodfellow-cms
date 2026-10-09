@@ -1,4 +1,4 @@
-# @goodfellow/ai
+# @goodfellow-cms/ai
 
 The AI assistant: it drafts and rewrites pages with Claude, OpenAI or a free AI service, called straight from the editor's browser with the editor's own key.
 

@@ -19,6 +19,6 @@
     "hooks": "@/hooks"
   },
   "registries": {
-    "@goodfellow": "https://cdn.jsdelivr.net/npm/@goodfellow/registry@latest/r/{name}.json"
+    "@goodfellow": "https://cdn.jsdelivr.net/npm/@goodfellow-cms/registry@latest/r/{name}.json"
   }
 }

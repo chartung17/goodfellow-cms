@@ -23,7 +23,7 @@ Pages mark their main content with Pagefind's `data-pagefind-body`, so the heade
 A block from a [block registry](/docs/block-registries), or a site's own block, can use the same index: render `data-goodfellow-search` on its outermost element, so builds index the site, and load Pagefind from `/pagefind/pagefind.js`, adding the site's base path with `withBase()`.
 
 ```tsx
-import { SEARCH_ATTRIBUTE } from "@goodfellow/core";
+import { SEARCH_ATTRIBUTE } from "@goodfellow-cms/core";
 
 render: ({ className }) => <div className={className} {...{ [SEARCH_ATTRIBUTE]: "" }}><MySearch /></div>
 ```

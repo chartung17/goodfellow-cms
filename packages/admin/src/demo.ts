@@ -7,7 +7,7 @@ import {
   demoContentStore,
   demoStore,
   parseDemoContent,
-} from "@goodfellow/core";
+} from "@goodfellow-cms/core";
 import { mediaUrl } from "./media.js";
 
 const DATABASE = "goodfellow-demo";

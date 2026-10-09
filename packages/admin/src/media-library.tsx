@@ -1,4 +1,4 @@
-import { type FileChange, MEDIA_DIR } from "@goodfellow/core";
+import { type FileChange, MEDIA_DIR } from "@goodfellow-cms/core";
 import { type ReactNode, useEffect, useId, useMemo, useRef, useState } from "react";
 import { useAdmin, useSiteContent } from "./admin-context.js";
 import { extensionOf, fileName, mediaKind, mediaPath, mediaUrl, mediaUsage, uploadName } from "./media.js";

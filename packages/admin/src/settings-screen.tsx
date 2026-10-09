@@ -11,8 +11,8 @@ import {
   siteSettingsSchema,
   THEME_COLORS,
   type ThemeColor,
-} from "@goodfellow/core";
-import { PageBody, type SiteContextValue } from "@goodfellow/react";
+} from "@goodfellow-cms/core";
+import { PageBody, type SiteContextValue } from "@goodfellow-cms/react";
 import type { Data } from "@puckeditor/core";
 import { useCallback, useMemo, useState } from "react";
 import { useAdmin, useSiteContent } from "./admin-context.js";

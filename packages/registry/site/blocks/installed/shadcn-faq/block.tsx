@@ -1,4 +1,4 @@
-import { classNameField, cx } from "@goodfellow/react";
+import { classNameField, cx } from "@goodfellow-cms/react";
 import type { ComponentConfig, RichText } from "@puckeditor/core";
 import { FaqList } from "./faq-list";
 

@@ -1,5 +1,5 @@
-import { blocks, categories } from "@goodfellow/blocks";
-import { createPuckConfig } from "@goodfellow/react";
+import { blocks, categories } from "@goodfellow-cms/blocks";
+import { createPuckConfig } from "@goodfellow-cms/react";
 import type { Fields } from "@puckeditor/core";
 import { describe, expect, it } from "vitest";
 import { blocksSchema, toContent, toFlatBlocks, toValues, valuesSchema } from "./schema.js";

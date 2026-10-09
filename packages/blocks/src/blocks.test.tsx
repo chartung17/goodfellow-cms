@@ -5,9 +5,9 @@ import {
   type Page,
   type SiteContent,
   siteSettingsSchema,
-} from "@goodfellow/core";
-import { createPuckConfig } from "@goodfellow/react";
-import { createPageRenderer } from "@goodfellow/react/server";
+} from "@goodfellow-cms/core";
+import { createPuckConfig } from "@goodfellow-cms/react";
+import { createPageRenderer } from "@goodfellow-cms/react/server";
 import { describe, expect, it } from "vitest";
 import { blocks, categories, listedEntries } from "./index.js";
 

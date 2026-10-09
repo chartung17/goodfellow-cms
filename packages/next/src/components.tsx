@@ -1,7 +1,7 @@
 "use client";
 
-import type { ImageSize } from "@goodfellow/core";
-import type { SiteImageProps, SiteLinkProps } from "@goodfellow/react";
+import type { ImageSize } from "@goodfellow-cms/core";
+import type { SiteImageProps, SiteLinkProps } from "@goodfellow-cms/react";
 import Image from "next/image";
 import Link from "next/link";
 import { usePathname } from "next/navigation";

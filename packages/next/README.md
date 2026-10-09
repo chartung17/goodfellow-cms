@@ -1,4 +1,4 @@
-# @goodfellow/next
+# @goodfellow-cms/next
 
 Goodfellow pages and the admin panel in a Next.js App Router site, exported as static files. Links use `next/link` and images `next/image`.
 

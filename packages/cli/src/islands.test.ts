@@ -16,7 +16,7 @@ async function exportsOf(module: Record<string, unknown>, exports: ClientModuleE
   const code = islandModule("/site/blocks/a.tsx", "blocks/a.tsx", exports)
     .replace('import * as __gf_module from "/site/blocks/a.tsx";', `const __gf_module = globalThis.__gfTestModule;`)
     .replace(
-      'import { island as __gf_island } from "@goodfellow/react/island";',
+      'import { island as __gf_island } from "@goodfellow-cms/react/island";',
       "const __gf_island = (value, module, name) => ({ value, module, name });",
     )
     .replace('export * from "/site/blocks/a.tsx";', "");
@@ -69,10 +69,10 @@ describe("islandModule", () => {
 
 describe("insideDir and inNodeModules", () => {
   it("compare Vite's module ids with Node's paths on Windows, where one has forward slashes and the other backslashes", () => {
-    const dir = "C:\\Users\\me\\site\\node_modules\\@goodfellow\\react";
-    expect(insideDir("C:/Users/me/site/node_modules/@goodfellow/react/dist/site-context.js", dir)).toBe(true);
-    expect(insideDir("c:/Users/me/site/node_modules/@goodfellow/react/dist/site-context.js", dir)).toBe(true);
-    expect(insideDir("C:/Users/me/site/node_modules/@goodfellow/react-extra/index.js", dir)).toBe(false);
+    const dir = "C:\\Users\\me\\site\\node_modules\\@goodfellow-cms\\react";
+    expect(insideDir("C:/Users/me/site/node_modules/@goodfellow-cms/react/dist/site-context.js", dir)).toBe(true);
+    expect(insideDir("c:/Users/me/site/node_modules/@goodfellow-cms/react/dist/site-context.js", dir)).toBe(true);
+    expect(insideDir("C:/Users/me/site/node_modules/@goodfellow-cms/react-extra/index.js", dir)).toBe(false);
     expect(insideDir("C:/Users/me/site/blocks/counter.tsx", dir)).toBe(false);
     expect(inNodeModules("C:/Users/me/site/node_modules/radix-ui/dist/index.mjs")).toBe(true);
     expect(inNodeModules("C:\\Users\\me\\site\\node_modules\\radix-ui\\dist\\index.mjs")).toBe(true);
@@ -93,22 +93,26 @@ describe("blockPackages", () => {
     root = await mkdtemp(join(tmpdir(), "goodfellow-packs-"));
     const pkg = (name: string, extra: object) =>
       writeFile(join(root, "node_modules", name, "package.json"), JSON.stringify({ name, ...extra }));
-    for (const name of ["@acme/blocks", "left-pad", "@goodfellow/admin"]) {
+    for (const name of ["@acme/blocks", "left-pad", "@goodfellow-cms/admin"]) {
       await mkdir(join(root, "node_modules", name), { recursive: true });
     }
-    await pkg("@acme/blocks", { peerDependencies: { "@goodfellow/react": "^1.0.0" } });
+    await pkg("@acme/blocks", { peerDependencies: { "@goodfellow-cms/react": "^1.0.0" } });
     await pkg("left-pad", {});
-    await pkg("@goodfellow/admin", { dependencies: { "@goodfellow/react": "1.0.0" } });
+    await pkg("@goodfellow-cms/admin", { dependencies: { "@goodfellow-cms/react": "1.0.0" } });
     // The workspace's own block pack, linked like pnpm links it.
-    await symlink(resolve(import.meta.dirname, "../../blocks"), join(root, "node_modules/@goodfellow/blocks"), "dir");
+    await symlink(
+      resolve(import.meta.dirname, "../../blocks"),
+      join(root, "node_modules/@goodfellow-cms/blocks"),
+      "dir",
+    );
     await writeFile(
       join(root, "package.json"),
       JSON.stringify({
         dependencies: {
           "@acme/blocks": "1.0.0",
           "left-pad": "1.0.0",
-          "@goodfellow/admin": "1.0.0",
-          "@goodfellow/blocks": "1.0.0",
+          "@goodfellow-cms/admin": "1.0.0",
+          "@goodfellow-cms/blocks": "1.0.0",
         },
         devDependencies: { missing: "1.0.0" },
       }),
@@ -117,7 +121,7 @@ describe("blockPackages", () => {
 
   afterAll(() => rm(root, { recursive: true, force: true }));
 
-  it("finds the site's packages that build on @goodfellow/react", () => {
-    expect(blockPackages(root)).toEqual(["@acme/blocks", "@goodfellow/blocks"]);
+  it("finds the site's packages that build on @goodfellow-cms/react", () => {
+    expect(blockPackages(root)).toEqual(["@acme/blocks", "@goodfellow-cms/blocks"]);
   });
 });

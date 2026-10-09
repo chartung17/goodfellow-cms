@@ -1,7 +1,7 @@
 "use client";
 
-import { SEARCH_INDEX_DIR, withBase } from "@goodfellow/core";
-import { SiteLink, useSite } from "@goodfellow/react";
+import { SEARCH_INDEX_DIR, withBase } from "@goodfellow-cms/core";
+import { SiteLink, useSite } from "@goodfellow-cms/react";
 import { useEffect, useId, useRef, useState } from "react";
 
 interface Result {

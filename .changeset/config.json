@@ -4,15 +4,15 @@
   "commit": false,
   "fixed": [
     [
-      "@goodfellow/admin",
-      "@goodfellow/ai",
-      "@goodfellow/blocks",
-      "@goodfellow/core",
-      "@goodfellow/github",
-      "@goodfellow/gitlab",
-      "@goodfellow/next",
-      "@goodfellow/react",
-      "@goodfellow/registry",
+      "@goodfellow-cms/admin",
+      "@goodfellow-cms/ai",
+      "@goodfellow-cms/blocks",
+      "@goodfellow-cms/core",
+      "@goodfellow-cms/github",
+      "@goodfellow-cms/gitlab",
+      "@goodfellow-cms/next",
+      "@goodfellow-cms/react",
+      "@goodfellow-cms/registry",
       "create-goodfellow",
       "goodfellow"
     ]
@@ -22,10 +22,10 @@
   "baseBranch": "master",
   "updateInternalDependencies": "patch",
   "ignore": [
-    "@goodfellow/docs",
-    "@goodfellow/e2e",
-    "@goodfellow/example-parish",
-    "@goodfellow/template-next",
-    "@goodfellow/template-starter"
+    "@goodfellow-cms/docs",
+    "@goodfellow-cms/e2e",
+    "@goodfellow-cms/example-parish",
+    "@goodfellow-cms/template-next",
+    "@goodfellow-cms/template-starter"
   ]
 }

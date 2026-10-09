@@ -1,5 +1,5 @@
 {
-  "name": "@goodfellow/template-next",
+  "name": "@goodfellow-cms/template-next",
   "version": "0.0.0",
   "private": true,
   "type": "module",
@@ -9,13 +9,13 @@
     "typecheck": "tsc -p tsconfig.json"
   },
   "dependencies": {
-    "@goodfellow/admin": "workspace:*",
-    "@goodfellow/blocks": "workspace:*",
-    "@goodfellow/core": "workspace:*",
-    "@goodfellow/github": "workspace:*",
-    "@goodfellow/gitlab": "workspace:*",
-    "@goodfellow/next": "workspace:*",
-    "@goodfellow/react": "workspace:*",
+    "@goodfellow-cms/admin": "workspace:*",
+    "@goodfellow-cms/blocks": "workspace:*",
+    "@goodfellow-cms/core": "workspace:*",
+    "@goodfellow-cms/github": "workspace:*",
+    "@goodfellow-cms/gitlab": "workspace:*",
+    "@goodfellow-cms/next": "workspace:*",
+    "@goodfellow-cms/react": "workspace:*",
     "@puckeditor/core": "0.23.0",
     "class-variance-authority": "0.7.1",
     "clsx": "2.1.1",

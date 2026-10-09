@@ -1,5 +1,5 @@
 // Updates src/google-fonts.ts, the fonts Site settings offers, from Google Fonts' list of families.
-// Run with `pnpm --filter @goodfellow/admin update-fonts`, and commit the result.
+// Run with `pnpm --filter @goodfellow-cms/admin update-fonts`, and commit the result.
 import { writeFile } from "node:fs/promises";
 import { fileURLToPath } from "node:url";
 

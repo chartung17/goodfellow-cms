@@ -57,8 +57,8 @@ jobs:
         uses: actions/configure-pages@v5
       - run: pnpm install --frozen-lockfile
       # The packages the docs site is built with, then the site itself, served from /repository-name/.
-      - run: pnpm turbo run build --filter='@goodfellow/docs^...'
-      - run: pnpm --filter @goodfellow/docs exec goodfellow build --base "${{ steps.pages.outputs.base_path }}/"
+      - run: pnpm turbo run build --filter='@goodfellow-cms/docs^...'
+      - run: pnpm --filter @goodfellow-cms/docs exec goodfellow build --base "${{ steps.pages.outputs.base_path }}/"
       - uses: actions/upload-pages-artifact@v4
         with:
           path: docs/dist

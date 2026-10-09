@@ -1,5 +1,5 @@
 {
-  "name": "@goodfellow/react",
+  "name": "@goodfellow-cms/react",
   "version": "0.0.0",
   "description": "Renders Goodfellow pages with React.",
   "keywords": [
@@ -52,7 +52,7 @@
     "test": "vitest run"
   },
   "dependencies": {
-    "@goodfellow/core": "workspace:*",
+    "@goodfellow-cms/core": "workspace:*",
     "tailwind-merge": "3.7.0"
   },
   "peerDependencies": {

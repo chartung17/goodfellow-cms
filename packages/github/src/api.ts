@@ -1,4 +1,4 @@
-import { GitApiError, SignInError } from "@goodfellow/core";
+import { GitApiError, SignInError } from "@goodfellow-cms/core";
 
 export interface ApiOptions {
   apiUrl: string;

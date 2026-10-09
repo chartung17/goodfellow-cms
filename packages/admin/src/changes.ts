@@ -27,7 +27,7 @@ import {
   serializeMarkdownEntry,
   storedCode,
   TITLE_FIELD,
-} from "@goodfellow/core";
+} from "@goodfellow-cms/core";
 import type { Data } from "@puckeditor/core";
 import { formattedHtml, htmlToMarkdown } from "./markdown-text.js";
 

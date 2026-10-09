@@ -1,6 +1,6 @@
 "use client";
 
-import { GoodfellowAdmin } from "@goodfellow/next/admin";
+import { GoodfellowAdmin } from "@goodfellow-cms/next/admin";
 import config from "@/goodfellow.config";
 
 export default function AdminPage() {

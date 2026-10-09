@@ -142,7 +142,7 @@ describe.each([
 ])("%s", (_name, root) => {
   it("stores content files in the canonical format the admin panel writes", async () => {
     const { collectionFileSchema, parseMarkdownEntry, serializeContent, serializeMarkdownEntry } = await import(
-      "@goodfellow/core"
+      "@goodfellow-cms/core"
     );
     const contentDir = join(root, "content");
     const files = (await readdir(contentDir, { recursive: true })).map((file) => file.split("\\").join("/"));
@@ -199,7 +199,7 @@ describe.each([
   ["Next.js starter", resolve(import.meta.dirname, "../../../templates/next")],
 ])("%s", (_name, root) => {
   it("is ready for blocks from block registries", async () => {
-    const { EMPTY_RECORD, installedIndex, REGISTRY_PACKAGES } = await import("@goodfellow/core");
+    const { EMPTY_RECORD, installedIndex, REGISTRY_PACKAGES } = await import("@goodfellow-cms/core");
     const pkg = JSON.parse(await readFile(join(root, "package.json"), "utf8")) as { dependencies: object };
     // The admin panel can't add packages, so sites have every one the registry's blocks use.
     expect(Object.keys(pkg.dependencies)).toEqual(expect.arrayContaining([...REGISTRY_PACKAGES]));

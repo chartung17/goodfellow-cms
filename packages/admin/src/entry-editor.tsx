@@ -1,4 +1,4 @@
-import type { AiFieldHint } from "@goodfellow/ai";
+import type { AiFieldHint } from "@goodfellow-cms/ai";
 import {
   type Collection,
   type CollectionField,
@@ -7,8 +7,8 @@ import {
   findEntry,
   isEmptyValue,
   type SiteContent,
-} from "@goodfellow/core";
-import { applyEntry, type SiteContextValue, SiteProvider, siteMetadata } from "@goodfellow/react";
+} from "@goodfellow-cms/core";
+import { applyEntry, type SiteContextValue, SiteProvider, siteMetadata } from "@goodfellow-cms/react";
 import {
   AutoField,
   type Config,

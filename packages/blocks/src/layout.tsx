@@ -1,5 +1,5 @@
-import { withBase } from "@goodfellow/core";
-import { classNameField, cx, mediaField, useSite } from "@goodfellow/react";
+import { withBase } from "@goodfellow-cms/core";
+import { classNameField, cx, mediaField, useSite } from "@goodfellow-cms/react";
 import type { ComponentConfig, Slot, SlotComponent } from "@puckeditor/core";
 import { type Gap, gapClasses, gapLabels, options, yesNo } from "./options.js";
 

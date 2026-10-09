@@ -1,5 +1,5 @@
-import { blocks } from "@goodfellow/blocks";
-import { defineConfig } from "@goodfellow/core";
+import { blocks } from "@goodfellow-cms/blocks";
+import { defineConfig } from "@goodfellow-cms/core";
 import { Counter } from "./blocks/counter";
 
 function Greeting({ name }: { name: string }) {

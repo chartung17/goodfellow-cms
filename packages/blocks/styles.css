@@ -1,6 +1,6 @@
 /*
  * Styles for Goodfellow's built-in blocks. Import after "tailwindcss" and
- * "@goodfellow/react/theme.css".
+ * "@goodfellow-cms/react/theme.css".
  */
 
 /* Let Tailwind find the classes the blocks use. */

@@ -44,13 +44,13 @@
     "test": "vitest run"
   },
   "dependencies": {
-    "@goodfellow/core": "workspace:*"
+    "@goodfellow-cms/core": "workspace:*"
   },
   "devDependencies": {
-    "@goodfellow/example-parish": "workspace:*",
-    "@goodfellow/registry": "workspace:*",
-    "@goodfellow/template-next": "workspace:*",
-    "@goodfellow/template-starter": "workspace:*"
+    "@goodfellow-cms/example-parish": "workspace:*",
+    "@goodfellow-cms/registry": "workspace:*",
+    "@goodfellow-cms/template-next": "workspace:*",
+    "@goodfellow-cms/template-starter": "workspace:*"
   },
   "publishConfig": {
     "access": "public"

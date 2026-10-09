@@ -47,7 +47,7 @@ export interface GoodfellowConfig {
 export interface AiConfig {
   /**
    * The AI services editors can choose from, by id, such as `["anthropic", "manual"]`.
-   * Defaults to all of them. See `PROVIDER_IDS` in `@goodfellow/ai`.
+   * Defaults to all of them. See `PROVIDER_IDS` in `@goodfellow-cms/ai`.
    */
   providers?: string[];
 }

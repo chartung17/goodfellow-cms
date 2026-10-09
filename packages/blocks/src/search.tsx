@@ -1,5 +1,5 @@
-import { SEARCH_ATTRIBUTE } from "@goodfellow/core";
-import { classNameField, cx } from "@goodfellow/react";
+import { SEARCH_ATTRIBUTE } from "@goodfellow-cms/core";
+import { classNameField, cx } from "@goodfellow-cms/react";
 import type { ComponentConfig } from "@puckeditor/core";
 import { SearchBox } from "./search-box.js";
 

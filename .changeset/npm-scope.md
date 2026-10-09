@@ -12,4 +12,4 @@
 "goodfellow": patch
 ---
 
-Every package has a README, keywords and links to its documentation, repository and issues, for its page on npm. All the packages are released together with the same version.
+The packages are published under the `@goodfellow-cms` scope on npm, such as `@goodfellow-cms/core` and `@goodfellow-cms/react`, since `@goodfellow` was taken. `goodfellow` and `create-goodfellow` keep their names, and the block registry's name in `components.json` and refs such as `@goodfellow/shadcn-faq` stays `@goodfellow`.

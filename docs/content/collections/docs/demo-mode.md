@@ -59,5 +59,5 @@ The demo is then at `https://your-name.github.io/goodfellow-demo/admin/`, and th
 To change what the demo starts from, turn demo mode off on your computer, edit the content in the admin panel with `npm run dev`, turn it back on and push. To move it to a new release of Goodfellow, update its Goodfellow packages and push:
 
 ```sh
-npm install @goodfellow/admin@latest @goodfellow/blocks@latest @goodfellow/core@latest @goodfellow/github@latest @goodfellow/gitlab@latest @goodfellow/react@latest goodfellow@latest
+npm install @goodfellow-cms/admin@latest @goodfellow-cms/blocks@latest @goodfellow-cms/core@latest @goodfellow-cms/github@latest @goodfellow-cms/gitlab@latest @goodfellow-cms/react@latest goodfellow@latest
 ```

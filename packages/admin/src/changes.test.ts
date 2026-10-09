@@ -5,7 +5,7 @@ import {
   type Entry,
   type Page,
   siteSettingsSchema,
-} from "@goodfellow/core";
+} from "@goodfellow-cms/core";
 import { describe, expect, it } from "vitest";
 import {
   addressPatternFor,
