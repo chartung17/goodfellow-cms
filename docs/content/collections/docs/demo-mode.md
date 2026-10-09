@@ -14,7 +14,8 @@ export default defineConfig({ blocks, demo: true });
 
 The site's `/admin` then opens straight away, with a banner saying it's a demo. Visitors can try everything editors can: pages, collections, the header and footer, the media library, site settings and the AI assistant (with their own key or a free service).
 
-- **Nothing is published.** Publish saves the changes, uploads included, in the visitor's own browser, so they're still there after reloading. **Start over** in the banner undoes them all. The live site and the repository never change.
+- **Nothing is published.** Publish saves the changes, uploads included, in the visitor's own browser, so they're still there after reloading. **Start over** in the banner undoes them all.
+- **Changes show only in the admin panel.** Its editors and previews show what the visitor changed, but the site's pages are the files the last build made, so **View site** shows the site as it was built. The repository never changes either.
 - **It starts from the site as last built.** The build puts a copy of the content at `/admin/demo-content.json`. The repository can stay private, and `backend` is ignored.
 - **Blocks** can be browsed but not added or removed, since adding one changes the site's code.
 - **Only the config turns it on.** The admin panel never changes `goodfellow.config.tsx`, so editors can't turn a real site into a demo or back.

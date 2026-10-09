@@ -228,8 +228,8 @@ export const defaultStrings = {
   "fields.type.select": "Choice from a list",
 
   "demo.banner":
-    "This is a demo. Try anything you like: changes are saved in this browser only, and the live site never changes.",
-  "demo.published": "Saved in this browser.",
+    "This is a demo. Try anything you like: your changes show here in the admin panel and are saved in this browser only. The site itself never changes.",
+  "demo.published": "Saved in this browser. The site itself doesn't change in a demo.",
   "demo.startOver": "Start over",
   "demo.startOverTitle": "Start over?",
   "demo.startOverBody": "Everything you've changed in this demo, including uploads, will be undone.",

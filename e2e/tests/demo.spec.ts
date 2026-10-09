@@ -27,7 +27,9 @@ test("opens to anyone without signing in, and keeps their changes in their own b
   await expect(name).toHaveValue("My site");
   await name.fill("Visitor's site");
   await page.getByRole("button", { name: "Publish" }).click();
-  await expect(page.getByText("Saved in this browser.", { exact: true })).toBeVisible();
+  await expect(
+    page.getByText("Saved in this browser. The site itself doesn't change in a demo.", { exact: true }),
+  ).toBeVisible();
 
   // Still there after reloading, and the live site hasn't changed.
   await page.reload();
@@ -65,7 +67,9 @@ test("keeps uploads in the browser, and starts over", async ({ page }) => {
   const name = await siteName(page);
   await name.fill("Changed");
   await page.getByRole("button", { name: "Publish" }).click();
-  await expect(page.getByText("Saved in this browser.", { exact: true })).toBeVisible();
+  await expect(
+    page.getByText("Saved in this browser. The site itself doesn't change in a demo.", { exact: true }),
+  ).toBeVisible();
 
   await page.getByRole("button", { name: "Start over" }).click();
   await page.getByRole("dialog").getByRole("button", { name: "Start over" }).click();
