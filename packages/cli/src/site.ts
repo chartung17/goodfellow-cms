@@ -5,7 +5,7 @@ import { CUSTOM_CSS_FILE, type GoodfellowConfig } from "@goodfellow-cms/core";
 import type { PageRenderer } from "@goodfellow-cms/react/server";
 import tailwindcss from "@tailwindcss/vite";
 import type { InlineConfig, Plugin, ViteDevServer } from "vite";
-import { blockPackages, type ClientModules, islandsPlugin } from "./islands.js";
+import { blockPackages, type ClientModules, islandsPlugin, slashes } from "./islands.js";
 
 const CONFIG_FILES = ["goodfellow.config.tsx", "goodfellow.config.ts", "goodfellow.config.jsx", "goodfellow.config.js"];
 const SERVER_ENTRY = "virtual:goodfellow/server";
@@ -63,7 +63,8 @@ export function baseViteConfig(root: string, configFile: string, modules: Client
     logLevel: "warn",
     plugins: [tailwindcss(), serverEntryPlugin(configFile), islandsPlugin(root, modules)],
     // `@/` is the site's root, as in shadcn/ui projects, where installed blocks find `@/components/ui/…`.
-    resolve: { alias: [{ find: /^@\//, replacement: `${root}/` }] },
+    // With forward slashes: on Windows, Vite doesn't resolve a replacement that mixes `\` and `/`.
+    resolve: { alias: [{ find: /^@\//, replacement: `${slashes(root)}/` }] },
     // Packages of blocks go through Vite, so their Client Components become islands too.
     ssr: { noExternal: blockPackages(root) },
   };

@@ -1,0 +1,3 @@
+# Check files out with LF line endings on every computer, as they're stored. Biome and the content
+# files' canonical form expect LF, so Windows' usual CRLF checkouts would fail `pnpm lint` and tests.
+* text=auto eol=lf

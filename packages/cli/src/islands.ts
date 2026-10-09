@@ -30,7 +30,7 @@ const NOT_BLOCK_PACKS = new Set([
 const SCRIPT = /\.[cm]?[jt]sx?$/;
 
 /** A path with forward slashes, as Vite writes module ids on Windows too (`C:/site/blocks/a.tsx`). */
-function slashes(path: string): string {
+export function slashes(path: string): string {
   return path.replaceAll("\\", "/");
 }
 
