@@ -1,4 +1,4 @@
-import { ConflictError, loadSiteContent, type StorageLike, writeChanges } from "@goodfellow/core";
+import { ConflictError, loadSiteContent, type StorageLike, writeChanges } from "@goodfellow-cms/core";
 import { describe, expect, it } from "vitest";
 import { type BrowserLocation, gitlab, redirectUri } from "./index.js";
 import { fakeGitLab } from "./testing.js";

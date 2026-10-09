@@ -1,4 +1,4 @@
-import { escapeStyleText, googleFontsUrl, type Theme, themeToCss } from "@goodfellow/core";
+import { escapeStyleText, googleFontsUrl, type Theme, themeToCss } from "@goodfellow-cms/core";
 import { type ReactNode, useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { type PreviewOptions, useAdmin } from "./admin-context.js";

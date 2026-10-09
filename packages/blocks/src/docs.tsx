@@ -1,5 +1,5 @@
-import { type Collection, type Entry, entryTitle, markdownHeadings } from "@goodfellow/core";
-import { classNameField, cx, SiteLink, templateOnly, useSite } from "@goodfellow/react";
+import { type Collection, type Entry, entryTitle, markdownHeadings } from "@goodfellow-cms/core";
+import { classNameField, cx, SiteLink, templateOnly, useSite } from "@goodfellow-cms/react";
 import type { ComponentConfig, Fields } from "@puckeditor/core";
 import { options } from "./options.js";
 

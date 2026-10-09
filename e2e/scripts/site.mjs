@@ -56,8 +56,8 @@ const testBlocks = join(here, "../fixtures/blocks");
 /** A test site's config: the starter's blocks, the test blocks, and optionally a backend. */
 function testConfig({ from = "./blocks", importLine = "", backend = "", demo = false } = {}) {
   return [
-    'import { blocks, categories } from "@goodfellow/blocks";',
-    'import { defineConfig } from "@goodfellow/core";',
+    'import { blocks, categories } from "@goodfellow-cms/blocks";',
+    'import { defineConfig } from "@goodfellow-cms/core";',
     ...(importLine ? [importLine] : []),
     `import { Counter, Disclosure } from ${JSON.stringify(`${from}/counter`)};`,
     `import { installedBlocks, installedCategories } from ${JSON.stringify(`${from}/installed`)};`,
@@ -99,12 +99,12 @@ export function createSite() {
 export const builtSites = {
   github: {
     port: 4401,
-    importLine: 'import { github } from "@goodfellow/github";',
+    importLine: 'import { github } from "@goodfellow-cms/github";',
     backend: 'github({ repo: "parish/site" })',
   },
   gitlab: {
     port: 4402,
-    importLine: 'import { gitlab } from "@goodfellow/gitlab";',
+    importLine: 'import { gitlab } from "@goodfellow-cms/gitlab";',
     backend: 'gitlab({ project: "parish/site", clientId: "test-client" })',
   },
   // A demo, which anyone can try without signing in.

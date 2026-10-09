@@ -5,7 +5,7 @@ import {
   SignInError,
   type StorageLike,
   writeChanges,
-} from "@goodfellow/core";
+} from "@goodfellow-cms/core";
 import { describe, expect, it } from "vitest";
 import { github, githubTokenLinks } from "./index.js";
 import { fakeGitHub } from "./testing.js";

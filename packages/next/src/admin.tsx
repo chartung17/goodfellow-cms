@@ -1,8 +1,8 @@
-import { Admin, type Strings } from "@goodfellow/admin";
-import type { ContentStore, GoodfellowConfig } from "@goodfellow/core";
+import { Admin, type Strings } from "@goodfellow-cms/admin";
+import type { ContentStore, GoodfellowConfig } from "@goodfellow-cms/core";
 import { useEffect, useState } from "react";
 import "@puckeditor/core/puck.css";
-import "@goodfellow/admin/styles.css";
+import "@goodfellow-cms/admin/styles.css";
 import themeCss from "./generated/theme-css.js";
 
 export interface GoodfellowAdminProps {
@@ -48,7 +48,7 @@ async function setUp(siteUrl: string): Promise<Setup> {
     import("./generated/tailwind-browser.js").then((module) => module.default),
     // `next build` drops this branch, so the local backend never ships.
     process.env.NODE_ENV === "development"
-      ? import("@goodfellow/admin/dev").then((module) => module.localStore(`${BASE_PATH}/__goodfellow/api`))
+      ? import("@goodfellow-cms/admin/dev").then((module) => module.localStore(`${BASE_PATH}/__goodfellow/api`))
       : undefined,
   ]);
   const tailwindBrowserUrl = URL.createObjectURL(new Blob([tailwindBrowser], { type: "text/javascript" }));

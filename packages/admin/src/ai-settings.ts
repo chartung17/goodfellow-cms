@@ -1,5 +1,5 @@
-import { PROVIDER_IDS, PROVIDERS, type ProviderId, type ProviderSettings } from "@goodfellow/ai";
-import { credentialStorage, type StorageLike } from "@goodfellow/core";
+import { PROVIDER_IDS, PROVIDERS, type ProviderId, type ProviderSettings } from "@goodfellow-cms/ai";
+import { credentialStorage, type StorageLike } from "@goodfellow-cms/core";
 import { useCallback, useState } from "react";
 
 const PREFERENCES_KEY = "goodfellow.ai";

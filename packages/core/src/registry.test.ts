@@ -39,7 +39,7 @@ const items: Record<string, unknown> = {
     name: "shadcn-faq",
     type: "registry:block",
     title: "FAQ",
-    dependencies: ["radix-ui@^1.4.0", "@goodfellow/react", "@puckeditor/core"],
+    dependencies: ["radix-ui@^1.4.0", "@goodfellow-cms/react", "@puckeditor/core"],
     registryDependencies: ["@goodfellow/accordion", "@goodfellow/utils"],
     files: [
       { path: "blocks/shadcn-faq/block.tsx", type: "registry:block", content: "export default {};\n" },

@@ -1,4 +1,4 @@
-import type { Collection, Entry, ImageSize, Menus, SiteSettings } from "@goodfellow/core";
+import type { Collection, Entry, ImageSize, Menus, SiteSettings } from "@goodfellow-cms/core";
 import type { Metadata } from "@puckeditor/core";
 import type { AnchorHTMLAttributes, ComponentType, ImgHTMLAttributes } from "react";
 

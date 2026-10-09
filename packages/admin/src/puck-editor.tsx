@@ -1,5 +1,5 @@
-import { type Collection, type FileChange, serializeContent } from "@goodfellow/core";
-import { cx, mediaFieldKind, type SiteContextValue, SiteProvider, siteMetadata } from "@goodfellow/react";
+import { type Collection, type FileChange, serializeContent } from "@goodfellow-cms/core";
+import { cx, mediaFieldKind, type SiteContextValue, SiteProvider, siteMetadata } from "@goodfellow-cms/react";
 import {
   type Config,
   type Data,

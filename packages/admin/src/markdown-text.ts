@@ -1,4 +1,4 @@
-import { markdownToHtml } from "@goodfellow/core";
+import { markdownToHtml } from "@goodfellow-cms/core";
 import TurndownService from "turndown";
 import { gfm } from "turndown-plugin-gfm";
 

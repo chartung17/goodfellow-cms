@@ -20,12 +20,12 @@ const parish = join(repo, "examples/parish");
 const next = join(repo, "templates/next");
 
 const versions = {
-  "@goodfellow/admin": "1.2.3",
-  "@goodfellow/blocks": "1.2.3",
-  "@goodfellow/core": "1.2.3",
-  "@goodfellow/github": "1.2.3",
-  "@goodfellow/gitlab": "1.2.3",
-  "@goodfellow/react": "1.2.3",
+  "@goodfellow-cms/admin": "1.2.3",
+  "@goodfellow-cms/blocks": "1.2.3",
+  "@goodfellow-cms/core": "1.2.3",
+  "@goodfellow-cms/github": "1.2.3",
+  "@goodfellow-cms/gitlab": "1.2.3",
+  "@goodfellow-cms/react": "1.2.3",
   goodfellow: "1.2.3",
 };
 
@@ -42,7 +42,7 @@ describe("scaffold", () => {
 
     const pkg = JSON.parse(await readFile(join(target, "package.json"), "utf8"));
     expect(pkg.name).toBe("my-site");
-    expect(pkg.dependencies["@goodfellow/core"]).toBe("^1.2.3");
+    expect(pkg.dependencies["@goodfellow-cms/core"]).toBe("^1.2.3");
     expect(pkg.dependencies["@puckeditor/core"]).toBe("0.23.0");
     expect(pkg.devDependencies.goodfellow).toBe("^1.2.3");
     expect(JSON.stringify(pkg)).not.toContain("workspace:");
@@ -99,9 +99,14 @@ describe("scaffold", () => {
 
   it("copies the Next.js starter without its build output", async () => {
     const target = join(dir, "next-site");
-    await scaffold({ template: next, target, versions: { ...versions, "@goodfellow/next": "1.2.3" }, host: "vercel" });
+    await scaffold({
+      template: next,
+      target,
+      versions: { ...versions, "@goodfellow-cms/next": "1.2.3" },
+      host: "vercel",
+    });
     const pkg = JSON.parse(await readFile(join(target, "package.json"), "utf8"));
-    expect(pkg.dependencies["@goodfellow/next"]).toBe("^1.2.3");
+    expect(pkg.dependencies["@goodfellow-cms/next"]).toBe("^1.2.3");
     expect(existsSync(join(target, "app/(site)/[[...path]]/page.tsx"))).toBe(true);
     expect(existsSync(join(target, "next.config.ts"))).toBe(true);
     for (const skipped of ["out", ".next", "next-env.d.ts", "turbo.json"]) {
@@ -120,7 +125,7 @@ describe("scaffold", () => {
       host: "gitlab-pages",
     });
     const config = await readFile(join(target, "goodfellow.config.tsx"), "utf8");
-    expect(config).toContain('\nimport { gitlab } from "@goodfellow/gitlab";');
+    expect(config).toContain('\nimport { gitlab } from "@goodfellow-cms/gitlab";');
     expect(config).toContain('  backend: gitlab({ project: "parish/site" }),');
     expect(config).toContain('// backend: github({ repo: "your-name/your-site" }),');
     expect(existsSync(join(target, ".gitlab-ci.yml"))).toBe(true);
@@ -138,7 +143,7 @@ describe("scaffold", () => {
 
   it("refuses a template that links to a package it has no version for", async () => {
     await expect(scaffold({ template: starter, target: join(dir, "site"), versions: {} })).rejects.toThrow(
-      "No version of @goodfellow/admin",
+      "No version of @goodfellow-cms/admin",
     );
   });
 });
@@ -177,9 +182,9 @@ describe("helpers", () => {
   });
 
   it("writes repository names safely into the config", () => {
-    const config = '// import { github } from "@goodfellow/github";\n  // backend: github({ repo: "x/y" }),\n';
+    const config = '// import { github } from "@goodfellow-cms/github";\n  // backend: github({ repo: "x/y" }),\n';
     expect(configureBackend(config, { host: "github", repo: 'a/b"c' })).toBe(
-      'import { github } from "@goodfellow/github";\n  backend: github({ repo: "a/b\\"c" }),\n',
+      'import { github } from "@goodfellow-cms/github";\n  backend: github({ repo: "a/b\\"c" }),\n',
     );
     expect(() => configureBackend("export default {};", { host: "github", repo: "a/b" })).toThrow();
   });

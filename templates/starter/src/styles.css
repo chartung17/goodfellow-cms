@@ -1,8 +1,8 @@
 @import "tailwindcss";
 /* Animations for blocks installed from block registries, such as an FAQ's opening answers. */
 @import "tw-animate-css";
-@import "@goodfellow/react/theme.css";
-@import "@goodfellow/blocks/styles.css";
+@import "@goodfellow-cms/react/theme.css";
+@import "@goodfellow-cms/blocks/styles.css";
 
 /* Lets Tailwind find class names typed into the editor. */
 @source "../content";

@@ -1,4 +1,4 @@
-import { addressPatternProblem, isAddressSegment } from "@goodfellow/core";
+import { addressPatternProblem, isAddressSegment } from "@goodfellow-cms/core";
 import { type FormEvent, useState } from "react";
 import { useAdmin, useSiteContent } from "./admin-context.js";
 import { addressPatternFor, collectionFileChange, newCollectionSettings, slugify } from "./changes.js";

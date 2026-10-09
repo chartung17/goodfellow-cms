@@ -1,4 +1,4 @@
-import { ConflictError, type ContentStore, decodeBase64, encodeBase64Bytes } from "@goodfellow/core";
+import { ConflictError, type ContentStore, decodeBase64, encodeBase64Bytes } from "@goodfellow-cms/core";
 
 /**
  * A content store that reads and writes the site's files through

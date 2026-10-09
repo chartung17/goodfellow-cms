@@ -1,8 +1,23 @@
 {
-  "name": "@goodfellow/next",
+  "name": "@goodfellow-cms/next",
   "version": "0.0.0",
   "description": "Goodfellow pages and the admin panel in a Next.js site.",
+  "keywords": [
+    "goodfellow",
+    "cms",
+    "website-builder",
+    "puck",
+    "nextjs",
+    "next"
+  ],
+  "homepage": "https://chartung17.github.io/goodfellow-cms/docs/nextjs",
+  "bugs": "https://github.com/chartung17/goodfellow-cms/issues",
   "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/chartung17/goodfellow-cms.git",
+    "directory": "packages/next"
+  },
   "type": "module",
   "sideEffects": [
     "./dist/admin.js"
@@ -43,18 +58,18 @@
     "test": "node scripts/embed.mjs && vitest run"
   },
   "dependencies": {
-    "@goodfellow/core": "workspace:*",
-    "@goodfellow/react": "workspace:*"
+    "@goodfellow-cms/core": "workspace:*",
+    "@goodfellow-cms/react": "workspace:*"
   },
   "peerDependencies": {
-    "@goodfellow/admin": "workspace:*",
+    "@goodfellow-cms/admin": "workspace:*",
     "@puckeditor/core": "0.23.0",
     "next": "^16.0.0",
     "react": "^19.0.0",
     "react-dom": "^19.0.0"
   },
   "devDependencies": {
-    "@goodfellow/admin": "workspace:*",
+    "@goodfellow-cms/admin": "workspace:*",
     "@puckeditor/core": "0.23.0",
     "@tailwindcss/browser": "4.3.3",
     "@types/react": "^19.2.0",
@@ -62,5 +77,11 @@
     "next": "16.3.8",
     "react": "19.3.0",
     "react-dom": "19.3.0"
+  },
+  "engines": {
+    "node": ">=22"
+  },
+  "publishConfig": {
+    "access": "public"
   }
 }

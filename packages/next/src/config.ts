@@ -1,8 +1,14 @@
 import { createServer } from "node:http";
 import type { AddressInfo } from "node:net";
 import { resolve } from "node:path";
-import { normalizeBase } from "@goodfellow/core";
-import { DEV_API_PREFIX, handleDevApi, isLocalOrigin, localFileStore, localRegistryDir } from "@goodfellow/core/node";
+import { normalizeBase } from "@goodfellow-cms/core";
+import {
+  DEV_API_PREFIX,
+  handleDevApi,
+  isLocalOrigin,
+  localFileStore,
+  localRegistryDir,
+} from "@goodfellow-cms/core/node";
 import type { NextConfig } from "next";
 
 export interface GoodfellowNextOptions {

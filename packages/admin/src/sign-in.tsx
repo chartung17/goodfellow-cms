@@ -1,4 +1,4 @@
-import { type GitBackend, type GitHost, SignInError } from "@goodfellow/core";
+import { type GitBackend, type GitHost, SignInError } from "@goodfellow-cms/core";
 import { type FormEvent, type ReactNode, useEffect, useState } from "react";
 import { type StringKey, useStrings } from "./strings.js";
 import { Button, ErrorMessage, TextField } from "./ui.js";

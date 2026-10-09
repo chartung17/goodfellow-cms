@@ -11,8 +11,8 @@ import {
   normalizePagePath,
   type Page,
   type SiteContent,
-} from "@goodfellow/core";
-import { fileSystemSource, handleDevApi, localFileStore, localRegistryDir } from "@goodfellow/core/node";
+} from "@goodfellow-cms/core";
+import { fileSystemSource, handleDevApi, localFileStore, localRegistryDir } from "@goodfellow-cms/core/node";
 import react from "@vitejs/plugin-react";
 import { createServer, type Plugin, type ViteDevServer } from "vite";
 import { ADMIN_ENTRY, adminEntryPlugin, adminHtml } from "./admin-entry.js";

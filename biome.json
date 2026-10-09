@@ -53,6 +53,16 @@
       "formatter": {
         "enabled": false
       }
+    },
+    {
+      "includes": ["scripts/**"],
+      "linter": {
+        "rules": {
+          "suspicious": {
+            "noUndeclaredEnvVars": "off"
+          }
+        }
+      }
     }
   ]
 }

@@ -1,8 +1,24 @@
 {
-  "name": "@goodfellow/ai",
+  "name": "@goodfellow-cms/ai",
   "version": "0.0.0",
   "description": "Goodfellow's AI assistant: drafts and rewrites pages with Claude, OpenAI or a free AI service, straight from the browser.",
+  "keywords": [
+    "goodfellow",
+    "cms",
+    "website-builder",
+    "puck",
+    "ai",
+    "claude",
+    "openai"
+  ],
+  "homepage": "https://chartung17.github.io/goodfellow-cms/docs/ai-assistant",
+  "bugs": "https://github.com/chartung17/goodfellow-cms/issues",
   "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/chartung17/goodfellow-cms.git",
+    "directory": "packages/ai"
+  },
   "type": "module",
   "sideEffects": false,
   "exports": {
@@ -26,16 +42,22 @@
   },
   "dependencies": {
     "@anthropic-ai/sdk": "0.131.0",
-    "@goodfellow/core": "workspace:*"
+    "@goodfellow-cms/core": "workspace:*"
   },
   "peerDependencies": {
     "@puckeditor/core": "0.23.0"
   },
   "devDependencies": {
-    "@goodfellow/blocks": "workspace:*",
-    "@goodfellow/react": "workspace:*",
+    "@goodfellow-cms/blocks": "workspace:*",
+    "@goodfellow-cms/react": "workspace:*",
     "@puckeditor/core": "0.23.0",
     "@types/react": "^19.2.0",
     "react": "19.3.0"
+  },
+  "engines": {
+    "node": ">=22"
+  },
+  "publishConfig": {
+    "access": "public"
   }
 }

@@ -1,8 +1,23 @@
 {
-  "name": "@goodfellow/blocks",
+  "name": "@goodfellow-cms/blocks",
   "version": "0.0.0",
   "description": "Goodfellow's built-in blocks. Styled with Tailwind and the site theme only.",
+  "keywords": [
+    "goodfellow",
+    "cms",
+    "website-builder",
+    "puck",
+    "blocks",
+    "tailwind"
+  ],
+  "homepage": "https://chartung17.github.io/goodfellow-cms/docs/built-in-blocks",
+  "bugs": "https://github.com/chartung17/goodfellow-cms/issues",
   "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/chartung17/goodfellow-cms.git",
+    "directory": "packages/blocks"
+  },
   "type": "module",
   "sideEffects": [
     "*.css"
@@ -25,8 +40,8 @@
     "test": "vitest run"
   },
   "dependencies": {
-    "@goodfellow/core": "workspace:*",
-    "@goodfellow/react": "workspace:*",
+    "@goodfellow-cms/core": "workspace:*",
+    "@goodfellow-cms/react": "workspace:*",
     "shiki": "4.5.0"
   },
   "peerDependencies": {
@@ -39,5 +54,11 @@
     "@types/react-dom": "^19.2.0",
     "react": "19.3.0",
     "react-dom": "19.3.0"
+  },
+  "engines": {
+    "node": ">=22"
+  },
+  "publishConfig": {
+    "access": "public"
   }
 }

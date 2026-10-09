@@ -1,4 +1,4 @@
-import { ContentError, type ContentStore, type GitHost, type GoodfellowConfig } from "@goodfellow/core";
+import { ContentError, type ContentStore, type GitHost, type GoodfellowConfig } from "@goodfellow-cms/core";
 import { useMemo, useState } from "react";
 import { createRoot } from "react-dom/client";
 import { AdminProvider, type PreviewOptions, useAdmin, useSiteContent } from "./admin-context.js";

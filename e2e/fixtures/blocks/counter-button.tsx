@@ -1,6 +1,6 @@
 "use client";
 
-import { SiteLink, useSite } from "@goodfellow/react";
+import { SiteLink, useSite } from "@goodfellow-cms/react";
 import { useState } from "react";
 
 export function CounterButton({ label, className }: { label: string; className: string }) {

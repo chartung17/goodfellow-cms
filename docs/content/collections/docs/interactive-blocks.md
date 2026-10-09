@@ -37,7 +37,7 @@ They run in the browser however the site is built. With `goodfellow build` and `
 - **Props** must be plain values: text, numbers, `true` and `false`, and lists and objects of these. A block can't pass a function such as an `onClick` handler, so handlers go inside the Client Component.
 - **Content** passed as `children` (or any prop holding JSX) is rendered by the block, and stays as it is in the browser. Client Components in it run on their own.
 - **`useSite()`** works in Client Components, so pages with them include the site's settings, menus and collections for the browser.
-- **Other packages' Client Components** need re-exporting from a `"use client"` file of the site's: `"use client"; export { Carousel } from "some-carousel";`. Packages of blocks (packages that use `@goodfellow/react`) don't.
+- **Other packages' Client Components** need re-exporting from a `"use client"` file of the site's: `"use client"; export { Carousel } from "some-carousel";`. Packages of blocks (packages that use `@goodfellow-cms/react`) don't.
 
 Each page with a Client Component loads React, so use HTML and CSS where they're enough: `<details>` for something that opens and closes, `:hover` and `:focus-within` for menus.
 

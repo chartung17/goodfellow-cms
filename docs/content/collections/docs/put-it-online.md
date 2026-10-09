@@ -17,7 +17,7 @@ Create a repository and push the site's folder to it, including `package-lock.js
 If you gave the repository to `npm create goodfellow`, this is done. Otherwise, in `goodfellow.config.tsx`, uncomment one `backend` line and its `import`, and fill in the repository:
 
 ```tsx
-import { github } from "@goodfellow/github";
+import { github } from "@goodfellow-cms/github";
 
 export default defineConfig({
   blocks,

@@ -9,9 +9,9 @@ import {
   loadSiteContent,
   normalizeBase,
   pageOutputFile,
-} from "@goodfellow/core";
-import { fileSystemSource } from "@goodfellow/core/node";
-import { writeSearchIndex } from "@goodfellow/core/search-index";
+} from "@goodfellow-cms/core";
+import { fileSystemSource } from "@goodfellow-cms/core/node";
+import { writeSearchIndex } from "@goodfellow-cms/core/search-index";
 import { createServer, build as viteBuild } from "vite";
 import { ADMIN_ENTRY, adminEntryPlugin, adminHtml } from "./admin-entry.js";
 import { type ClientModules, ISLANDS_ENTRY } from "./islands.js";

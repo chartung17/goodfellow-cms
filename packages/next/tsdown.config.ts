@@ -7,7 +7,7 @@ export default defineConfig({
   platform: "neutral",
   fixedExtension: false,
   // Next.js resolves these itself, with the right build for server or browser.
-  deps: { neverBundle: [/^node:/, /^next(\/|$)/, /^@goodfellow\//, /^@puckeditor\//, /^react(-dom)?(\/|$)/] },
+  deps: { neverBundle: [/^node:/, /^next(\/|$)/, /^@goodfellow-cms\//, /^@puckeditor\//, /^react(-dom)?(\/|$)/] },
   // Keeps the admin panel's stylesheet imports, for Next.js to bundle.
   treeshake: { moduleSideEffects: (id) => id.endsWith(".css") },
   inputOptions: {

@@ -1,4 +1,4 @@
-import { GitApiError, SignInError } from "@goodfellow/core";
+import { GitApiError, SignInError } from "@goodfellow-cms/core";
 
 export interface ApiOptions {
   /** The API root, such as `https://gitlab.com/api/v4`. */

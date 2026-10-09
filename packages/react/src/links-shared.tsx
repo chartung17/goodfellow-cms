@@ -1,4 +1,4 @@
-import { withBase } from "@goodfellow/core";
+import { withBase } from "@goodfellow-cms/core";
 import type { SiteContextValue, SiteImageProps, SiteLinkProps } from "./site-types.js";
 
 /** Whether a link goes to one of the site's own pages, rather than a file, another site, or a new tab. */

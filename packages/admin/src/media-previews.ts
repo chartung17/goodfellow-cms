@@ -1,4 +1,4 @@
-import type { ContentStore } from "@goodfellow/core";
+import type { ContentStore } from "@goodfellow-cms/core";
 import { extensionOf, MEDIA_URL_PREFIX, mediaPath } from "./media.js";
 
 const TYPES: Record<string, string> = {

@@ -1,8 +1,22 @@
 {
-  "name": "@goodfellow/react",
+  "name": "@goodfellow-cms/react",
   "version": "0.0.0",
   "description": "Renders Goodfellow pages with React.",
+  "keywords": [
+    "goodfellow",
+    "cms",
+    "website-builder",
+    "puck",
+    "react"
+  ],
+  "homepage": "https://chartung17.github.io/goodfellow-cms/docs/write-blocks",
+  "bugs": "https://github.com/chartung17/goodfellow-cms/issues",
   "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/chartung17/goodfellow-cms.git",
+    "directory": "packages/react"
+  },
   "type": "module",
   "sideEffects": [
     "*.css"
@@ -38,7 +52,7 @@
     "test": "vitest run"
   },
   "dependencies": {
-    "@goodfellow/core": "workspace:*",
+    "@goodfellow-cms/core": "workspace:*",
     "tailwind-merge": "3.7.0"
   },
   "peerDependencies": {
@@ -52,5 +66,11 @@
     "@types/react-dom": "^19.2.0",
     "react": "19.3.0",
     "react-dom": "19.3.0"
+  },
+  "engines": {
+    "node": ">=22"
+  },
+  "publishConfig": {
+    "access": "public"
   }
 }

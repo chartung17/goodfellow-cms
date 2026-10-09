@@ -7,7 +7,7 @@ import {
   type InstalledRecord,
   planInstall,
   type RegistrySources,
-} from "@goodfellow/core";
+} from "@goodfellow-cms/core";
 
 /** The sites a new site can start from. The keys are what `--template` takes. */
 export const TEMPLATES = {
@@ -140,7 +140,7 @@ export function sitePackageJson(source: string, name: string, versions: Record<s
 
 /** Turns on one of the commented-out `backend` lines in a template's `goodfellow.config.tsx`. */
 export function configureBackend(config: string, backend: Backend): string {
-  const importLine = `// import { ${backend.host} } from "@goodfellow/${backend.host}";`;
+  const importLine = `// import { ${backend.host} } from "@goodfellow-cms/${backend.host}";`;
   const backendLine = new RegExp(`^([ \\t]*)// backend: ${backend.host}\\(.*$`, "m");
   if (!config.includes(importLine) || !backendLine.test(config)) {
     throw new Error(`The template's goodfellow.config.tsx has no ${backend.host} line to turn on.`);

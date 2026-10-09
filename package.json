@@ -13,7 +13,9 @@
     "lint": "biome check .",
     "format": "biome check --write .",
     "changeset": "changeset",
-    "test:e2e": "turbo run test:e2e"
+    "test:e2e": "turbo run test:e2e",
+    "release:version": "node scripts/release.mjs version",
+    "release:publish": "node scripts/release.mjs publish"
   },
   "devDependencies": {
     "@biomejs/biome": "2.5.15",

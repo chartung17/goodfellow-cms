@@ -1,4 +1,4 @@
-import { fakeGitHub } from "@goodfellow/github/testing";
+import { fakeGitHub } from "@goodfellow-cms/github/testing";
 import { expect, type Page, test } from "@playwright/test";
 import { files, GITHUB_SITE, routeToFake } from "./backends.js";
 

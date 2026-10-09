@@ -6,7 +6,7 @@ section: developers
 order: 7
 ---
 
-Goodfellow's blocks built with component libraries come from block registries: [shadcn registries](https://ui.shadcn.com/docs/registry) whose items are Goodfellow blocks. Goodfellow publishes one for shadcn/ui, `@goodfellow/registry`. Anyone can publish one for another library in the same format: build it with `npx shadcn build` and host the files anywhere that allows requests from browsers (CORS), such as GitHub Pages or npm through jsDelivr.
+Goodfellow's blocks built with component libraries come from block registries: [shadcn registries](https://ui.shadcn.com/docs/registry) whose items are Goodfellow blocks. Goodfellow publishes one for shadcn/ui, `@goodfellow-cms/registry`. Anyone can publish one for another library in the same format: build it with `npx shadcn build` and host the files anywhere that allows requests from browsers (CORS), such as GitHub Pages or npm through jsDelivr.
 
 ## Items
 
@@ -40,7 +40,7 @@ A block is a `registry:block` item with `meta.goodfellow`:
 
 ## Packages
 
-The admin panel can't install npm packages, so every site includes the same set, and blocks can use only those: besides React, Puck and `@goodfellow/react`, they are `class-variance-authority`, `clsx`, `cn`, `embla-carousel-react`, `lucide-react`, `radix-ui`, `tailwind-merge` and `tw-animate-css`.
+The admin panel can't install npm packages, so every site includes the same set, and blocks can use only those: besides React, Puck and `@goodfellow-cms/react`, they are `class-variance-authority`, `clsx`, `cn`, `embla-carousel-react`, `lucide-react`, `radix-ui`, `tailwind-merge` and `tw-animate-css`.
 
 ## Writing the blocks
 

@@ -1,4 +1,4 @@
-import { type Collection, type Entry, formatFieldValue } from "@goodfellow/core";
+import { type Collection, type Entry, formatFieldValue } from "@goodfellow-cms/core";
 import type { ComponentData, Config, Data, Fields } from "@puckeditor/core";
 
 /** `{title}`, `{event-date}`: a field's name in braces. */

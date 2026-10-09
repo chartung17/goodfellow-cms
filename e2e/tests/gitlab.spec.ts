@@ -1,4 +1,4 @@
-import { fakeGitLab } from "@goodfellow/gitlab/testing";
+import { fakeGitLab } from "@goodfellow-cms/gitlab/testing";
 import { expect, test } from "@playwright/test";
 import { files, GITLAB_SITE, routeToFake } from "./backends.js";
 

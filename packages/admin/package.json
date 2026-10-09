@@ -1,8 +1,23 @@
 {
-  "name": "@goodfellow/admin",
+  "name": "@goodfellow-cms/admin",
   "version": "0.0.0",
   "description": "Goodfellow's admin panel: a visual editor for a site's pages, layout and settings.",
+  "keywords": [
+    "goodfellow",
+    "cms",
+    "website-builder",
+    "puck",
+    "admin-panel",
+    "visual-editor"
+  ],
+  "homepage": "https://chartung17.github.io/goodfellow-cms/docs/edit-pages",
+  "bugs": "https://github.com/chartung17/goodfellow-cms/issues",
   "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/chartung17/goodfellow-cms.git",
+    "directory": "packages/admin"
+  },
   "type": "module",
   "sideEffects": [
     "*.css"
@@ -37,10 +52,10 @@
     "@codemirror/state": "6.7.6",
     "@codemirror/theme-one-dark": "6.1.3",
     "@codemirror/view": "6.43.14",
-    "@goodfellow/ai": "workspace:*",
-    "@goodfellow/core": "workspace:*",
-    "@goodfellow/react": "workspace:*",
-    "@goodfellow/registry": "workspace:*",
+    "@goodfellow-cms/ai": "workspace:*",
+    "@goodfellow-cms/core": "workspace:*",
+    "@goodfellow-cms/react": "workspace:*",
+    "@goodfellow-cms/registry": "workspace:*",
     "codemirror": "6.0.2",
     "turndown": "7.2.4",
     "turndown-plugin-gfm": "1.0.2"
@@ -57,5 +72,11 @@
     "@types/turndown": "5.0.6",
     "react": "19.3.0",
     "react-dom": "19.3.0"
+  },
+  "engines": {
+    "node": ">=22"
+  },
+  "publishConfig": {
+    "access": "public"
   }
 }

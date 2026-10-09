@@ -1,4 +1,4 @@
-import { type HeadElement, parseHeadCode } from "@goodfellow/core";
+import { type HeadElement, parseHeadCode } from "@goodfellow-cms/core";
 import { createElement } from "react";
 
 /** HTML attribute names React spells differently. */

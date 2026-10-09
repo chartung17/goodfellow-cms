@@ -10,7 +10,7 @@ A block is a [Puck component](https://puckeditor.com/docs/integrating-puck/compo
 
 ```tsx
 // blocks/mass-times.tsx
-import { classNameField, cx } from "@goodfellow/react";
+import { classNameField, cx } from "@goodfellow-cms/react";
 import type { ComponentConfig } from "@puckeditor/core";
 
 export interface MassTimesProps {
@@ -49,7 +49,7 @@ export const MassTimes: ComponentConfig<MassTimesProps> = {
 - **Complete class names:** write Tailwind classes as whole strings, using lookup tables for options (`{ sm: "gap-3", md: "gap-6" }`), or Tailwind won't find them.
 - **Theme classes:** style with the theme's classes, such as `bg-primary`, `text-muted-foreground`, `font-heading` and `rounded-lg`, rather than fixed colors, so blocks follow the site's settings.
 - **Site data:** read menus, settings and collections with `useSite()`, never by copying them into props.
-- **Links and images:** render them with `SiteLink` and `SiteImage` from `@goodfellow/react`, not `<a>` and `<img>`, so they follow the site's base path and use `next/link` and `next/image` in Next.js. Other root-relative addresses, such as a CSS background, go through `withBase(url, useSite().base)`.
+- **Links and images:** render them with `SiteLink` and `SiteImage` from `@goodfellow-cms/react`, not `<a>` and `<img>`, so they follow the site's base path and use `next/link` and `next/image` in Next.js. Other root-relative addresses, such as a CSS background, go through `withBase(url, useSite().base)`.
 - **Media fields:** a prop holding an uploaded file's address uses `mediaField()`, which adds the media library's chooser.
 - **No hooks in `render`**, other than `useSite()`: in Next.js, blocks render as Server Components. Interactive parts go in [Client Components](/docs/interactive-blocks).
 - **Labels for everyone:** fields' labels and options are for people who aren't developers: "Space above and below", not "padding-y".
@@ -58,4 +58,4 @@ export const MassTimes: ComponentConfig<MassTimesProps> = {
 
 In a collection's page design, Puck's `metadata` holds the item being shown (`metadata.entry`) and its collection (`metadata.collection`), for `resolveFields` and `resolveData`; `useSite().entry` has the item while rendering. Wrap blocks that only make sense there in `templateOnly()`, which leaves them out of the other editors.
 
-Custom fields don't say what they hold, so give them `metadata: { ai: … }` (an `AiFieldHint` from `@goodfellow/ai`) for the AI assistant to fill them in.
+Custom fields don't say what they hold, so give them `metadata: { ai: … }` (an `AiFieldHint` from `@goodfellow-cms/ai`) for the AI assistant to fill them in.

@@ -1,8 +1,8 @@
 import { existsSync } from "node:fs";
 import { mkdir, writeFile } from "node:fs/promises";
 import { join, relative, resolve } from "node:path";
-import { CUSTOM_CSS_FILE, type GoodfellowConfig } from "@goodfellow/core";
-import type { PageRenderer } from "@goodfellow/react/server";
+import { CUSTOM_CSS_FILE, type GoodfellowConfig } from "@goodfellow-cms/core";
+import type { PageRenderer } from "@goodfellow-cms/react/server";
 import tailwindcss from "@tailwindcss/vite";
 import type { InlineConfig, Plugin, ViteDevServer } from "vite";
 import { blockPackages, type ClientModules, islandsPlugin } from "./islands.js";
@@ -32,7 +32,7 @@ function serverEntryPlugin(configFile: string): Plugin {
       id === RESOLVED_SERVER_ENTRY
         ? [
             `import config from ${JSON.stringify(configFile)};`,
-            `import { createPageRenderer } from "@goodfellow/react/server";`,
+            `import { createPageRenderer } from "@goodfellow-cms/react/server";`,
             "export { config };",
             "export const renderPage = createPageRenderer(config);",
           ].join("\n")

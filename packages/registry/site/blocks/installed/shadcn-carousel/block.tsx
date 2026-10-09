@@ -1,4 +1,4 @@
-import { classNameField, cx, mediaField } from "@goodfellow/react";
+import { classNameField, cx, mediaField } from "@goodfellow-cms/react";
 import type { ComponentConfig } from "@puckeditor/core";
 import { ImageCarousel } from "./image-carousel";
 

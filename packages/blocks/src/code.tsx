@@ -1,4 +1,4 @@
-import { classNameField, cx } from "@goodfellow/react";
+import { classNameField, cx } from "@goodfellow-cms/react";
 import type { ComponentConfig } from "@puckeditor/core";
 import { CopyButton } from "./copy-button.js";
 import { CODE_LANGUAGES, type CodeColors, type CodeLanguage, highlightCode, loadHighlighter } from "./highlight.js";

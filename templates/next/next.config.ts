@@ -1,4 +1,4 @@
-import { withGoodfellow } from "@goodfellow/next/config";
+import { withGoodfellow } from "@goodfellow-cms/next/config";
 
 // Builds the site as static files in out/. Add your own Next.js settings inside withGoodfellow({ ... }).
 export default withGoodfellow({

@@ -20,4 +20,10 @@ When a change to Goodfellow changes what users see or do, update these pages in 
 
 ## Building
 
-`pnpm build` writes the site to `dist/`, with a search index, since the header has a Search block. `pnpm preview` serves it. The site goes online in roadmap step 13.
+`pnpm build` writes the site to `dist/`, with a search index, since the header has a Search block. `pnpm preview` serves it.
+
+## Online
+
+The site is at <https://chartung17.github.io/goodfellow-cms/>, published with GitHub Pages by `.github/workflows/docs.yml`. It describes the latest release: the release workflow deploys it after publishing a new version to npm, from that version's commit, so changes to these pages go online with the next release. To publish a fix sooner, run **Deploy docs** in the repository's Actions tab with `master` as the version. See [RELEASING.md](../RELEASING.md).
+
+It has no admin panel online, since the backends can't yet edit a site in a subfolder of a repository; edit it on your computer as above.

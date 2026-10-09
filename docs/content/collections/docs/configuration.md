@@ -9,9 +9,9 @@ order: 1
 A site's `goodfellow.config.tsx` says which blocks it has and where it's stored. The site's pages and its admin panel import the same file, so the editor always offers exactly the blocks the site renders.
 
 ```tsx
-import { blocks, categories } from "@goodfellow/blocks";
-import { defineConfig } from "@goodfellow/core";
-import { github } from "@goodfellow/github";
+import { blocks, categories } from "@goodfellow-cms/blocks";
+import { defineConfig } from "@goodfellow-cms/core";
+import { github } from "@goodfellow-cms/github";
 import { installedBlocks, installedCategories } from "./blocks/installed";
 import { MassTimes } from "./blocks/mass-times";
 

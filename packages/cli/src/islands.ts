@@ -17,10 +17,15 @@ const ISLAND_PREFIX = "\0goodfellow-island:";
 export type ClientModules = Map<string, string>;
 
 /** Packages that render pages, whose own `"use client"` modules are never islands. */
-const RENDERERS = ["@goodfellow/react", "@puckeditor/core", "react", "react-dom"];
+const RENDERERS = ["@goodfellow-cms/react", "@puckeditor/core", "react", "react-dom"];
 
-/** Goodfellow's own packages that use `@goodfellow/react` without being block packs. */
-const NOT_BLOCK_PACKS = new Set(["@goodfellow/react", "@goodfellow/admin", "@goodfellow/next", "goodfellow"]);
+/** Goodfellow's own packages that use `@goodfellow-cms/react` without being block packs. */
+const NOT_BLOCK_PACKS = new Set([
+  "@goodfellow-cms/react",
+  "@goodfellow-cms/admin",
+  "@goodfellow-cms/next",
+  "goodfellow",
+]);
 
 const SCRIPT = /\.[cm]?[jt]sx?$/;
 
@@ -58,7 +63,7 @@ function readJson(file: string): Record<string, Record<string, string> | undefin
 }
 
 /**
- * The site's block packs: its packages that build on `@goodfellow/react`.
+ * The site's block packs: its packages that build on `@goodfellow-cms/react`.
  * Vite loads them itself rather than leaving them to Node, so their Client
  * Components become islands like the site's own.
  */
@@ -77,7 +82,7 @@ export function blockPackages(root: string): string[] {
     try {
       const dependency = readJson(join(dir, "package.json"));
       return Boolean(
-        dependency.dependencies?.["@goodfellow/react"] ?? dependency.peerDependencies?.["@goodfellow/react"],
+        dependency.dependencies?.["@goodfellow-cms/react"] ?? dependency.peerDependencies?.["@goodfellow-cms/react"],
       );
     } catch {
       return false;
@@ -178,7 +183,7 @@ function identifier(name: string): string {
 export function islandModule(file: string, name: string, exports: ClientModuleExports): string {
   const lines = [
     `import * as __gf_module from ${JSON.stringify(file)};`,
-    `import { island as __gf_island } from "@goodfellow/react/island";`,
+    `import { island as __gf_island } from "@goodfellow-cms/react/island";`,
   ];
   exports.names.forEach((exported, index) => {
     lines.push(
@@ -272,7 +277,7 @@ export function islandsPlugin(root: string, modules: ClientModules): Plugin {
           ([name, file]) => `  ${JSON.stringify(name)}: () => import(${JSON.stringify(file)}),`,
         );
         return [
-          `import { hydrateIslands } from "@goodfellow/react/hydrate";`,
+          `import { hydrateIslands } from "@goodfellow-cms/react/hydrate";`,
           "hydrateIslands({",
           ...loaders,
           "});",

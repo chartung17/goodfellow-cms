@@ -1,4 +1,4 @@
-import { credentialStorage, GitApiError, type GitHost, SignInError, type StorageLike } from "@goodfellow/core";
+import { credentialStorage, GitApiError, type GitHost, SignInError, type StorageLike } from "@goodfellow-cms/core";
 import { type ApiOptions, githubJson, repoPath } from "./api.js";
 import { GitHubBackend } from "./backend.js";
 

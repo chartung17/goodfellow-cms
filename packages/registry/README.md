@@ -1,4 +1,4 @@
-# @goodfellow/registry
+# @goodfellow-cms/registry
 
 Goodfellow's block registry: blocks built with [shadcn/ui](https://ui.shadcn.com), which a site's admins add and remove on the admin panel's **Blocks** screen, with no developer. It's also the reference for anyone publishing a registry of Goodfellow blocks built with another component library.
 
@@ -28,7 +28,7 @@ Adding a block copies its code into the site, as `npx shadcn add` would, in one 
 
 The editor offers the block once the site has been rebuilt with it, which the host does after the publish (and `goodfellow dev` or `next dev` do straight away). Removing a block is refused while any page, collection page design, header or footer uses it. Removing deletes the files it added, except those someone has changed since or that another installed block uses.
 
-The admin panel installs a release of this registry that matches its own: `https://cdn.jsdelivr.net/npm/@goodfellow/registry@<version>/r/{name}.json`. In development, `goodfellow dev` and `next dev` serve the copy in the site's `node_modules`.
+The admin panel installs a release of this registry that matches its own: `https://cdn.jsdelivr.net/npm/@goodfellow-cms/registry@<version>/r/{name}.json`. In development, `goodfellow dev` and `next dev` serve the copy in the site's `node_modules`.
 
 ## Publishing your own registry
 
@@ -71,15 +71,15 @@ A block is a `registry:block` item with `meta.goodfellow`:
 
 ### Packages
 
-The admin panel can't install npm packages, so every site includes the same set and blocks can use only those. Besides `react`, `@goodfellow/react` and `@puckeditor/core`, which every site has, they are `class-variance-authority`, `clsx`, `cn`, `embla-carousel-react`, `lucide-react`, `radix-ui`, `tailwind-merge` and `tw-animate-css`. An item whose `dependencies` name anything else can't be added. To suggest a package for the list, open an issue.
+The admin panel can't install npm packages, so every site includes the same set and blocks can use only those. Besides `react`, `@goodfellow-cms/react` and `@puckeditor/core`, which every site has, they are `class-variance-authority`, `clsx`, `cn`, `embla-carousel-react`, `lucide-react`, `radix-ui`, `tailwind-merge` and `tw-animate-css`. An item whose `dependencies` name anything else can't be added. To suggest a package for the list, open an issue.
 
 ### Writing the blocks
 
 Registry blocks follow the same rules as any Goodfellow block (see [AGENTS.md](https://github.com/chartung17/goodfellow-cms/blob/master/AGENTS.md#blocks)):
 
-- Every block has a `className` prop (`className: classNameField`), applied to its outermost element and combined with `cx()` from `@goodfellow/react`, last.
+- Every block has a `className` prop (`className: classNameField`), applied to its outermost element and combined with `cx()` from `@goodfellow-cms/react`, last.
 - Use the theme's classes (`bg-primary`, `text-muted-foreground`, `rounded-lg`), which shadcn's components use too, so blocks follow the site's colors and fonts.
-- Render links and images with `SiteLink` and `SiteImage` from `@goodfellow/react`, and image fields with `mediaField()`. To style a link as a button, give `SiteLink` the classes from shadcn's `buttonVariants()`.
+- Render links and images with `SiteLink` and `SiteImage` from `@goodfellow-cms/react`, and image fields with `mediaField()`. To style a link as a button, give `SiteLink` the classes from shadcn's `buttonVariants()`.
 - Labels and options are for non-technical people: "Space above and below", not "padding-y".
 - `render` uses no hooks besides `useSite()`. Interactive parts go in a file starting with `"use client"`, which gets plain values and content (`children`, rich text) only.
 - **One Client Component per interactive part.** Sites built with `goodfellow build` run each Client Component a block renders as its own small React app (an island), and islands don't share React context. Components whose parts talk to each other through context, as Radix's `Accordion`, `AccordionItem` and `AccordionContent` do, must all be put together inside one `"use client"` file, which the block renders with its content as props. See `site/blocks/installed/shadcn-faq/` here.
@@ -100,7 +100,7 @@ export default defineConfig({
 ## Working on this registry
 
 - `registry.json` lists the blocks, whose files are in `site/blocks/installed/`, laid out as they'll be in a site.
-- `site/components/ui/` and `shadcn.json` are a snapshot of the shadcn/ui components the blocks use, so a release always installs the same code. `pnpm --filter @goodfellow/registry update-shadcn` (`scripts/snapshot.mjs`) fetches them again; review and commit what it writes. Don't edit the snapshot by hand.
+- `site/components/ui/` and `shadcn.json` are a snapshot of the shadcn/ui components the blocks use, so a release always installs the same code. `pnpm --filter @goodfellow-cms/registry update-shadcn` (`scripts/snapshot.mjs`) fetches them again; review and commit what it writes. Don't edit the snapshot by hand.
 - `pnpm build` (`scripts/build.mjs`) writes `r/`, which is what's published: an item per block and component, with its files, and `r/registry.json`.
 - The tests check that every item is valid, uses only the allowed packages, installs with every file it imports, and renders.
 

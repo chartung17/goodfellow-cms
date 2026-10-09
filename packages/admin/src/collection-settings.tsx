@@ -12,7 +12,7 @@ import {
   isReservedPagePath,
   serializeContent,
   TITLE_FIELD,
-} from "@goodfellow/core";
+} from "@goodfellow-cms/core";
 import { useMemo, useState } from "react";
 import { useAdmin, useSiteContent } from "./admin-context.js";
 import { collectionSettingsChanges, deleteCollectionChanges, slugify, uniqueName } from "./changes.js";

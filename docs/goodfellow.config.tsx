@@ -1,5 +1,5 @@
-import { blocks, categories } from "@goodfellow/blocks";
-import { defineConfig } from "@goodfellow/core";
+import { blocks, categories } from "@goodfellow-cms/blocks";
+import { defineConfig } from "@goodfellow-cms/core";
 import { DocsLayout } from "./blocks/docs-layout";
 
 export default defineConfig({
@@ -7,5 +7,6 @@ export default defineConfig({
   // Never rename a key: pages refer to blocks by it.
   blocks: { ...blocks, DocsLayout },
   categories: { ...categories, docs: { title: "Documentation", components: ["DocsLayout"] } },
-  // The site is put online in roadmap step 13, which sets `backend` and `base`.
+  // No `backend`, so builds have no admin panel: .github/workflows/docs.yml publishes the site to GitHub Pages,
+  // passing its subfolder as the base path.
 });

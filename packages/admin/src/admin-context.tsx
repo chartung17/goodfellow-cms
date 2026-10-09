@@ -16,8 +16,8 @@ import {
   SignInError,
   type SiteContent,
   writeChanges,
-} from "@goodfellow/core";
-import { createPuckConfig } from "@goodfellow/react";
+} from "@goodfellow-cms/core";
+import { createPuckConfig } from "@goodfellow-cms/react";
 import type { Config } from "@puckeditor/core";
 import { createContext, type ReactNode, useCallback, useContext, useEffect, useMemo, useState } from "react";
 import { mediaUrl } from "./media.js";
@@ -28,7 +28,7 @@ import { REGISTRY_VERSION } from "./registry-version.js";
 export interface PreviewOptions {
   /** The site's compiled stylesheets. */
   stylesheets: string[];
-  /** `@goodfellow/react/theme.css`, so Tailwind in the preview knows the theme's classes. */
+  /** `@goodfellow-cms/react/theme.css`, so Tailwind in the preview knows the theme's classes. */
   themeCss: string;
   /** URL of `@tailwindcss/browser`, which styles classes typed in the editor before the site is rebuilt. */
   tailwindBrowserUrl?: string;

@@ -1,4 +1,4 @@
-import { canFormatMarkdown } from "@goodfellow/core";
+import { canFormatMarkdown } from "@goodfellow-cms/core";
 import { AutoField, FieldLabel, RichTextMenu, type RichtextField } from "@puckeditor/core";
 import { useRef, useState } from "react";
 import { editedMarkdown, formattedHtml } from "./markdown-text.js";

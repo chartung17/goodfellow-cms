@@ -1,4 +1,4 @@
-import { classNameField, cx, mediaField, SiteImage } from "@goodfellow/react";
+import { classNameField, cx, mediaField, SiteImage } from "@goodfellow-cms/react";
 import type { ComponentConfig } from "@puckeditor/core";
 import { Card, CardContent, CardFooter } from "@/components/ui/card";
 

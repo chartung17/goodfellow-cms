@@ -1,7 +1,7 @@
 ---
-"@goodfellow/core": minor
-"@goodfellow/react": minor
-"@goodfellow/blocks": minor
+"@goodfellow-cms/core": minor
+"@goodfellow-cms/react": minor
+"@goodfellow-cms/blocks": minor
 "goodfellow": minor
 ---
 

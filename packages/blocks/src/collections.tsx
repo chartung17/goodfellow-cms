@@ -12,8 +12,8 @@ import {
   markdownText,
   sortCollectionEntries,
   sortEntries,
-} from "@goodfellow/core";
-import { classNameField, cx, SiteImage, SiteLink, templateOnly, useSite } from "@goodfellow/react";
+} from "@goodfellow-cms/core";
+import { classNameField, cx, SiteImage, SiteLink, templateOnly, useSite } from "@goodfellow-cms/react";
 import type { ComponentConfig, Fields, RichText } from "@puckeditor/core";
 import type { ReactNode } from "react";
 import { CodeView } from "./code.js";

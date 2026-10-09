@@ -1,6 +1,6 @@
 // Copies the shadcn/ui components Goodfellow's blocks use from shadcn's registry into site/components/ui,
 // with shadcn.json describing them. shadcn's registry isn't versioned, so each release of this package
-// ships the files it was tested with. Run with `pnpm --filter @goodfellow/registry update-shadcn`, check
+// ships the files it was tested with. Run with `pnpm --filter @goodfellow-cms/registry update-shadcn`, check
 // the blocks still work, and commit the result.
 import { mkdir, readFile, rm, writeFile } from "node:fs/promises";
 import { fileURLToPath } from "node:url";

@@ -76,15 +76,17 @@ test("keeps uploads in the browser, and starts over", async ({ page }) => {
 });
 
 // The admin panel lists blocks from the registry's release on jsDelivr; tests serve the built registry instead.
-const registryDir = fileURLToPath(new URL("../node_modules/@goodfellow/registry/r/", import.meta.url));
+const registryDir = fileURLToPath(new URL("../node_modules/@goodfellow-cms/registry/r/", import.meta.url));
 
 test("lists the blocks there are, but doesn't add or remove them", async ({ page }) => {
-  await page.route(/^https:\/\/cdn\.jsdelivr\.net\/npm\/@goodfellow\/registry@[^/]+\/r\/([a-z0-9-]+\.json)$/, (route) =>
-    route.fulfill({
-      contentType: "application/json",
-      headers: { "access-control-allow-origin": "*" },
-      body: readFileSync(join(registryDir, new URL(route.request().url()).pathname.split("/").at(-1) ?? ""), "utf8"),
-    }),
+  await page.route(
+    /^https:\/\/cdn\.jsdelivr\.net\/npm\/@goodfellow-cms\/registry@[^/]+\/r\/([a-z0-9-]+\.json)$/,
+    (route) =>
+      route.fulfill({
+        contentType: "application/json",
+        headers: { "access-control-allow-origin": "*" },
+        body: readFileSync(join(registryDir, new URL(route.request().url()).pathname.split("/").at(-1) ?? ""), "utf8"),
+      }),
   );
   await page.goto(`${DEMO}/admin/#/blocks`);
   await expect(

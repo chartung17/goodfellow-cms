@@ -1,4 +1,4 @@
-import { classNameField, sanitizeHtml } from "@goodfellow/react";
+import { classNameField, sanitizeHtml } from "@goodfellow-cms/react";
 import type { ComponentConfig } from "@puckeditor/core";
 import { HtmlPreview } from "./html-preview";
 import { HtmlWithScripts } from "./html-scripts";

@@ -1,4 +1,4 @@
-import type { GoodfellowConfig } from "@goodfellow/core";
+import type { GoodfellowConfig } from "@goodfellow-cms/core";
 import type { ComponentConfig, Config, Fields, TextField } from "@puckeditor/core";
 import type { ReactNode } from "react";
 

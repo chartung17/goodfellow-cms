@@ -9,7 +9,7 @@ import {
   type GitUser,
   SignInError,
   type WriteOptions,
-} from "@goodfellow/core";
+} from "@goodfellow-cms/core";
 import { type ApiOptions, githubJson, githubRequest, repoPath } from "./api.js";
 
 interface TreeResponse {

@@ -1,7 +1,7 @@
 ---
-"@goodfellow/core": patch
-"@goodfellow/react": patch
-"@goodfellow/blocks": patch
+"@goodfellow-cms/core": patch
+"@goodfellow-cms/react": patch
+"@goodfellow-cms/blocks": patch
 "goodfellow": patch
 ---
 

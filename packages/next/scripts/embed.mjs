@@ -10,7 +10,7 @@ const out = join(dirname(fileURLToPath(import.meta.url)), "../src/generated");
 mkdirSync(out, { recursive: true });
 
 const files = {
-  "theme-css.ts": require.resolve("@goodfellow/react/theme.css"),
+  "theme-css.ts": require.resolve("@goodfellow-cms/react/theme.css"),
   "tailwind-browser.ts": require.resolve("@tailwindcss/browser"),
 };
 for (const [name, source] of Object.entries(files)) {

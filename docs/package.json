@@ -1,5 +1,5 @@
 {
-  "name": "@goodfellow/docs",
+  "name": "@goodfellow-cms/docs",
   "version": "0.0.0",
   "private": true,
   "description": "Goodfellow's documentation site, built with Goodfellow.",
@@ -11,10 +11,10 @@
     "typecheck": "tsc -p tsconfig.json"
   },
   "dependencies": {
-    "@goodfellow/admin": "workspace:*",
-    "@goodfellow/blocks": "workspace:*",
-    "@goodfellow/core": "workspace:*",
-    "@goodfellow/react": "workspace:*",
+    "@goodfellow-cms/admin": "workspace:*",
+    "@goodfellow-cms/blocks": "workspace:*",
+    "@goodfellow-cms/core": "workspace:*",
+    "@goodfellow-cms/react": "workspace:*",
     "@puckeditor/core": "0.23.0",
     "react": "19.3.0",
     "react-dom": "19.3.0",

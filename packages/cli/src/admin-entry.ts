@@ -1,5 +1,5 @@
 import { createRequire } from "node:module";
-import { DEV_API_PREFIX } from "@goodfellow/core/node";
+import { DEV_API_PREFIX } from "@goodfellow-cms/core/node";
 import type { Plugin } from "vite";
 
 export const ADMIN_ENTRY = "virtual:goodfellow/admin";
@@ -25,10 +25,10 @@ export function adminEntryPlugin(configFile: string, entry: AdminEntryMode): Plu
   const tailwindBrowser = createRequire(import.meta.url).resolve("@tailwindcss/browser");
   const common = [
     `import config from ${JSON.stringify(configFile)};`,
-    `import { mountAdmin } from "@goodfellow/admin";`,
+    `import { mountAdmin } from "@goodfellow-cms/admin";`,
     `import "@puckeditor/core/puck.css";`,
-    `import "@goodfellow/admin/styles.css";`,
-    `import themeCss from "@goodfellow/react/theme.css?raw";`,
+    `import "@goodfellow-cms/admin/styles.css";`,
+    `import themeCss from "@goodfellow-cms/react/theme.css?raw";`,
     `import tailwindBrowserUrl from ${JSON.stringify(`${tailwindBrowser}?url`)};`,
     `const element = document.getElementById("gf-admin");`,
   ];
@@ -36,7 +36,7 @@ export function adminEntryPlugin(configFile: string, entry: AdminEntryMode): Plu
   const mount = () =>
     entry.mode === "dev"
       ? [
-          `import { localStore } from "@goodfellow/admin/dev";`,
+          `import { localStore } from "@goodfellow-cms/admin/dev";`,
           ...common,
           "mountAdmin(element, {",
           "  config,",

@@ -1,8 +1,21 @@
 {
-  "name": "@goodfellow/core",
+  "name": "@goodfellow-cms/core",
   "version": "0.0.0",
   "description": "Goodfellow's content model, config and file format. Runs in Node and the browser.",
+  "keywords": [
+    "goodfellow",
+    "cms",
+    "website-builder",
+    "puck"
+  ],
+  "homepage": "https://chartung17.github.io/goodfellow-cms/docs/content-files",
+  "bugs": "https://github.com/chartung17/goodfellow-cms/issues",
   "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/chartung17/goodfellow-cms.git",
+    "directory": "packages/core"
+  },
   "type": "module",
   "sideEffects": false,
   "exports": {
@@ -46,5 +59,11 @@
     "@puckeditor/core": "0.23.0",
     "@types/node": "^22.19.0",
     "react": "19.3.0"
+  },
+  "engines": {
+    "node": ">=22"
+  },
+  "publishConfig": {
+    "access": "public"
   }
 }
