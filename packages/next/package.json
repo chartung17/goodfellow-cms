@@ -2,7 +2,22 @@
   "name": "@goodfellow/next",
   "version": "0.0.0",
   "description": "Goodfellow pages and the admin panel in a Next.js site.",
+  "keywords": [
+    "goodfellow",
+    "cms",
+    "website-builder",
+    "puck",
+    "nextjs",
+    "next"
+  ],
+  "homepage": "https://chartung17.github.io/goodfellow-cms/docs/nextjs",
+  "bugs": "https://github.com/chartung17/goodfellow-cms/issues",
   "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/chartung17/goodfellow-cms.git",
+    "directory": "packages/next"
+  },
   "type": "module",
   "sideEffects": [
     "./dist/admin.js"
@@ -62,5 +77,11 @@
     "next": "16.3.8",
     "react": "19.3.0",
     "react-dom": "19.3.0"
+  },
+  "engines": {
+    "node": ">=22"
+  },
+  "publishConfig": {
+    "access": "public"
   }
 }

@@ -2,7 +2,23 @@
   "name": "@goodfellow/registry",
   "version": "0.0.0",
   "description": "Goodfellow's block registry: blocks built with shadcn/ui, which sites install from the admin panel.",
+  "keywords": [
+    "goodfellow",
+    "cms",
+    "website-builder",
+    "puck",
+    "shadcn",
+    "shadcn-registry",
+    "blocks"
+  ],
+  "homepage": "https://chartung17.github.io/goodfellow-cms/docs/block-registries",
+  "bugs": "https://github.com/chartung17/goodfellow-cms/issues",
   "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/chartung17/goodfellow-cms.git",
+    "directory": "packages/registry"
+  },
   "type": "module",
   "files": [
     "r",
@@ -30,5 +46,11 @@
     "radix-ui": "1.7.0",
     "react": "19.3.0",
     "react-dom": "19.3.0"
+  },
+  "engines": {
+    "node": ">=22"
+  },
+  "publishConfig": {
+    "access": "public"
   }
 }

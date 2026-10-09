@@ -2,7 +2,22 @@
   "name": "@goodfellow/admin",
   "version": "0.0.0",
   "description": "Goodfellow's admin panel: a visual editor for a site's pages, layout and settings.",
+  "keywords": [
+    "goodfellow",
+    "cms",
+    "website-builder",
+    "puck",
+    "admin-panel",
+    "visual-editor"
+  ],
+  "homepage": "https://chartung17.github.io/goodfellow-cms/docs/edit-pages",
+  "bugs": "https://github.com/chartung17/goodfellow-cms/issues",
   "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/chartung17/goodfellow-cms.git",
+    "directory": "packages/admin"
+  },
   "type": "module",
   "sideEffects": [
     "*.css"
@@ -57,5 +72,11 @@
     "@types/turndown": "5.0.6",
     "react": "19.3.0",
     "react-dom": "19.3.0"
+  },
+  "engines": {
+    "node": ">=22"
+  },
+  "publishConfig": {
+    "access": "public"
   }
 }

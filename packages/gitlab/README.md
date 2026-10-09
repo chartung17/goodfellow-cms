@@ -1,0 +1,17 @@
+# @goodfellow/gitlab
+
+Edit a Goodfellow site stored on GitLab, straight from the browser: sign-in with an access token, publishing as single commits, conflict checks and deploy status.
+
+```tsx
+import { gitlab } from "@goodfellow/gitlab";
+
+export default defineConfig({ blocks, backend: gitlab({ project: "your-name/your-site" }) });
+```
+
+[Goodfellow](https://github.com/chartung17/goodfellow-cms) is a website builder for people who aren't developers, with no server or database: pages are files in your own GitHub or GitLab repository, edited in a visual editor built on [Puck](https://puckeditor.com). To start a new site, run `npm create goodfellow@latest my-site`. See the [documentation](https://chartung17.github.io/goodfellow-cms/) for everything else.
+
+More in the docs: [Hosts and business sites](https://chartung17.github.io/goodfellow-cms/docs/hosts).
+
+## License
+
+MIT

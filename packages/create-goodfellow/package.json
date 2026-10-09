@@ -2,7 +2,23 @@
   "name": "create-goodfellow",
   "version": "0.0.0",
   "description": "Creates a new Goodfellow site: npm create goodfellow@latest my-site",
+  "keywords": [
+    "goodfellow",
+    "cms",
+    "website-builder",
+    "puck",
+    "create",
+    "starter",
+    "scaffold"
+  ],
+  "homepage": "https://chartung17.github.io/goodfellow-cms/docs/create-a-site",
+  "bugs": "https://github.com/chartung17/goodfellow-cms/issues",
   "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/chartung17/goodfellow-cms.git",
+    "directory": "packages/create-goodfellow"
+  },
   "type": "module",
   "bin": {
     "create-goodfellow": "./bin/create-goodfellow.js"
@@ -35,5 +51,8 @@
     "@goodfellow/registry": "workspace:*",
     "@goodfellow/template-next": "workspace:*",
     "@goodfellow/template-starter": "workspace:*"
+  },
+  "publishConfig": {
+    "access": "public"
   }
 }

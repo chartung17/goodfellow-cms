@@ -21,5 +21,6 @@
     }
   },
   "title": "Goodfellow",
-  "titleTemplate": "%s | Goodfellow"
+  "titleTemplate": "%s | Goodfellow",
+  "url": "https://chartung17.github.io/goodfellow-cms"
 }

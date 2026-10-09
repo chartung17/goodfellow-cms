@@ -61,6 +61,18 @@
                       "size": "lg",
                       "variant": "outline"
                     }
+                  },
+                  {
+                    "type": "Button",
+                    "props": {
+                      "id": "Button-demo",
+                      "className": "",
+                      "href": "https://chartung17.github.io/goodfellow-demo/admin/",
+                      "label": "Try the demo",
+                      "newTab": false,
+                      "size": "lg",
+                      "variant": "outline"
+                    }
                   }
                 ],
                 "justify": "start",

@@ -171,7 +171,8 @@ The admin panel is for people who have never used git.
 | Lint and format | Biome |
 | Unit tests | Vitest, test files next to the code as `*.test.ts(x)` |
 | End-to-end tests | Playwright, in `e2e/` |
-| Versioning and changelogs | Changesets |
+| Versioning and changelogs | Changesets, every package on one version |
+| Releases | `pnpm release:version`, then the Release workflow (`scripts/release.mjs`); see RELEASING.md |
 | Node | 22 or later |
 
 Run these from the repo root before every commit. CI runs the same steps.
@@ -193,7 +194,7 @@ pnpm test:e2e
 
 ## Starters and examples
 
-- **Documentation site:** `docs/` is a site of its own, built with `goodfellow build`, with one block of its own (`DocsLayout`). It isn't a template, so `create-goodfellow` doesn't copy it.
+- **Documentation site:** `docs/` is a site of its own, built with `goodfellow build`, with one block of its own (`DocsLayout`). It isn't a template, so `create-goodfellow` doesn't copy it. `.github/workflows/docs.yml` publishes it to GitHub Pages with each release, built from the release's commit, so it describes what's on npm; it has no admin panel online. Its home page and the README link to the demo site, which lives in a repository of its own.
 - **Sites:** `templates/starter` is the default site, `templates/next` the same site as a Next.js app, and `examples/parish` a complete example. `create-goodfellow` copies any of them, leaving out build output and `turbo.json`. Both are workspace packages, so they run against the workspace's packages, and their `package.json` files use `workspace:*`, which `create-goodfellow` replaces with published versions.
 - **Bundling:** `create-goodfellow`'s build copies the sites into its `templates/` folder (`scripts/bundle-templates.mjs`), with every package's version in `templates/versions.json`. It also copies the built block registry to `templates/registry`, which `--blocks recommended` (the default) installs from with `planInstall()`, so new sites need no download. It depends on them so Turborepo rebuilds it when they change. A new example needs adding there and to `TEMPLATES` in `scaffold.ts`.
 - **Setup lines:** `create-goodfellow` turns on the commented-out `backend` lines in `goodfellow.config.tsx` and removes other hosts' setup files, so keep those lines and file names as they are in every site.
@@ -204,7 +205,7 @@ pnpm test:e2e
 
 - **Exports:** use named exports. Each package exposes its public API from `src/index.ts`; anything not exported there is internal.
 - **Dependencies:** keep runtime dependencies small. Every package that ships to the browser counts against the editor's load time, and anything in `@goodfellow/react` also ships to every visitor of every site.
-- **Changesets:** any change to a published package needs one (`pnpm changeset`).
+- **Changesets:** any change to a published package needs one (`pnpm changeset`). Every package in `packages/` is in one `fixed` group, so they're released together with the same version; a new package goes in that group. Releases are made as RELEASING.md describes: `pnpm release:version` bumps the versions in a pull request, and once it's merged and CI passes on `master`, `.github/workflows/release.yml` runs `scripts/release.mjs publish --ci`, which publishes what npm doesn't have yet (packed with `pnpm pack`, so `workspace:*` becomes the version, then published with npm), tags the release and deploys the docs.
 - **Docs:** when a change affects what users see or do, update README.md (including the roadmap) and the documentation site's pages in `docs/content/collections/docs/` in the same change. They're Markdown items (see `docs/README.md`); a test checks they're in canonical form and that every link between them, heading links included, goes somewhere.
 
 ## Terminology

@@ -1,0 +1,70 @@
+# Publishes the packages to npm once CI passes on master, if master has a version
+# npm doesn't have yet, then tags the release and updates the docs site. Versions
+# only change when the pull request from `pnpm release:version` is merged, so
+# other changes to master publish nothing. See RELEASING.md.
+#
+# npm accepts this workflow through trusted publishing (each package's settings on
+# npmjs.com name this repository and release.yml), or an NPM_TOKEN secret.
+name: Release
+
+on:
+  workflow_run:
+    workflows: [CI]
+    types: [completed]
+    branches: [master]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: release
+  cancel-in-progress: false
+
+jobs:
+  publish:
+    # Only after CI passed on a push to master (not a pull request from a branch that happens to be called master).
+    if: >-
+      (github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/master') ||
+      (github.event.workflow_run.conclusion == 'success' && github.event.workflow_run.event == 'push')
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write # pushes the release's tags
+      id-token: write # trusted publishing, and provenance
+    outputs:
+      published: ${{ steps.publish.outputs.published }}
+      sha: ${{ steps.commit.outputs.sha }}
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          # The commit CI passed on, even if master has moved on since.
+          ref: ${{ github.event.workflow_run.head_sha || github.sha }}
+          fetch-depth: 0
+      - id: commit
+        run: echo "sha=$(git rev-parse HEAD)" >> "$GITHUB_OUTPUT"
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 22
+          cache: pnpm
+      # Trusted publishing needs npm 11.5.1 or later; Node 22 comes with npm 10.
+      - run: npm install --global npm@11
+      - run: pnpm install --frozen-lockfile
+      - id: publish
+        env:
+          NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
+        run: |
+          # Without the secret, npm signs in with trusted publishing. npm reads the token from the environment.
+          if [ -n "$NPM_TOKEN" ]; then echo '//registry.npmjs.org/:_authToken=${NPM_TOKEN}' > "$HOME/.npmrc"; fi
+          node scripts/release.mjs publish --ci
+
+  docs:
+    needs: publish
+    if: needs.publish.outputs.published == 'true'
+    uses: ./.github/workflows/docs.yml
+    with:
+      ref: ${{ needs.publish.outputs.sha }}
+    permissions:
+      contents: read
+      pages: write
+      id-token: write

@@ -1,0 +1,74 @@
+# Builds the documentation site (docs/) and publishes it with GitHub Pages. The
+# release workflow runs it after each release, so the docs describe the latest
+# version on npm. To publish a fix to the docs between releases, run it from the
+# Actions tab with "master" as the version. In the repository's Settings → Pages,
+# "Source" must be "GitHub Actions". See RELEASING.md.
+name: Deploy docs
+
+on:
+  workflow_call:
+    inputs:
+      ref:
+        description: The commit to build the docs from.
+        type: string
+        required: true
+  workflow_dispatch:
+    inputs:
+      ref:
+        description: The version to build the docs from, such as v0.2.0 or master. Leave it empty for the latest release.
+        type: string
+        required: false
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
+      - name: Check out the version to build
+        env:
+          REF: ${{ inputs.ref }}
+        run: |
+          if [ -z "$REF" ]; then
+            REF=$(git describe --tags --abbrev=0 --match 'v*' origin/master 2>/dev/null || true)
+            if [ -z "$REF" ]; then
+              echo "::error::There's no release yet. Run this with \"master\" as the version, or release first."
+              exit 1
+            fi
+          fi
+          git checkout --detach "$REF" 2>/dev/null || git checkout --detach "origin/$REF"
+          echo "Building the docs from $REF ($(git rev-parse --short HEAD))."
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 22
+          cache: pnpm
+      - id: pages
+        uses: actions/configure-pages@v5
+      - run: pnpm install --frozen-lockfile
+      # The packages the docs site is built with, then the site itself, served from /repository-name/.
+      - run: pnpm turbo run build --filter='@goodfellow/docs^...'
+      - run: pnpm --filter @goodfellow/docs exec goodfellow build --base "${{ steps.pages.outputs.base_path }}/"
+      - uses: actions/upload-pages-artifact@v4
+        with:
+          path: docs/dist
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v4

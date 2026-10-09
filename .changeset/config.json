@@ -2,7 +2,21 @@
   "$schema": "https://unpkg.com/@changesets/config@3.0.0/schema.json",
   "changelog": "@changesets/cli/changelog",
   "commit": false,
-  "fixed": [],
+  "fixed": [
+    [
+      "@goodfellow/admin",
+      "@goodfellow/ai",
+      "@goodfellow/blocks",
+      "@goodfellow/core",
+      "@goodfellow/github",
+      "@goodfellow/gitlab",
+      "@goodfellow/next",
+      "@goodfellow/react",
+      "@goodfellow/registry",
+      "create-goodfellow",
+      "goodfellow"
+    ]
+  ],
   "linked": [],
   "access": "public",
   "baseBranch": "master",

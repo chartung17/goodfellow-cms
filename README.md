@@ -4,7 +4,7 @@ A git-based website builder built on the [Puck](https://puckeditor.com) visual e
 
 Goodfellow gives non-technical site owners a drag-and-drop editor at `/admin` with no server, database or monthly hosting bill. Pages are stored as files in the site's own GitHub or GitLab repository. Every save is a commit, and a free static host (GitHub Pages, GitLab Pages or Vercel) rebuilds the site.
 
-> **Status: early development.** Static rendering, the admin panel, collections, the AI assistant, the media library, blocks from Goodfellow's shadcn/ui block registry, demo mode, Markdown collections, code highlighting and search, publishing to GitHub or GitLab, `create-goodfellow` and the Next.js adapter work, with deploy setups for GitHub Pages, GitLab Pages and Vercel. Nothing is published to npm yet. This README describes what Goodfellow is meant to become; the [roadmap](#roadmap) shows what exists. The [documentation site](docs/), built with Goodfellow, goes online in step 13.
+> **Status: early development.** Static rendering, the admin panel, collections, the AI assistant, the media library, blocks from Goodfellow's shadcn/ui block registry, demo mode, Markdown collections, code highlighting and search, publishing to GitHub or GitLab, `create-goodfellow` and the Next.js adapter work, with deploy setups for GitHub Pages, GitLab Pages and Vercel. The packages are on npm, released together with one version number. This README describes what Goodfellow is meant to become; the [roadmap](#roadmap) shows what exists. The [documentation](https://chartung17.github.io/goodfellow-cms/), built with Goodfellow, describes the latest release, and [the demo](https://chartung17.github.io/goodfellow-demo/admin/) lets anyone try the admin panel.
 
 ## How it works
 
@@ -80,7 +80,7 @@ It asks which site to start from, where the site will be stored (GitHub or GitLa
 
 To skip the questions, give the answers as options: `npm create goodfellow@latest my-site -- --template parish --github your-name/your-site --host github-pages --blocks built-in`. Run it with `--help` for the full list.
 
-Until Goodfellow is published to npm, `npm create goodfellow` doesn't work yet, so try the sites in this repository instead. The repository is a pnpm workspace: its sites use the repository's own packages (`workspace:*` in their `package.json`), so `npm install` fails inside them. Get pnpm with `corepack enable` (or `npm install -g pnpm`), then run:
+To try the sites in this repository instead, with the newest, unreleased changes, or to work on Goodfellow itself: the repository is a pnpm workspace: its sites use the repository's own packages (`workspace:*` in their `package.json`), so `npm install` fails inside them. Get pnpm with `corepack enable` (or `npm install -g pnpm`), then run:
 
 ```sh
 pnpm install    # from the repository's root
@@ -343,7 +343,7 @@ my-site/
 9. **Interactive blocks everywhere** (done). Client Components in blocks (`"use client"`) run in the browser on sites built with `goodfellow build` too, not only with Next.js.
 10. **shadcn blocks** (done). A registry of Goodfellow blocks built with [shadcn/ui](https://ui.shadcn.com), installed into the site without a developer. When creating a site, admins choose "Recommended" or "Built-in blocks only"; the admin panel lets them add and remove individual blocks. Others can publish registries of blocks built with other libraries, in a documented format. Updating installed blocks comes with step 16's automatic updates.
 11. **Demo mode** (done). A site whose config sets `demo: true` (it can only be turned on in the config, never from the admin panel) opens its admin panel to anyone, with no sign-in. Visitors can try everything, from editing pages and collections to the media library, settings and the AI assistant, but nothing is published: their changes stay in their own browser until they start over. The demo starts from a copy of the site's content that the build includes, so the repository can stay private.
-12. **Documentation site.** A documentation site built with Goodfellow itself, in `docs/`, and the blocks it needs, which any site can use: code with syntax highlighting, search (with [Pagefind](https://pagefind.app), indexed only on sites that use a search block), navigation within a collection, previous and next links, and an "On this page" list. Collections can store their items as Markdown files, edited in the admin panel's formatted editor or as Markdown. The docs cover why Goodfellow exists and how it compares with alternatives such as WordPress and TinaCMS, guides for site owners and editors, reference docs for developers, and each host's rules for business sites on its free plan. Built and tested, but not yet online.
+12. **Documentation site** (done). A documentation site built with Goodfellow itself, in `docs/`, and the blocks it needs, which any site can use: code with syntax highlighting, search (with [Pagefind](https://pagefind.app), indexed only on sites that use a search block), navigation within a collection, previous and next links, and an "On this page" list. Collections can store their items as Markdown files, edited in the admin panel's formatted editor or as Markdown. The docs cover why Goodfellow exists and how it compares with alternatives such as WordPress and TinaCMS, guides for site owners and editors, reference docs for developers, and each host's rules for business sites on its free plan. Online at [chartung17.github.io/goodfellow-cms](https://chartung17.github.io/goodfellow-cms/) since step 13.
 13. **Going live.** Make the repository public, publish the packages to npm, and put the documentation site online with GitHub Pages. A demo site, made from the parish example in a repository of its own with the published packages, goes online with GitHub Pages too, and the docs link to it.
 14. **Site setup without a developer.** A web page where anyone can create a site from a starter, store it on GitHub or GitLab, and put it online with GitHub Pages, GitLab Pages or Vercel. It asks what the site is for and recommends a host whose free plan allows it, such as GitLab Pages for a business. Builds work out which repository they're in, so nobody has to edit the config.
 15. **Custom domains.** Connect a domain from the admin panel. Goodfellow sets the domain on the host where it can, lists the records to add at the domain's registrar, with guides for popular registrars, and shows when the domain is working.
@@ -358,7 +358,7 @@ my-site/
 
 ## Contributing
 
-See [AGENTS.md](AGENTS.md) for architecture rules and conventions. They apply to human contributors as well as coding agents.
+See [AGENTS.md](AGENTS.md) for architecture rules and conventions. They apply to human contributors as well as coding agents. [RELEASING.md](RELEASING.md) explains how versions are released to npm.
 
 ## License
 
