@@ -155,7 +155,8 @@ function copyNextTemplate(dir) {
     if (["node_modules", ".next", "out", ".turbo"].includes(entry)) continue;
     cpSync(join(nextTemplate, entry), join(dir, entry), { recursive: true });
   }
-  symlinkSync(join(nextTemplate, "node_modules"), join(dir, "node_modules"), "dir");
+  // A junction on Windows, which needs no administrator rights; a symlink elsewhere.
+  symlinkSync(join(nextTemplate, "node_modules"), join(dir, "node_modules"), "junction");
 }
 
 /** Creates the Next.js test site, with an extra block whose component runs in the browser. */

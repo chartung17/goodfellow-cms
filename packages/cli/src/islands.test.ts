@@ -99,11 +99,12 @@ describe("blockPackages", () => {
     await pkg("@acme/blocks", { peerDependencies: { "@goodfellow-cms/react": "^1.0.0" } });
     await pkg("left-pad", {});
     await pkg("@goodfellow-cms/admin", { dependencies: { "@goodfellow-cms/react": "1.0.0" } });
-    // The workspace's own block pack, linked like pnpm links it.
+    // The workspace's own block pack, linked like pnpm links it: a junction on Windows, which needs no
+    // administrator rights, and a symlink elsewhere.
     await symlink(
       resolve(import.meta.dirname, "../../blocks"),
       join(root, "node_modules/@goodfellow-cms/blocks"),
-      "dir",
+      "junction",
     );
     await writeFile(
       join(root, "package.json"),
