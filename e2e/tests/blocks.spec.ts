@@ -89,7 +89,7 @@ test("runs custom HTML used as written on the site, but only in a sandboxed fram
   await expect.poll(() => page.evaluate(() => "beforeAdding" in window).catch(() => true)).toBe(false);
 
   const html =
-    '<p id="widget">Widget</p><script>document.getElementById("widget").textContent = "Ran"; try { window.parent.document.title = "Reached"; } catch {}</script>';
+    '<p id="widget">Widget</p><script>window.runs = (window.runs || 0) + 1; document.getElementById("widget").textContent = "Ran " + window.runs; try { window.parent.document.title = "Reached"; } catch {}</script>';
   writeSiteFile(
     "content/pages/widget.json",
     `${JSON.stringify(
@@ -106,12 +106,20 @@ test("runs custom HTML used as written on the site, but only in a sandboxed fram
   );
 
   await page.goto("/widget");
-  await expect(page.locator("#widget")).toHaveText("Ran");
+  await expect(page.locator("#widget")).toHaveText("Ran 1");
+  // Its script ran with the page, and not again once the page's Client Components started.
+  const island = page.locator('gf-island[data-gf-export="HtmlWithScripts"]');
+  await expect(island).toHaveCount(1);
+  // React has taken over the block once it marks the island as a root.
+  await expect
+    .poll(() => island.evaluate((element) => Object.keys(element).some((key) => key.startsWith("__reactContainer"))))
+    .toBe(true);
+  await expect(page.locator("#widget")).toHaveText("Ran 1");
 
   await page.goto("/admin#/");
   await page.goto(`/admin#/pages/edit?path=${encodeURIComponent("/widget")}`);
   const frame = page.frameLocator("iframe#preview-frame").frameLocator('iframe[title="Custom HTML"]');
-  await expect(frame.locator("#widget")).toHaveText("Ran");
+  await expect(frame.locator("#widget")).toHaveText("Ran 1");
   await expect(page.frameLocator("iframe#preview-frame").locator('iframe[title="Custom HTML"]')).toHaveAttribute(
     "sandbox",
     "allow-scripts",
@@ -200,19 +208,36 @@ baseTest("adds a block to a site on GitHub in one publish", async ({ page }) => 
   await baseExpect(page.locator(".gfa-block-list")).toContainText("FAQ");
 });
 
-baseTest("adds a block to a Next.js site, which then runs it", async ({ page }) => {
-  // `next dev` recompiles once after adding the block and again after the test resets it.
+baseTest("adds blocks to a Next.js site, which then runs them, also after moving between pages", async ({ page }) => {
+  // `next dev` recompiles once after adding the blocks and again after the test resets them.
   baseTest.setTimeout(400_000);
   const root = nextSite as string;
   resetNextContent();
   try {
     await page.goto("http://localhost:4403/admin/#/blocks");
     await page.getByRole("button", { name: "Add FAQ" }).click({ timeout: 60_000 });
+    await page.getByRole("button", { name: "Add Custom HTML" }).click();
     await publishBlocks(page);
     await expect.poll(() => existsSync(join(root, "blocks/installed/installed.json")), { timeout: 60_000 }).toBe(true);
 
-    writeFileSync(join(root, "content/pages/help.json"), `${JSON.stringify(faqPage, null, 2)}\n`);
-    // `next dev` recompiles once the block is on disk; a page asked for meanwhile may not have it yet.
+    const html =
+      '<p id="widget">Widget</p><script>window.runs = (window.runs || 0) + 1; document.getElementById("widget").textContent = "Ran " + window.runs;</script>';
+    const helpPage = {
+      ...faqPage,
+      data: {
+        ...faqPage.data,
+        content: [
+          ...faqPage.data.content,
+          { type: "custom-html", props: { id: "custom-html-1", className: "", html, sanitize: false } },
+        ],
+      },
+    };
+    writeFileSync(join(root, "content/pages/help.json"), `${JSON.stringify(helpPage, null, 2)}\n`);
+    const menus = JSON.parse(readFileSync(join(root, "content/menus.json"), "utf8"));
+    menus.menus.main.push({ href: "/help", label: "Help" });
+    writeFileSync(join(root, "content/menus.json"), `${JSON.stringify(menus, null, 2)}\n`);
+
+    // `next dev` recompiles once the blocks are on disk; a page asked for meanwhile may not have them yet.
     await expect(async () => {
       await page.goto("http://localhost:4403/help/");
       await baseExpect(page.getByRole("button", { name: "When are you open?" })).toBeVisible({ timeout: 5_000 });
@@ -223,6 +248,21 @@ baseTest("adds a block to a Next.js site, which then runs it", async ({ page }) 
       if (!(await answer.isVisible())) await page.getByRole("button", { name: "When are you open?" }).click();
       baseExpect(await answer.isVisible()).toBe(true);
     }).toPass({ timeout: 60_000 });
+    // Opened directly, the page ran the script once, and React taking over didn't run it again.
+    await expect(page.locator("#widget")).toHaveText("Ran 1");
+
+    // Moving to the page from another one runs its script too.
+    await page.goto("http://localhost:4403/about/");
+    await page.evaluate(() => Object.assign(window, { beforeMoving: true }));
+    await page.getByRole("navigation", { name: "main" }).getByRole("link", { name: "Help" }).click();
+    await expect(page.locator("#widget")).toHaveText("Ran 1");
+    baseExpect(await page.evaluate(() => "beforeMoving" in window)).toBe(true);
+    // And again after moving away and back.
+    await page.getByRole("navigation", { name: "main" }).getByRole("link", { name: "About" }).click();
+    await expect(page.locator("#widget")).toBeHidden();
+    await page.getByRole("navigation", { name: "main" }).getByRole("link", { name: "Help" }).click();
+    await expect(page.locator("#widget")).toHaveText("Ran 2");
+    baseExpect(await page.evaluate(() => "beforeMoving" in window)).toBe(true);
   } finally {
     // The site's pages and the admin panel both import the blocks, so both recompile.
     if (resetNextContent()) {
