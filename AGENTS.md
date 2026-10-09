@@ -186,6 +186,7 @@ pnpm build
 pnpm test:e2e
 ```
 
+- **Line endings:** files are LF everywhere, which Biome and the content files' canonical form expect. `.gitattributes` makes git check them out with LF on Windows too.
 - **Order:** tests and typechecks use other workspace packages' built `dist/` folders, so Turborepo builds dependencies first. If you run Vitest directly inside one package, run `pnpm build` first.
 - **TypeScript 7:** tsdown warns that TypeScript 7's API is experimental. That warning is expected. The Next.js starter uses TypeScript 5.9, because `next build` type-checks through TypeScript's JavaScript API.
 - **Next.js:** `pnpm build` runs `next build` for `templates/next`, which writes `out/`. `next dev` and `next build` may rewrite its `tsconfig.json`; commit what they write. `@goodfellow-cms/next` embeds the theme's CSS and Tailwind for the browser as text (`scripts/embed.mjs`, into the ignored `src/generated/`), since Next.js can't import them as text.
