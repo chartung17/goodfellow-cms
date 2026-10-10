@@ -1,17 +1,15 @@
 /**
- * Calendars in a site: the pages a month-at-a-time Calendar block adds, and
- * the calendar files builds write for collections of events.
+ * Calendars in a site: how many months a month-at-a-time Calendar block gives
+ * pages (see `withPages`), and the calendar files builds write for collections
+ * of events.
  */
 
-import { isEventLike, isMonth, monthsAround } from "../calendar.js";
+import { isEventLike } from "../calendar.js";
 import { absoluteUrl } from "../head.js";
 import { type CalendarEvent, calendarFile } from "../ics.js";
 import { type Collection, entryTitle, richTextToPlainText } from "./collections.js";
-import { allPages, type Page, type SiteContent } from "./load.js";
+import type { SiteContent } from "./load.js";
 import { markdownText } from "./markdown.js";
-
-/** The built-in Calendar block's name in a site's blocks, which content refers to it by. */
-export const CALENDAR_BLOCK = "Calendar";
 
 /** Where builds put calendar files: `/calendars/<collection>.ics`, and `/calendars/<collection>/<slug>.ics` for each event. */
 export const CALENDARS_DIR = "calendars";
@@ -44,62 +42,6 @@ function monthCount(value: unknown, fallback: number): number {
 /** The months a Calendar block set to a month at a time shows, read from its props. */
 export function calendarMonths(props: Record<string, unknown>): CalendarMonths {
   return { before: monthCount(props.monthsBefore, 1), after: monthCount(props.monthsAfter, 12) };
-}
-
-/** The first Calendar block in Puck data that shows a month at a time, wherever it is. */
-function monthCalendar(value: unknown): CalendarMonths | undefined {
-  if (Array.isArray(value)) {
-    for (const item of value) {
-      const found = monthCalendar(item);
-      if (found) return found;
-    }
-    return undefined;
-  }
-  if (!value || typeof value !== "object") return undefined;
-  const record = value as { type?: unknown; props?: Record<string, unknown> };
-  if (record.type === CALENDAR_BLOCK && record.props?.view === "month") return calendarMonths(record.props);
-  for (const child of Object.values(value)) {
-    const found = monthCalendar(child);
-    if (found) return found;
-  }
-  return undefined;
-}
-
-/** A month page's address: the calendar's page with the month after it. */
-export function monthPagePath(path: string, month: string): string {
-  return path === "/" ? `/${month}` : `${path}/${month}`;
-}
-
-/**
- * Every page a build writes: the site's pages and its entries' pages (see
- * `allPages`), and a page for each month that a month-at-a-time Calendar block
- * shows, around the month `today` is in. A month page never takes an address
- * a page or entry already has.
- */
-export function sitePages(content: SiteContent, today: string): Page[] {
-  const pages = allPages(content);
-  const taken = new Set(pages.map((page) => page.path));
-  const months: Page[] = [];
-  for (const page of pages) {
-    if (page.entry || page.path === "/404") continue;
-    const calendar = monthCalendar(page.content.data.content) ?? monthCalendar(page.content.data.zones);
-    if (!calendar) continue;
-    for (const month of monthsAround(today, calendar.before, calendar.after)) {
-      const path = monthPagePath(page.path, month);
-      if (taken.has(path)) continue;
-      taken.add(path);
-      months.push({ ...page, path, month });
-    }
-  }
-  return [...pages, ...months].sort((a, b) => a.path.localeCompare(b.path));
-}
-
-/** The page a month page belongs to, and its month, from a month page's address. */
-export function splitMonthPath(path: string): { path: string; month: string } | undefined {
-  const last = path.slice(path.lastIndexOf("/") + 1);
-  if (!isMonth(last)) return undefined;
-  const parent = path.slice(0, path.lastIndexOf("/"));
-  return { path: parent || "/", month: last };
 }
 
 /** The collections that are calendars: ones whose settings name their event field. */

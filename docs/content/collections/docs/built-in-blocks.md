@@ -24,7 +24,8 @@ Every site has these blocks. Sites can also have [blocks from block registries](
 | Site name and logo | The site's logo and name, linking home |
 | Search | A search box for the whole site, with results as you type |
 | Collection navigation | Links to every item in a collection, grouped by one of its choice fields |
-| Collection list | A collection's items as a list or cards |
+| Collection list | A collection's items as a list or cards, with a heading, on pages of their own and a page for each choice (see [Showing collections](/docs/showing-collections)) |
+| Collection loop | Blocks you design, shown once for each of a collection's items |
 | Calendar | Events coming up, or a month at a time, from a collection of events or another calendar (see [Calendars and events](/docs/calendars)) |
 | Entry field | One of the item's fields, in a collection's page design only |
 | Add to calendar | Links that add the item's event to visitors' calendars, in a page design only |

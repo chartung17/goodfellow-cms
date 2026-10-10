@@ -109,23 +109,40 @@ describe("values", () => {
       render: () => <span />,
       metadata: { ai: { type: "choice", options: [{ value: "homily", label: "Homily" }] } },
     },
+    topics: {
+      type: "custom",
+      label: "Topics",
+      render: () => <span />,
+      metadata: {
+        ai: {
+          type: "choices",
+          options: [
+            { value: "music", label: "Music" },
+            { value: "youth", label: "Youth" },
+          ],
+        },
+      },
+    },
     secret: { type: "custom", label: "Secret", render: () => <span /> },
   };
 
   it("describes fields, including custom ones that say what they hold", () => {
     const schema = valuesSchema(fields) as { properties: { values: { properties: Record<string, Loose> } } };
     const properties = schema.properties.values.properties;
-    expect(Object.keys(properties)).toEqual(["title", "date", "kind"]);
+    expect(Object.keys(properties)).toEqual(["title", "date", "kind", "topics"]);
     expect(properties.kind.enum).toEqual(["", "homily"]);
+    expect(properties.topics).toMatchObject({ type: "array", items: { enum: ["music", "youth"] } });
   });
 
   it("keeps the current value where the answer doesn't fit", () => {
     expect(
-      toValues({ values: { title: "New", date: "next week", kind: "homily", secret: "x" } }, fields, {
-        title: "Old",
-        date: "2026-01-01",
-        secret: "kept",
-      }),
-    ).toEqual({ title: "New", date: "2026-01-01", kind: "homily", secret: "kept" });
+      toValues(
+        {
+          values: { title: "New", date: "next week", kind: "homily", topics: ["youth", "sport", "music"], secret: "x" },
+        },
+        fields,
+        { title: "Old", date: "2026-01-01", secret: "kept" },
+      ),
+    ).toEqual({ title: "New", date: "2026-01-01", kind: "homily", topics: ["music", "youth"], secret: "kept" });
   });
 });

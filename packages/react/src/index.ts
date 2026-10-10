@@ -2,7 +2,15 @@
 export { sanitizeHtml } from "@goodfellow-cms/core";
 export { BodyCode, HeadCode } from "./custom-code.js";
 export { cx } from "./cx.js";
-export { applyEntry, placeholderValues } from "./entry.js";
+export {
+  applyEntry,
+  type EntryLoop,
+  entryLoop,
+  expandEntryLoops,
+  type LoopItem,
+  placeholderValues,
+  repeatsForEntries,
+} from "./entry.js";
 export { SiteImage, SiteLink } from "./links.js";
 export {
   PageBody,

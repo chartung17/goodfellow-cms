@@ -63,6 +63,8 @@ function aiHint(field: CollectionField, markdown: boolean): AiFieldHint {
       return { type: "date", description };
     case "select":
       return { type: "choice", options: field.options ?? [], description };
+    case "tags":
+      return { type: "choices", options: field.options ?? [], description };
     case "link":
       return {
         type: "string",
@@ -136,6 +138,41 @@ function fieldControl(field: CollectionField, markdown: boolean, settings: SiteS
             <Hint text={field.hint} />
           </FieldLabel>
         ),
+      };
+    case "tags":
+      return {
+        type: "custom",
+        label,
+        render: ({ value, onChange, id }) => {
+          const chosen = Array.isArray(value) ? value : [];
+          return (
+            // Checkboxes with labels of their own, so not one label around them all.
+            <FieldLabel label={label} el="div">
+              <fieldset id={id} className="gfa-tags-field" aria-label={label}>
+                {(field.options ?? []).map((option) => (
+                  <label key={option.value} className="gfa-checkbox">
+                    <input
+                      type="checkbox"
+                      checked={chosen.includes(option.value)}
+                      onChange={(event) => {
+                        const next = event.target.checked
+                          ? [...chosen, option.value]
+                          : chosen.filter((tag) => tag !== option.value);
+                        // In the order the collection lists them, so files don't change when only the order would.
+                        const ordered = (field.options ?? [])
+                          .map((candidate) => candidate.value)
+                          .filter((tag) => next.includes(tag));
+                        onChange(ordered.length > 0 ? ordered : undefined);
+                      }}
+                    />
+                    {option.label}
+                  </label>
+                ))}
+              </fieldset>
+              <Hint text={field.hint} />
+            </FieldLabel>
+          );
+        },
       };
     case "event":
       return {

@@ -76,20 +76,63 @@
               }
             },
             {
-              "type": "CollectionList",
+              "type": "CollectionLoop",
               "props": {
-                "id": "CollectionList-staff",
+                "id": "CollectionLoop-staff",
+                "allLabel": "All",
+                "choicePages": "",
                 "className": "",
                 "collection": "staff",
                 "columns": "4",
                 "dateField": "",
+                "design": [
+                  {
+                    "type": "Image",
+                    "props": {
+                      "id": "Image-staff-photo",
+                      "alt": "",
+                      "aspect": "square",
+                      "caption": "",
+                      "className": "",
+                      "rounded": true,
+                      "src": "{photo}"
+                    }
+                  },
+                  {
+                    "type": "Heading",
+                    "props": {
+                      "id": "Heading-staff-name",
+                      "align": "left",
+                      "className": "text-lg",
+                      "level": "h3",
+                      "text": "{title}"
+                    }
+                  },
+                  {
+                    "type": "Text",
+                    "props": {
+                      "id": "Text-staff-role",
+                      "align": "left",
+                      "className": "text-muted-foreground",
+                      "content": "<p>{role}</p>"
+                    }
+                  }
+                ],
                 "emptyText": "",
-                "imageField": "photo",
-                "layout": "cards",
+                "filterField": "",
+                "filterValue": "",
+                "gap": "md",
+                "items": [],
                 "limit": 0,
+                "linkToPage": false,
+                "nextLabel": "Next",
                 "order": "default",
+                "pageTitle": "Page {number}",
+                "pagesLabel": "Pages",
+                "paginate": false,
+                "previousLabel": "Previous",
                 "show": "all",
-                "summaryField": "role"
+                "sortField": ""
               }
             }
           ],

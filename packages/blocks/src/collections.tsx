@@ -8,22 +8,31 @@ import {
   isDateValue,
   isEmptyValue,
   isEventLike,
-  isUpcoming,
   type MarkdownOptions,
   type MarkdownPart,
   markdownParts,
   markdownText,
   type SiteSettings,
   shownOccurrence,
-  sortCollectionEntries,
-  sortEntries,
   todayIn,
+  withPages,
 } from "@goodfellow-cms/core";
 import { classNameField, cx, SiteImage, SiteLink, templateOnly, useSite } from "@goodfellow-cms/react";
 import type { ComponentConfig, Fields, RichText } from "@puckeditor/core";
 import type { ReactNode } from "react";
 import { CodeView } from "./code.js";
 import { highlightCode, loadHighlighter } from "./highlight.js";
+import {
+  ChoiceLinks,
+  currentListing,
+  type ListingProps,
+  listingDefaults,
+  listingFields,
+  listingPages,
+  PageLinks,
+  resolveListingFields,
+  selectedEntries,
+} from "./listing.js";
 import { options } from "./options.js";
 
 type FieldChoice = { label: string; value: string };
@@ -193,19 +202,16 @@ export const EntryField = templateOnly(entryField);
 
 type Layout = "list" | "cards";
 type Columns = "2" | "3" | "4";
-type Order = "default" | "newest" | "oldest" | "title";
-type Show = "all" | "upcoming" | "past";
 
-export interface CollectionListProps {
-  collection: string;
+export interface CollectionListProps extends ListingProps {
+  /** A heading above the list, and a link beside it, such as "See all" to a page with every item. */
+  heading: string;
+  moreLabel: string;
+  moreHref: string;
   layout: Layout;
   columns: Columns;
   imageField: string;
-  dateField: string;
   summaryField: string;
-  order: Order;
-  show: Show;
-  limit: number;
   emptyText: string;
   className: string;
 }
@@ -219,56 +225,30 @@ const columnClasses: Record<Columns, string> = {
 /** The entries a list shows, in order. `now` is today's date: pages are rebuilt nightly to keep it current. */
 export function listedEntries(
   collection: Collection,
-  { dateField, order, show, limit }: Pick<CollectionListProps, "dateField" | "order" | "show" | "limit">,
+  props: Pick<ListingProps, "dateField" | "order" | "show" | "limit"> & Partial<ListingProps>,
   now = todayIn(undefined),
 ): Entry[] {
-  let entries = collection.entries;
-  if (dateField && show !== "all") {
-    entries = entries.filter((entry) => {
-      const date = entry.content.fields[dateField];
-      // An event that repeats is upcoming until its last time.
-      if (isEventLike(date)) return show === "upcoming" ? isUpcoming(date, now) : !isUpcoming(date, now);
-      if (!isDateValue(date)) return false;
-      return show === "upcoming" ? date >= now : date < now;
-    });
-  }
-  const isEventField = collection.settings.fields.some((field) => field.name === dateField && field.type === "event");
-  if (order === "title") entries = sortEntries(entries);
-  else if (isEventField && (order !== "default" || collection.settings.sort?.field === dateField)) {
-    // Events that repeat come in order of when they next happen, rather than when they first did.
-    const next = (entry: Entry) => {
-      const value = entry.content.fields[dateField];
-      return isEventLike(value) ? (shownOccurrence(value, now)?.start ?? value.start) : "";
-    };
-    const descending = order === "newest" || (order === "default" && collection.settings.sort?.order === "desc");
-    entries = [...entries].sort((a, b) => {
-      const [x, y] = [next(a), next(b)];
-      if (!x || !y) return x ? -1 : y ? 1 : 0;
-      return descending ? y.localeCompare(x) : x.localeCompare(y);
-    });
-  } else if ((order === "newest" || order === "oldest") && dateField) {
-    entries = sortEntries(entries, dateField, order === "newest" ? "desc" : "asc");
-  } else entries = sortCollectionEntries(collection.settings, entries);
-  return limit > 0 ? entries.slice(0, limit) : entries;
+  const entries = selectedEntries(collection, { ...listingDefaults, ...props }, now);
+  return props.limit > 0 ? entries.slice(0, props.limit) : entries;
 }
 
 function CollectionListView({
-  collection: id,
+  heading,
+  moreLabel,
+  moreHref,
   layout,
   columns,
   imageField,
-  dateField,
   summaryField,
-  order,
-  show,
-  limit,
   emptyText,
   className,
   isEditing,
-}: CollectionListProps & { isEditing: boolean }) {
-  const { collections, settings } = useSite();
-  const collection = collections.find((candidate) => candidate.id === id);
-  if (!collection) {
+  ...props
+}: CollectionListProps & { id?: string; isEditing: boolean }) {
+  const site = useSite();
+  const { settings } = site;
+  const listing = currentListing(props, site);
+  if (!listing) {
     return isEditing ? (
       <p className={cx("rounded-md border border-dashed border-border p-4 text-muted-foreground", className)}>
         Choose a collection to list.
@@ -276,122 +256,125 @@ function CollectionListView({
     ) : null;
   }
 
-  const entries = listedEntries(collection, { dateField, order, show, limit }, todayIn(settings.timeZone));
-  if (entries.length === 0) {
-    return emptyText ? <p className={cx("text-muted-foreground", className)}>{emptyText}</p> : null;
-  }
-
+  const { collection, entries } = listing;
+  const { dateField } = props;
   const fieldOf = (name: string) => collection.settings.fields.find((field) => field.name === name);
   const cards = layout === "cards";
 
-  return (
-    <ul
-      className={cx(
-        cards ? cx("grid gap-6", columnClasses[columns]) : "flex flex-col divide-y divide-border",
-        className,
-      )}
-    >
-      {entries.map((entry) => {
-        const values = entry.content.fields;
-        const image = imageField && !isEmptyValue(values[imageField]) ? String(values[imageField]) : undefined;
-        const dateValue = dateField ? values[dateField] : undefined;
-        const shown = isEventLike(dateValue) ? shownOccurrence(dateValue, todayIn(settings.timeZone)) : undefined;
-        const date = shown ? shown.start : isDateValue(dateValue) ? dateValue : undefined;
-        const summaryValue = summaryField ? values[summaryField] : undefined;
-        const summary = !summaryField
-          ? ""
-          : collection.settings.markdown?.body === summaryField && typeof summaryValue === "string"
-            ? markdownText(summaryValue)
-            : formatFieldValue(fieldOf(summaryField), summaryValue, settings.language);
-        const title = entryTitle(entry);
+  // A list on its own is just the list; with a heading or links to its other pages, they go around it.
+  const top = heading || (moreLabel && moreHref);
+  const alone = !top && !props.choicePages && listing.pages <= 1;
+  const own = alone ? className : "";
+  const list =
+    entries.length === 0 ? (
+      emptyText ? (
+        <p className={cx("text-muted-foreground", own)}>{emptyText}</p>
+      ) : null
+    ) : (
+      <ul
+        className={cx(cards ? cx("grid gap-6", columnClasses[columns]) : "flex flex-col divide-y divide-border", own)}
+      >
+        {entries.map((entry) => {
+          const values = entry.content.fields;
+          const image = imageField && !isEmptyValue(values[imageField]) ? String(values[imageField]) : undefined;
+          const dateValue = dateField ? values[dateField] : undefined;
+          const shown = isEventLike(dateValue) ? shownOccurrence(dateValue, todayIn(settings.timeZone)) : undefined;
+          const date = shown ? shown.start : isDateValue(dateValue) ? dateValue : undefined;
+          const summaryValue = summaryField ? values[summaryField] : undefined;
+          const summary = !summaryField
+            ? ""
+            : collection.settings.markdown?.body === summaryField && typeof summaryValue === "string"
+              ? markdownText(summaryValue)
+              : formatFieldValue(fieldOf(summaryField), summaryValue, settings.language);
+          const title = entryTitle(entry);
 
-        return (
-          <li key={entry.slug} className={cards ? "flex" : "py-4 first:pt-0 last:pb-0"}>
-            <article
-              className={cx(
-                "relative flex",
-                cards ? "w-full flex-col overflow-hidden rounded-lg border border-border" : "items-start gap-4",
-              )}
-            >
-              {image && (
-                <SiteImage
-                  src={image}
-                  alt=""
-                  loading="lazy"
-                  className={
-                    cards ? "aspect-video w-full object-cover" : "aspect-video w-32 shrink-0 rounded-md object-cover"
-                  }
-                />
-              )}
-              <div className={cx("flex flex-col gap-1", cards && "p-4")}>
-                {date && (
-                  <time dateTime={date} className="text-sm text-muted-foreground">
-                    {formatFieldValue(fieldOf(dateField), dateValue, settings.language, settings.timeZone)}
-                  </time>
+          return (
+            <li key={entry.slug} className={cards ? "flex" : "py-4 first:pt-0 last:pb-0"}>
+              <article
+                className={cx(
+                  "relative flex",
+                  cards ? "w-full flex-col overflow-hidden rounded-lg border border-border" : "items-start gap-4",
                 )}
-                <h3 className="font-heading text-lg font-semibold">
-                  {entry.path ? (
-                    <SiteLink href={entry.path} className="after:absolute after:inset-0 hover:underline">
-                      {title}
-                    </SiteLink>
-                  ) : (
-                    title
+              >
+                {image && (
+                  <SiteImage
+                    src={image}
+                    alt=""
+                    loading="lazy"
+                    className={
+                      cards ? "aspect-video w-full object-cover" : "aspect-video w-32 shrink-0 rounded-md object-cover"
+                    }
+                  />
+                )}
+                <div className={cx("flex flex-col gap-1", cards && "p-4")}>
+                  {date && (
+                    <time dateTime={date} className="text-sm text-muted-foreground">
+                      {formatFieldValue(fieldOf(dateField), dateValue, settings.language, settings.timeZone)}
+                    </time>
                   )}
-                </h3>
-                {summary && <p className="line-clamp-3 text-muted-foreground">{summary}</p>}
-              </div>
-            </article>
-          </li>
-        );
-      })}
-    </ul>
+                  <h3 className="font-heading text-lg font-semibold">
+                    {entry.path ? (
+                      <SiteLink href={entry.path} className="after:absolute after:inset-0 hover:underline">
+                        {title}
+                      </SiteLink>
+                    ) : (
+                      title
+                    )}
+                  </h3>
+                  {summary && <p className="line-clamp-3 text-muted-foreground">{summary}</p>}
+                </div>
+              </article>
+            </li>
+          );
+        })}
+      </ul>
+    );
+
+  if (alone) return list;
+  return (
+    <section className={cx("flex flex-col gap-6", className)}>
+      {top && (
+        <div className="flex flex-wrap items-baseline justify-between gap-x-4 gap-y-2">
+          {heading && <h2 className="font-heading text-2xl font-bold tracking-tight">{heading}</h2>}
+          {moreLabel && moreHref && (
+            <SiteLink href={moreHref} className="text-primary hover:underline">
+              {moreLabel} →
+            </SiteLink>
+          )}
+        </div>
+      )}
+      <ChoiceLinks listing={listing} props={props} />
+      {list}
+      <PageLinks listing={listing} props={props} />
+    </section>
   );
 }
 
 const listFields: Fields<CollectionListProps> = {
-  collection: { type: "select", label: "Collection", options: [] },
+  heading: { type: "text", label: "Heading (leave empty for none)" },
+  moreLabel: { type: "text", label: 'Link beside the heading, such as "See all" (leave empty for none)' },
+  moreHref: { type: "text", label: "Where the link goes, such as /news" },
+  ...listingFields,
   layout: { type: "radio", label: "Layout", options: options({ list: "List", cards: "Cards" }) },
   columns: { type: "radio", label: "Cards per row", options: options({ "2": "2", "3": "3", "4": "4" }) },
   imageField: { type: "select", label: "Picture", options: [NONE] },
-  dateField: { type: "select", label: "Date", options: [NONE] },
   summaryField: { type: "select", label: "Summary", options: [NONE] },
-  order: {
-    type: "select",
-    label: "Order",
-    options: options({
-      default: "The collection's order",
-      newest: "Newest first",
-      oldest: "Oldest first",
-      title: "A to Z",
-    }),
-  },
-  show: {
-    type: "select",
-    label: "Show",
-    options: options({ all: "Everything", upcoming: "Today and later", past: "Before today" }),
-  },
-  limit: { type: "number", label: "How many (0 for all)", min: 0 },
   emptyText: { type: "text", label: "Text when there's nothing to show" },
   className: classNameField,
 };
 
-/**
- * Lists a collection's entries, such as the latest videos or upcoming events,
- * linking to each entry's page if the collection has them.
- */
-export const CollectionList: ComponentConfig<CollectionListProps> = {
+const collectionList: ComponentConfig<CollectionListProps> = {
   label: "Collection list",
   fields: listFields,
   defaultProps: {
-    collection: "",
+    heading: "",
+    moreLabel: "",
+    moreHref: "",
+    ...listingDefaults,
     layout: "cards",
     columns: "3",
     imageField: "",
-    dateField: "",
     summaryField: "",
-    order: "default",
-    show: "all",
-    limit: 0,
     emptyText: "",
     className: "",
   },
@@ -400,22 +383,21 @@ export const CollectionList: ComponentConfig<CollectionListProps> = {
     const collection = collections.find((candidate) => candidate.id === props.collection);
     const choose = (types: FieldType[]) => [NONE, ...fieldChoices(collection, types)];
     const resolved: Partial<Fields<CollectionListProps>> = {
-      ...fields,
-      collection: {
-        type: "select",
-        label: "Collection",
-        options: [
-          { label: "Choose…", value: "" },
-          ...collections.map((c) => ({ label: c.settings.name, value: c.id })),
-        ],
-      },
+      ...resolveListingFields(fields, props, collections),
       imageField: { type: "select", label: "Picture", options: choose(["image"]) },
-      dateField: { type: "select", label: "Date", options: choose(["date", "event"]) },
       summaryField: { type: "select", label: "Summary", options: choose(["text", "textarea", "richtext"]) },
     };
     if (props.layout !== "cards") delete resolved.columns;
-    if (!props.dateField) delete resolved.show;
+    if (!props.moreLabel) delete resolved.moreHref;
     return resolved as Fields<CollectionListProps>;
   },
   render: ({ puck, ...props }) => <CollectionListView {...props} isEditing={puck.isEditing} />,
 };
+
+/**
+ * Lists a collection's entries, such as the latest videos or upcoming events,
+ * linking to each entry's page if the collection has them. Long lists can go
+ * on several pages, and a choice field can give each of its choices a page
+ * (see `withPages`).
+ */
+export const CollectionList = withPages(collectionList, listingPages);

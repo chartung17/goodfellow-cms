@@ -1,3 +1,4 @@
+import { isAddedPage } from "@goodfellow-cms/core";
 import type { Config, Data, Metadata } from "@puckeditor/core";
 import type { ComponentType, ReactNode } from "react";
 import { cx } from "./cx.js";
@@ -67,10 +68,10 @@ export function createPageBody({ Render, SiteProvider }: Renderers) {
     const rootClassName = (page.root.props as Record<string, unknown> | undefined)?.className;
     return (
       <SiteProvider value={site}>
-        {/* Search indexes only pages' own content, not their header and footer, and not "Page not found". */}
+        {/* Search indexes only pages' own content, not their header and footer, "Page not found" or pages blocks add, such as a list's second page. */}
         <main
           className={cx("gf-main", typeof rootClassName === "string" && rootClassName)}
-          data-pagefind-body={site.path === "/404" || site.month ? undefined : ""}
+          data-pagefind-body={site.path === "/404" || isAddedPage(site) ? undefined : ""}
         >
           <Render config={pageConfig} data={page} metadata={metadata} site={site} />
         </main>

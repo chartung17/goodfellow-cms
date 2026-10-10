@@ -124,6 +124,9 @@ export const Button: ComponentConfig<ButtonProps> = {
 
 type Aspect = "auto" | "square" | "landscape" | "wide";
 
+/** A placeholder for a collection's field, such as `{photo}`. */
+const PLACEHOLDER = /^\{[a-z][a-z0-9]*(?:-[a-z0-9]+)*\}$/;
+
 export interface ImageProps {
   src: string;
   alt: string;
@@ -157,7 +160,18 @@ export const Image: ComponentConfig<ImageProps> = {
   defaultProps: { src: "", alt: "", caption: "", aspect: "auto", rounded: true, className: "" },
   render: ({ src, alt, caption, aspect, rounded, className }) => (
     <figure className={className || undefined}>
-      {src ? (
+      {PLACEHOLDER.test(src) ? (
+        // A field's placeholder, such as {photo} in a collection's template or loop, filled in where pages are built.
+        <div
+          className={cx(
+            "flex w-full items-center justify-center bg-muted text-sm text-muted-foreground",
+            aspectClasses[aspect] || "aspect-video",
+            rounded && "rounded-lg",
+          )}
+        >
+          {src}
+        </div>
+      ) : src ? (
         <SiteImage
           src={src}
           alt={alt}

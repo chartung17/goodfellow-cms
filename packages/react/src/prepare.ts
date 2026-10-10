@@ -8,10 +8,10 @@ import {
   type SiteSettings,
   setLinkTargets,
 } from "@goodfellow-cms/core";
-import type { Config, Data, Metadata } from "@puckeditor/core";
+import type { Config, Data } from "@puckeditor/core";
 // The server entry works everywhere and has no browser-only code, so Server Components can prepare pages too.
 import { migrate, resolveAllData } from "@puckeditor/core/rsc";
-import { applyEntry } from "./entry.js";
+import { applyEntry, expandEntryLoops } from "./entry.js";
 import { createPuckConfig } from "./puck-config.js";
 import { type SiteContextValue, siteMetadata } from "./site-types.js";
 
@@ -49,11 +49,11 @@ export interface PreparedPage {
  * Brings stored Puck data up to date with the installed Puck version, then runs
  * every block's `resolveData`, so blocks can fetch or compute content at build time.
  */
-async function prepareData(data: unknown, config: Config, metadata: Metadata): Promise<Data> {
+async function prepareData(data: unknown, config: Config, site: SiteContextValue): Promise<Data> {
   const stored = data as Data;
   // Puck's DropZone-to-slot migration needs the config and logs on every call, so only run it on data that has zones.
   const migrated = migrate(stored, stored.zones && Object.keys(stored.zones).length > 0 ? config : undefined);
-  return resolveAllData(migrated, config, metadata);
+  return resolveAllData(expandEntryLoops(migrated, config, site), config, siteMetadata(site));
 }
 
 /** The entry a page shows, if it's an entry's page. */
@@ -141,10 +141,9 @@ export async function prepareLayout(
     collections: content.collections,
     ...options,
   };
-  const metadata = siteMetadata(site);
   const [header, footer] = await Promise.all([
-    prepareData(content.header.data, configs.layout, metadata),
-    prepareData(content.footer.data, configs.layout, metadata),
+    prepareData(content.header.data, configs.layout, site),
+    prepareData(content.footer.data, configs.layout, site),
   ]);
   const rebase = rebaser(options, content.settings);
   return { site, layoutConfig: configs.layout, header: rebase(header), footer: rebase(footer) };
@@ -168,18 +167,17 @@ export async function preparePage(
     path: page.path,
     collections: content.collections,
     ...(found && { collection: found.collection, entry: found.entry }),
-    ...(page.month && { month: page.month }),
+    ...(page.view && { view: page.view }),
     ...options,
   };
   // An entry's page is its collection's template, with the entry's values filled in.
   const pageConfig = found ? configs.template : configs.page;
   const applied = applyPageEntry(configs, content, page);
 
-  const metadata = siteMetadata(site);
   const [data, header, footer] = await Promise.all([
-    prepareData(applied.content.data, pageConfig, metadata),
-    prepareData(content.header.data, configs.layout, metadata),
-    prepareData(content.footer.data, configs.layout, metadata),
+    prepareData(applied.content.data, pageConfig, site),
+    prepareData(content.header.data, configs.layout, site),
+    prepareData(content.footer.data, configs.layout, site),
   ]);
   const rebase = rebaser(options, content.settings);
   return {

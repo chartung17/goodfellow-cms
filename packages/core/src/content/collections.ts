@@ -60,6 +60,14 @@ export function entryFieldProblems(fields: CollectionField[], values: Record<str
           problems.push(`${field.name} must be one of: ${field.options?.map((option) => option.value).join(", ")}`);
         }
         break;
+      case "tags":
+        if (
+          !Array.isArray(value) ||
+          value.some((tag) => typeof tag !== "string" || !field.options?.some((option) => option.value === tag))
+        ) {
+          problems.push(`${field.name} must be a list of: ${field.options?.map((option) => option.value).join(", ")}`);
+        }
+        break;
       default:
         if (typeof value !== "string") problems.push(`${field.name} must be text`);
     }
@@ -70,6 +78,7 @@ export function entryFieldProblems(fields: CollectionField[], values: Record<str
 /** Whether a field has no value worth showing. */
 export function isEmptyValue(value: unknown): boolean {
   if (value === undefined || value === null) return true;
+  if (Array.isArray(value)) return value.length === 0;
   if (typeof value === "object") return !isEventLike(value);
   if (typeof value === "string") return richTextToPlainText(value) === "" && !/<img\b/i.test(value);
   return false;
@@ -120,11 +129,47 @@ export function formatFieldValue(
       return isDateValue(value) ? dateFormat(language).format(new Date(`${value}T00:00:00Z`)) : String(value);
     case "select":
       return field.options?.find((option) => option.value === value)?.label ?? String(value);
+    case "tags":
+      return choicesOf(field, value)
+        .map((choice) => field.options?.find((option) => option.value === choice)?.label ?? choice)
+        .join(", ");
     case "richtext":
       return typeof value === "string" ? richTextToPlainText(value) : "";
     default:
       return String(value);
   }
+}
+
+/** The choices a choice or tags field's value has, as a list: none, one, or for tags, any number. */
+export function choicesOf(field: CollectionField | undefined, value: unknown): string[] {
+  if (field?.type === "tags") return Array.isArray(value) ? value.filter((tag) => typeof tag === "string") : [];
+  return typeof value === "string" && value !== "" ? [value] : [];
+}
+
+/** Whether an entry has a choice in a choice or tags field. */
+export function hasChoice(collection: Collection, entry: Entry, field: string, choice: string): boolean {
+  const definition = collection.settings.fields.find((candidate) => candidate.name === field);
+  return choicesOf(definition, entry.content.fields[field]).includes(choice);
+}
+
+/** The fields whose values are choices, which lists can filter by and give a page for each. */
+export function isChoiceField(field: CollectionField): boolean {
+  return field.type === "select" || field.type === "tags";
+}
+
+/**
+ * A choice as part of an address, such as `youth-ministry` for "Youth
+ * ministry": lowercase letters, numbers and hyphens, without accents.
+ * `undefined` for a choice with none of those, such as one in another script.
+ */
+export function choiceSlug(choice: string): string | undefined {
+  const slug = choice
+    .normalize("NFKD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "");
+  return slug || undefined;
 }
 
 /** The name shown for an entry in lists: its title, or its file name. */

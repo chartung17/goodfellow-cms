@@ -8,8 +8,8 @@ export type JsonSchema = { [key: string]: unknown };
  * say what they hold. Set it as `metadata: { ai: … }` on the field.
  */
 export interface AiFieldHint {
-  type: "string" | "number" | "date" | "choice";
-  /** The choices, for `choice`. */
+  type: "string" | "number" | "date" | "choice" | "choices";
+  /** The choices, for `choice` (one of them) and `choices` (any number of them). */
   options?: Array<{ value: string; label: string }>;
   description?: string;
 }
@@ -90,6 +90,15 @@ export function fieldSchema(field: AnyField): JsonSchema | undefined {
         return withDescription({ type: "string" }, describe(field, "A date written as YYYY-MM-DD, or empty"));
       if (hint.type === "choice" && hint.options?.length) {
         return withDescription({ enum: ["", ...hint.options.map((option) => option.value)] }, description);
+      }
+      if (hint.type === "choices" && hint.options?.length) {
+        const labels = hint.options
+          .map((option) => `${JSON.stringify(option.value)} means "${option.label}"`)
+          .join(", ");
+        return withDescription(
+          { type: "array", items: { enum: hint.options.map((option) => option.value) } },
+          describe(field, [hint.description, `Any number of: ${labels}`].filter(Boolean).join(". ")),
+        );
       }
       return withDescription({ type: "string" }, description);
     }
@@ -224,6 +233,12 @@ function cleanValue(field: AnyField, value: unknown): { ok: true; value: unknown
       if (!hint) return { ok: false };
       if (hint.type === "number") {
         return typeof value === "number" && Number.isFinite(value) ? { ok: true, value } : { ok: false };
+      }
+      if (hint.type === "choices") {
+        if (!Array.isArray(value)) return { ok: false };
+        const offered = (hint.options ?? []).map((option) => option.value);
+        const tags = offered.filter((option) => value.includes(option));
+        return { ok: true, value: tags.length > 0 ? tags : undefined };
       }
       if (typeof value !== "string") return { ok: false };
       if (hint.type === "date" && value !== "" && !/^\d{4}-\d{2}-\d{2}$/.test(value)) return { ok: false };

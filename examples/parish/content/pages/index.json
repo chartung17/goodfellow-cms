@@ -281,42 +281,6 @@
           "className": "",
           "content": [
             {
-              "type": "Flex",
-              "props": {
-                "id": "Flex-news",
-                "align": "center",
-                "className": "mb-8",
-                "direction": "row",
-                "gap": "md",
-                "items": [
-                  {
-                    "type": "Heading",
-                    "props": {
-                      "id": "Heading-news",
-                      "align": "left",
-                      "className": "",
-                      "level": "h2",
-                      "text": "Parish news"
-                    }
-                  },
-                  {
-                    "type": "Button",
-                    "props": {
-                      "id": "Button-news",
-                      "className": "",
-                      "href": "/news",
-                      "label": "All news",
-                      "newTab": false,
-                      "size": "md",
-                      "variant": "outline"
-                    }
-                  }
-                ],
-                "justify": "between",
-                "wrap": true
-              }
-            },
-            {
               "type": "CollectionList",
               "props": {
                 "id": "CollectionList-news-home",
@@ -325,9 +289,12 @@
                 "columns": "3",
                 "dateField": "date",
                 "emptyText": "No news yet.",
+                "heading": "Parish news",
                 "imageField": "image",
                 "layout": "list",
                 "limit": 3,
+                "moreHref": "/news",
+                "moreLabel": "All news",
                 "order": "newest",
                 "show": "all",
                 "summaryField": "summary"

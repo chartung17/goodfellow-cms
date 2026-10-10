@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { calendarFiles, calendarMonths, sitePages, splitMonthPath } from "./calendars.js";
+import { calendarFiles, calendarMonths } from "./calendars.js";
 import { ContentError } from "./errors.js";
 import { type ContentSource, loadSiteContent } from "./load.js";
 
@@ -84,40 +84,7 @@ describe("calendar collections", () => {
 });
 
 describe("month pages", () => {
-  const calendar = (props: Record<string, unknown>) => ({ type: "Calendar", props: { id: "Calendar-1", ...props } });
-
-  it("are added for calendars that show a month at a time, around today's month", async () => {
-    const content = await loadSiteContent(
-      memorySource({
-        "content/pages/index.json": page("Home"),
-        "content/pages/calendar.json": page("Calendar", [
-          {
-            type: "Section",
-            props: { id: "Section-1", content: [calendar({ view: "month", monthsBefore: 1, monthsAfter: 2 })] },
-          },
-        ]),
-        "content/pages/events.json": page("Events", [calendar({ view: "list" })]),
-        "content/pages/calendar/2026-11.json": page("A page of its own"),
-      }),
-    );
-    const pages = sitePages(content, "2026-10-10");
-    expect(pages.map((built) => [built.path, built.month])).toEqual([
-      ["/", undefined],
-      ["/calendar", undefined],
-      ["/calendar/2026-09", "2026-09"],
-      ["/calendar/2026-10", "2026-10"],
-      // A page's own address comes first.
-      ["/calendar/2026-11", undefined],
-      ["/calendar/2026-12", "2026-12"],
-      ["/events", undefined],
-    ]);
-    expect(pages.find((built) => built.path === "/calendar/2026-12")?.file).toBe("content/pages/calendar.json");
-  });
-
-  it("are read from addresses and props", () => {
-    expect(splitMonthPath("/calendar/2026-11")).toEqual({ path: "/calendar", month: "2026-11" });
-    expect(splitMonthPath("/2026-11")).toEqual({ path: "/", month: "2026-11" });
-    expect(splitMonthPath("/calendar/2026-13")).toBeUndefined();
+  it("are counted from a calendar's props", () => {
     expect(calendarMonths({ monthsBefore: 3, monthsAfter: 100 })).toEqual({ before: 3, after: 36 });
     expect(calendarMonths({})).toEqual({ before: 1, after: 12 });
   });

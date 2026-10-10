@@ -58,4 +58,8 @@ export const MassTimes: ComponentConfig<MassTimesProps> = {
 
 In a collection's page design, Puck's `metadata` holds the item being shown (`metadata.entry`) and its collection (`metadata.collection`), for `resolveFields` and `resolveData`; `useSite().entry` has the item while rendering. Wrap blocks that only make sense there in `templateOnly()`, which leaves them out of the other editors.
 
+A block can give the page it's on pages of its own, as Calendar does for its months and Collection list for its later pages: wrap it in `withPages(block, (props, { content, page, today }) => [...])` from `@goodfellow-cms/core`, returning each page's `suffix` (its address after the page's own, such as `page/2`), a `title` added to the page's, and what it shows (`month`, `page` or `choice`). Builds write them, and the block reads which one it's showing from `useSite().view`, when `view.block` is its own id. Only the first block on a page that adds pages gets them.
+
+A block can also repeat the blocks inside it once for each of a collection's items, as Collection loop does: `repeatsForEntries(block, { design, items, entries })` from `@goodfellow-cms/react` names the slot that holds the design, the slot the copies go into, and a function that picks the items. The copies are made where pages are rendered, with each item's values in its placeholders, and never saved.
+
 Custom fields don't say what they hold, so give them `metadata: { ai: … }` (an `AiFieldHint` from `@goodfellow-cms/ai`) for the AI assistant to fill them in.

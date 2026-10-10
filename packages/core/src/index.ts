@@ -45,7 +45,6 @@ export {
 export { type AiConfig, defineConfig, type GoodfellowConfig } from "./config.js";
 export {
   type BuildFile,
-  CALENDAR_BLOCK,
   CALENDARS_DIR,
   type CalendarMonths,
   type CollectionEvent,
@@ -56,9 +55,6 @@ export {
   collectionEvents,
   eventFilePath,
   MAX_CALENDAR_MONTHS,
-  monthPagePath,
-  sitePages,
-  splitMonthPath,
 } from "./content/calendars.js";
 export {
   HEAD_TAGS,
@@ -71,10 +67,14 @@ export {
 } from "./content/code.js";
 export {
   type Collection,
+  choiceSlug,
+  choicesOf,
   type Entry,
   entryFieldProblems,
   entryTitle,
   formatFieldValue,
+  hasChoice,
+  isChoiceField,
   isDateValue,
   isEmptyValue,
   richTextToPlainText,
@@ -169,6 +169,18 @@ export {
   updateSettingsSchema,
 } from "./content/schemas.js";
 export { serializeContent } from "./content/serialize.js";
+export {
+  type BlockPages,
+  type BlockPagesContext,
+  blockPages,
+  isAddedPage,
+  MAX_BLOCK_PAGES,
+  type PageVariant,
+  type PageView,
+  sitePages,
+  variantPath,
+  withPages,
+} from "./content/site-pages.js";
 export {
   ConflictError,
   type ContentStore,

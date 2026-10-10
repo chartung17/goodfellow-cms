@@ -170,7 +170,7 @@ async function buildSite(options: BuildOptions): Promise<BuildResult> {
       if (config.demo) await writeFile(join(outDir, DEMO_CONTENT_PATH), await demoContent(fileSystemSource(root)));
     }
 
-    const pages = sitePages(content, todayIn(content.settings.timeZone));
+    const pages = sitePages(content, todayIn(content.settings.timeZone), config.blocks);
     const written: string[] = [];
     for (const page of pages) {
       const html = applyBasePath(await renderPage(content, page, { stylesheets, ...(islands && { islands }) }), base);

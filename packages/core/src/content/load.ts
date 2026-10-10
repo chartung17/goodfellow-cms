@@ -32,6 +32,7 @@ import {
   type SiteSettings,
   siteSettingsSchema,
 } from "./schemas.js";
+import type { PageView } from "./site-pages.js";
 
 /**
  * Read access to a site's files. Implemented by the local file system during
@@ -56,10 +57,10 @@ export interface Page {
    */
   entry?: { collection: string; slug: string };
   /**
-   * Set for a month's page of a calendar (see `sitePages`), such as `2026-11`:
-   * the page it belongs to, shown for that month.
+   * Set on pages that blocks add (see `sitePages`), such as a calendar's month
+   * or a list's second page, and on the page they're added to: what it shows.
    */
-  month?: string;
+  view?: PageView;
 }
 
 export interface SiteContent {

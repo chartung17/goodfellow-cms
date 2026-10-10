@@ -25,7 +25,11 @@ Every JSON file has a `version`, and is written with two-space indentation, keys
 
 A collection's `_collection.json` has its `name`, `entryName` (what one item is called), its `fields`, an optional `path` such as `/events/{slug}` for items' pages, an optional `sort`, and its `template`, the page design. Every collection has a text field named `title`. A field's `name` is what content refers to, so it never changes once items use it.
 
-An item's JSON file holds `{ "version": 1, "fields": { … } }`.
+An item's JSON file holds `{ "version": 1, "fields": { … } }`. A choice field (`select`) holds one of its `options`' values, and a tags field (`tags`) a list of them, such as `["music", "youth"]`.
+
+## Pages blocks add
+
+Some blocks give the page they're on pages of their own, which builds write beside it: a Calendar showing a month at a time a page for each month (`/calendar/2026-11`), and a Collection list or loop its later pages (`/news/page/2`) and a page for each choice of a field (`/news/topics/music`, from the choice's value). These pages aren't in `content/`: they're the same page, showing something else. They never take an address a page or item already has.
 
 ## Events
 
@@ -41,7 +45,7 @@ A collection with `"calendar": { "when": "when", "place": "place", "summary": "s
 
 `start` and `end` are `YYYY-MM-DD` for an all-day event, whose `end` is its last day. `repeat.every` is `day`, `week`, `month` or `year`, with an optional `interval`; weekly repeats can name `days`, and monthly ones say `on` the start's `date` (the default), its `weekday` of the month (the second Tuesday) or the `last` such weekday. `until` and `skip` are dates.
 
-Builds write each calendar collection as `/calendars/<id>.ics`, and each of its events as `/calendars/<id>/<slug>.ics`, and give a page whose Calendar block shows a month at a time a page for each month, such as `/calendar/2026-11`, which takes no address a page or item already has.
+Builds write each calendar collection as `/calendars/<id>.ics`, and each of its events as `/calendars/<id>/<slug>.ics`, and give a page whose Calendar block shows a month at a time a page for each month (see [Pages blocks add](#pages-blocks-add)).
 
 ## Markdown items
 
