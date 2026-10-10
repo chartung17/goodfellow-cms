@@ -62,6 +62,8 @@ export const siteSettingsSchema = z.object({
   titleTemplate: z.string().default("%s"),
   /** Image shown when a page is shared on social media, unless the page sets its own. */
   socialImage: z.string().optional(),
+  /** Whether links to other sites open in a new tab, wherever they are: menus, buttons, rich text and Markdown. */
+  externalLinksInNewTab: z.boolean().optional(),
   /** How to get in touch, shown by the Contact details block wherever it's placed. */
   contact: z
     .object({

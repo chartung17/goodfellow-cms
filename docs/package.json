@@ -5,8 +5,8 @@
   "description": "Goodfellow's documentation site, built with Goodfellow.",
   "type": "module",
   "scripts": {
-    "dev": "goodfellow dev",
-    "build": "goodfellow build",
+    "dev": "node scripts/starters.mjs && goodfellow dev",
+    "build": "node scripts/starters.mjs && goodfellow build",
     "preview": "goodfellow preview",
     "typecheck": "tsc -p tsconfig.json"
   },
@@ -14,6 +14,8 @@
     "@goodfellow-cms/admin": "workspace:*",
     "@goodfellow-cms/blocks": "workspace:*",
     "@goodfellow-cms/core": "workspace:*",
+    "@goodfellow-cms/github": "workspace:*",
+    "@goodfellow-cms/gitlab": "workspace:*",
     "@goodfellow-cms/react": "workspace:*",
     "@puckeditor/core": "0.23.0",
     "react": "19.3.0",
@@ -21,7 +23,8 @@
     "tailwindcss": "4.3.3"
   },
   "devDependencies": {
-    "goodfellow": "workspace:*",
-    "@types/react": "^19.2.0"
+    "@types/react": "^19.2.0",
+    "create-goodfellow": "workspace:*",
+    "goodfellow": "workspace:*"
   }
 }

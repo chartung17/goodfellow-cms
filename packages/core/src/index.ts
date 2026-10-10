@@ -128,6 +128,7 @@ export {
   memoryDemoStorage,
   parseDemoContent,
 } from "./demo.js";
+export { isExternalLink, type LinkTargetOptions, NEW_TAB, setLinkTargets } from "./external-links.js";
 export {
   credentialStorage,
   type DeployState,
@@ -190,4 +191,38 @@ export {
   SHADCN_REGISTRY,
 } from "./registry.js";
 export { SEARCH_ATTRIBUTE, SEARCH_INDEX_DIR } from "./search.js";
+export {
+  type CreatedSiteRepository,
+  type NewSiteRepository,
+  type SetupAccount,
+  SetupError,
+  type SetupHost,
+  type SetupOwner,
+  type SetupProblem,
+  type SetupStep,
+  type SetupWarning,
+} from "./setup-host.js";
+export {
+  type Backend,
+  BLOCK_CHOICES,
+  type BlockChoice,
+  BUNDLED_GITIGNORE,
+  configureBackend,
+  HOSTS,
+  type Host,
+  hostsFor,
+  installRecommendedBlocks,
+  parseRepo,
+  planSite,
+  type SetupRegistry,
+  type SiteFile,
+  type SiteFiles,
+  type SitePlan,
+  siteFileText,
+  sitePackageJson,
+  sitePackageName,
+  TEMPLATES,
+  type TemplateName,
+  withoutRepositoryNotes,
+} from "./site-setup.js";
 export { DEFAULT_RADIUS, DEFAULT_THEME_COLORS, escapeStyleText, googleFontsUrl, themeToCss } from "./theme.js";

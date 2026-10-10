@@ -52,6 +52,28 @@ describe("SiteLink", () => {
   });
 });
 
+describe("SiteLink with links to other sites in new tabs", () => {
+  const settings = siteSettingsSchema.parse({ version: 1, url: "https://example.org", externalLinksInNewTab: true });
+
+  it("opens other sites in a new tab, but not the site's own pages or links that say where they open", () => {
+    expect(render({ settings }, <SiteLink href="https://github.com">G</SiteLink>)).toBe(
+      '<a href="https://github.com" target="_blank" rel="noopener noreferrer">G</a>',
+    );
+    expect(render({ settings }, <SiteLink href="/about">A</SiteLink>)).toBe('<a href="/about">A</a>');
+    expect(render({ settings }, <SiteLink href="https://example.org/news">N</SiteLink>)).toBe(
+      '<a href="https://example.org/news">N</a>',
+    );
+    expect(
+      render(
+        { settings },
+        <SiteLink href="https://github.com" target="_self">
+          S
+        </SiteLink>,
+      ),
+    ).toBe('<a href="https://github.com" target="_self">S</a>');
+  });
+});
+
 describe("SiteImage", () => {
   it("uses the renderer's image component with the image's size, where it's known", () => {
     const media = { "/media/a.png": { width: 40, height: 20 } };

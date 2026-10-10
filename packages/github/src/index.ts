@@ -3,6 +3,7 @@ import { type ApiOptions, githubJson, repoPath } from "./api.js";
 import { GitHubBackend } from "./backend.js";
 
 export { GitHubBackend } from "./backend.js";
+export { type GitHubSetupOptions, githubSetup, githubSetupTokenLinks } from "./setup.js";
 
 export interface GitHubOptions {
   /** The site's repository, as `owner/name`. */

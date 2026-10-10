@@ -53,6 +53,18 @@
                   {
                     "type": "Button",
                     "props": {
+                      "id": "Button-create",
+                      "className": "",
+                      "href": "/new-site",
+                      "label": "Create a site",
+                      "newTab": false,
+                      "size": "lg",
+                      "variant": "secondary"
+                    }
+                  },
+                  {
+                    "type": "Button",
+                    "props": {
                       "id": "Button-12",
                       "className": "",
                       "href": "/docs/why-goodfellow",
