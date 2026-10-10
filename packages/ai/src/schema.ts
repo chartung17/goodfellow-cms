@@ -53,9 +53,11 @@ export function fieldSchema(field: AnyField): JsonSchema | undefined {
       const hint =
         media === "image"
           ? "The address of one of the site's images, or empty"
-          : media === "file"
-            ? "The address of one of the site's files, or empty"
-            : undefined;
+          : media === "video"
+            ? "The address of one of the site's uploaded videos, or empty"
+            : media === "file"
+              ? "The address of one of the site's files, or empty"
+              : undefined;
       return withDescription({ type: "string" }, describe(field, hint));
     }
     case "textarea":

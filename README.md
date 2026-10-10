@@ -28,7 +28,7 @@ Editor's browser                       Git host (GitHub / GitLab)         Static
 3. **Git backends** (done). GitHub and GitLab sign-in, publishing, conflict detection and deploy status, plus GitHub Pages, GitLab Pages and Vercel setups.
 4. **Collections and templates** (done). Collections with their own fields, a shared page design for their items, and a block that lists them on other pages.
 5. **AI assistant** (done). Draft and rewrite pages with Claude, OpenAI or a free AI service, called straight from the editor's browser with the editor's own key. Editors without a key can copy a prompt into Claude.ai or another chat app and paste the answer back.
-6. **Media library** (done). Upload, browse and replace images and files from the admin panel, and choose them for blocks and settings.
+6. **Media library** (done). Upload, browse and replace images and files from the admin panel, and choose them for blocks and settings. A Video block plays uploaded videos, YouTube and Vimeo videos, and other sites' players, without adding JavaScript to the site's pages.
 7. **Starters** (done). `create-goodfellow`, which creates a site and sets up its storage and host, and an example parish site with collections and custom blocks.
 8. **Next.js adapter** (done). Goodfellow pages and the admin panel in a Next.js app, exported as static files, with a Next.js starter. Links use `next/link` and images `next/image`, sites can be served from a subfolder, and blocks can use Client Components.
 9. **Interactive blocks everywhere** (done). Client Components in blocks (`"use client"`) run in the browser on sites built with `goodfellow build` too, not only with Next.js.

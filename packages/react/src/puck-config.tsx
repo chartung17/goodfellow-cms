@@ -9,7 +9,7 @@ export const classNameField: TextField = {
 };
 
 /** What kind of media a field holds, for the admin panel to offer its media library. */
-export type MediaFieldKind = "image" | "file";
+export type MediaFieldKind = "image" | "video" | "file";
 
 /**
  * A text field for the address of an uploaded file, such as an image. The
@@ -22,7 +22,7 @@ export function mediaField(label: string, kind: MediaFieldKind = "image"): TextF
 /** The kind of media a field holds, if it's a media field. */
 export function mediaFieldKind(field: { metadata?: unknown } | undefined): MediaFieldKind | undefined {
   const media = (field?.metadata as { media?: unknown } | undefined)?.media;
-  return media === "image" || media === "file" ? media : undefined;
+  return media === "image" || media === "video" || media === "file" ? media : undefined;
 }
 
 /** Settings on the page itself (the root of the page's Puck data). */

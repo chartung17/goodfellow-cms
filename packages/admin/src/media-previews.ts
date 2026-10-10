@@ -15,6 +15,7 @@ const TYPES: Record<string, string> = {
   m4a: "audio/mp4",
   mp4: "video/mp4",
   webm: "video/webm",
+  vtt: "text/vtt",
 };
 
 /** The type to show a file as, from its name. Needed so browsers display SVGs from memory. */

@@ -18,6 +18,7 @@ Every site has these blocks. Sites can also have [blocks from block registries](
 | Text | Formatted text: paragraphs, lists, links |
 | Button | A link styled as a button |
 | Image | An image with an optional caption |
+| Video | A video from the media library, YouTube, Vimeo or another site's player |
 | Code | Code with syntax highlighting, an optional title and a copy button |
 | Contact details | The address, phone number and email address from Site settings |
 | Menu | One of the site's menus, with dropdowns for submenus |
@@ -33,6 +34,17 @@ Every site has these blocks. Sites can also have [blocks from block registries](
 | On this page | The headings of the item's Markdown text, in a page design only |
 
 Blocks use the site's colors, fonts and corner rounding. Every block accepts extra CSS classes, which override the block's own styles: `py-4` on a Section replaces its default padding.
+
+## Video
+
+The Video block shows a video from one of four places, chosen in **Video from**:
+
+- **The media library**: an MP4 or WebM video uploaded to the site, up to 25 MB, with an optional picture shown before it plays and captions as a WebVTT (`.vtt`) file. Uploaded videos are kept in the site's repository for good, even after they're replaced, so longer ones are better on YouTube or Vimeo.
+- **YouTube**: paste the video's address in any form YouTube gives it (a `watch` address, a `youtu.be` link, a Short, a live stream, or the embed code), or just its ID. A start time in the address, such as `t=1m30s`, is kept. It plays in YouTube's privacy-enhanced player, which sets no cookies until it's played.
+- **Vimeo**: paste the video's address, including an unlisted video's, or its embed code. It plays with Vimeo's "do not track" on.
+- **Another site's player**: paste the player's embed address, or the whole embed code the other site gives. It's shown in a sandbox, with only what players need, and only from a secure (`https://`) address on another site.
+
+Give every video a description for screen readers. It can also have a caption below it, a shape (the video's own, wide, landscape, square, or tall for videos made on phones), and play on its own without sound, start with the sound off, or play again when it ends. Players load only when they're scrolled near, so they don't slow down the top of the page.
 
 ## Code
 

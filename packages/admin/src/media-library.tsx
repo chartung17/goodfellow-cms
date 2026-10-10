@@ -330,7 +330,25 @@ export function MediaScreen() {
   );
 }
 
-export type MediaFieldKind = "image" | "file";
+export type MediaFieldKind = "image" | "video" | "file";
+
+const PICKER_TITLES: Record<MediaFieldKind, StringKey> = {
+  image: "media.pickerTitle",
+  video: "media.pickerTitleVideo",
+  file: "media.pickerTitleFile",
+};
+
+const CHOOSE_LABELS: Record<MediaFieldKind, StringKey> = {
+  image: "media.choose",
+  video: "media.chooseVideo",
+  file: "media.chooseFile",
+};
+
+const ACCEPT: Record<MediaFieldKind, string | undefined> = {
+  image: "image/*",
+  video: "video/mp4,video/webm",
+  file: undefined,
+};
 
 /** Picks a file from the media library, or uploads a new one, for a field. */
 export function MediaPickerDialog({
@@ -347,17 +365,17 @@ export function MediaPickerDialog({
   const { status, run } = useUploads();
   const urls = media
     .map(mediaUrl)
-    .filter((url) => kind === "file" || mediaKind(url) === "image")
+    .filter((url) => kind === "file" || mediaKind(url) === kind)
     .sort((a, b) => fileName(a).localeCompare(fileName(b)));
 
   return (
-    <Dialog title={t(kind === "image" ? "media.pickerTitle" : "media.pickerTitleFile")} onClose={onClose}>
+    <Dialog title={t(PICKER_TITLES[kind])} onClose={onClose}>
       <div className="gfa-form">
         <div>
           <UploadButton
             label={t("media.upload")}
             multiple={false}
-            accept={kind === "image" ? "image/*" : undefined}
+            accept={ACCEPT[kind]}
             disabled={status.type === "uploading"}
             onFiles={async (files) => {
               const result = await run(files.slice(0, 1));
@@ -415,7 +433,7 @@ export function MediaChooser({
     <div className="gfa-media-chooser">
       {value && <MediaThumb key={value} url={value} className="gfa-media-chosen" />}
       <div className="gfa-media-chooser-actions">
-        <Button onClick={() => setOpen(true)}>{t(kind === "image" ? "media.choose" : "media.chooseFile")}</Button>
+        <Button onClick={() => setOpen(true)}>{t(CHOOSE_LABELS[kind])}</Button>
         {value && (
           <Button variant="ghost" onClick={() => onChange("")}>
             {t("media.clear")}

@@ -363,3 +363,16 @@ export {
   updateSettingsFile,
   VERSION_PACKAGE,
 } from "./updates.js";
+export {
+  type EmbedProblem,
+  embedPlayerUrl,
+  embedSource,
+  type PlayerOptions,
+  parseStartTime,
+  type VimeoVideo,
+  vimeoPlayerUrl,
+  vimeoVideo,
+  type YouTubeVideo,
+  youtubePlayerUrl,
+  youtubeVideo,
+} from "./video.js";

@@ -414,15 +414,17 @@ export const defaultStrings = {
   "media.deleteUsed": "It's used in: {places}. Those places will show a missing image or a broken link.",
   "media.notUsed": "Nothing on the site uses it.",
   "media.error.type":
-    "{name} can't be uploaded. The site can use images (JPEG, PNG, GIF, WebP, AVIF and SVG), PDFs, office documents, MP3 audio and MP4 video.",
+    "{name} can't be uploaded. The site can use images (JPEG, PNG, GIF, WebP, AVIF and SVG), PDFs, office documents, MP3 audio, MP4 and WebM video, and captions for videos (WebVTT).",
   "media.error.size":
     "{name} is too large: files can be up to 25 MB. For long videos, upload them to YouTube or Vimeo and link to them instead.",
   "media.error.unreadable":
     "{name} couldn't be read. It may be damaged, or in a format browsers can't open, such as HEIC. Save it as a JPEG and try again.",
   "media.choose": "Choose image",
   "media.chooseFile": "Choose file",
+  "media.chooseVideo": "Choose video",
   "media.pickerTitle": "Choose an image",
   "media.pickerTitleFile": "Choose a file",
+  "media.pickerTitleVideo": "Choose a video",
   "media.pickerEmpty": "Nothing has been uploaded yet. Upload a file to use it here.",
   "media.clear": "Remove",
 
