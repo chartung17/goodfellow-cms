@@ -62,11 +62,26 @@ test("creates a site on GitHub with GitHub Pages, as npm create goodfellow would
 test("warns about private repositories on GitHub Pages and business sites on hosts that don't allow them", async ({
   page,
 }) => {
+  const label = (name: string) => page.locator("label", { has: page.getByRole("radio", { name, exact: true }) });
   await page.goto(SETUP, { waitUntil: "networkidle" });
   await page.getByRole("radio", { name: "Private", exact: true }).check();
-  await expect(page.getByText(/GitHub Pages doesn't work with private repositories/)).toBeVisible();
+  // Private sites are best on GitLab; Vercel is never the recommendation.
+  await expect(label("GitLab")).toContainText("Recommended");
+  await expect(page.getByText(/Private sites are best kept on GitLab/)).toBeVisible();
+  await expect(
+    page.getByText(/GitHub Pages doesn't work with private repositories on GitHub's free plan, unless/),
+  ).toBeVisible();
+  await expect(label("GitHub Pages")).not.toContainText("Recommended");
+  await expect(label("Vercel")).not.toContainText("Recommended");
   await page.getByRole("radio", { name: "Vercel" }).check();
-  await expect(page.getByText(/GitHub Pages doesn't work with private repositories/)).toBeHidden();
+  await expect(
+    page.getByText(/GitHub Pages doesn't work with private repositories on GitHub's free plan, unless/),
+  ).toBeHidden();
+  await page.getByRole("button", { name: "Use GitLab" }).click();
+  await expect(page.getByRole("radio", { name: "GitLab Pages" })).toBeChecked();
+  await expect(label("GitLab Pages")).toContainText("Recommended");
+  await page.getByRole("radio", { name: "Public", exact: true }).check();
+  await page.getByRole("radio", { name: "GitHub", exact: true }).check();
 
   await page.getByRole("radio", { name: "A business" }).check();
   // A business site is best kept on GitLab, and the host follows.

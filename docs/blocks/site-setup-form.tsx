@@ -74,10 +74,22 @@ const STEP_LABELS: Record<SetupStep, string> = {
 /** Kept in the browser tab while someone signs in with GitLab and comes back. */
 const CHOICES_KEY = "goodfellow:setup:choices";
 
-/** The host whose free plan allows a site like this, for the git host chosen. */
-function recommendedHost(purpose: Purpose, git: GitHostName): Host {
-  if (git === "gitlab" || purpose === "business") return "gitlab-pages";
-  return "github-pages";
+/**
+ * Where to keep a site's files: GitLab for business sites and private ones,
+ * whose free hosting allows both. Either is fine otherwise.
+ */
+function recommendedGit(choices: Choices): GitHostName | undefined {
+  return choices.purpose === "business" || choices.private ? "gitlab" : undefined;
+}
+
+/**
+ * The host whose free plan allows a site like this, for the git host chosen.
+ * None for a private repository on GitHub, which GitHub Pages' free plan doesn't serve:
+ * GitLab is recommended instead.
+ */
+function recommendedHost(choices: Choices): Host | undefined {
+  if (choices.git === "gitlab" || choices.purpose === "business") return "gitlab-pages";
+  return choices.private ? undefined : "github-pages";
 }
 
 /** Why a host's free plan may not allow this site, or `undefined` if it does. */
@@ -268,8 +280,8 @@ export function SiteSetupForm({ gitlabClientId }: SiteSetupFormProps) {
     setChoices((current) => {
       const next = { ...current, ...change };
       // A new purpose or git host suggests its own host, which must be one that git host can use.
-      if (change.purpose || change.git) next.host = recommendedHost(next.purpose, next.git);
-      if (!hostsFor(next.git).includes(next.host)) next.host = recommendedHost(next.purpose, next.git);
+      const suggested = recommendedHost(next) ?? hostsFor(next.git)[0] ?? "github-pages";
+      if (change.purpose || change.git || !hostsFor(next.git).includes(next.host)) next.host = suggested;
       return next;
     });
     if (change.git) setAccount(undefined);
@@ -425,48 +437,7 @@ export function SiteSetupForm({ gitlabClientId }: SiteSetupFormProps) {
         ))}
       </Question>
 
-      <Question title="Where to keep the site's files">
-        {(Object.keys(GIT_HOSTS) as GitHostName[]).map((value) => (
-          <Choice
-            key={value}
-            name={`${id}-git`}
-            value={value}
-            current={choices.git}
-            {...GIT_HOSTS[value]}
-            onChange={(git) => update({ git })}
-          />
-        ))}
-      </Question>
-
-      <Question title="Where to put it online">
-        {hostsFor(choices.git).map((value) => (
-          <Choice
-            key={value}
-            name={`${id}-host`}
-            value={value}
-            current={choices.host}
-            label={HOSTS[value].label}
-            description={HOSTS[value].note}
-            badge={value === recommendedHost(choices.purpose, choices.git) ? "Recommended" : undefined}
-            onChange={(chosen) => update({ host: chosen })}
-          />
-        ))}
-        {problem && <Note tone="warning">{problem}</Note>}
-        {choices.purpose === "business" && choices.git === "github" && (
-          <Note>
-            GitHub's free hosting isn't for business sites, so business sites are best kept on GitLab, with GitLab
-            Pages.
-          </Note>
-        )}
-        {choices.host === "vercel" && (
-          <Note>
-            Once the repository is created, you'll connect it to Vercel, which needs an account there, free for
-            non-commercial sites.
-          </Note>
-        )}
-      </Question>
-
-      <Question title={`Who can see the ${choices.git === "github" ? "repository" : "project"}`}>
+      <Question title="Who can see the site's files">
         <Choice
           name={`${id}-visibility`}
           value="public"
@@ -483,10 +454,56 @@ export function SiteSetupForm({ gitlabClientId }: SiteSetupFormProps) {
           description="Only the people you invite can see the files. The site itself is public either way."
           onChange={() => update({ private: true })}
         />
+      </Question>
+
+      <Question title="Where to keep the site's files">
+        {(Object.keys(GIT_HOSTS) as GitHostName[]).map((value) => (
+          <Choice
+            key={value}
+            name={`${id}-git`}
+            value={value}
+            current={choices.git}
+            {...GIT_HOSTS[value]}
+            badge={value === recommendedGit(choices) ? "Recommended" : undefined}
+            onChange={(git) => update({ git })}
+          />
+        ))}
+        {choices.git === "github" && recommendedGit(choices) === "gitlab" && (
+          <Note>
+            {choices.purpose === "business"
+              ? "GitHub's free hosting isn't for business sites, so business sites are best kept on GitLab, with GitLab Pages."
+              : "Private sites are best kept on GitLab: GitLab Pages works with private projects on its free plan, and GitHub Pages doesn't work with private repositories on GitHub's."}{" "}
+            <button type="button" className={link} onClick={() => update({ git: "gitlab" })}>
+              Use GitLab
+            </button>
+          </Note>
+        )}
+      </Question>
+
+      <Question title="Where to put it online">
+        {hostsFor(choices.git).map((value) => (
+          <Choice
+            key={value}
+            name={`${id}-host`}
+            value={value}
+            current={choices.host}
+            label={HOSTS[value].label}
+            description={HOSTS[value].note}
+            badge={value === recommendedHost(choices) ? "Recommended" : undefined}
+            onChange={(chosen) => update({ host: chosen })}
+          />
+        ))}
+        {problem && <Note tone="warning">{problem}</Note>}
         {privatePages && (
           <Note tone="warning">
-            GitHub Pages doesn't work with private repositories on GitHub's free plan. Choose Public, or Vercel, or keep
-            the site on GitLab, unless your account has GitHub Pro, Team or Enterprise.
+            GitHub Pages doesn't work with private repositories on GitHub's free plan, unless your account has GitHub
+            Pro, Team or Enterprise. Keep the site on GitLab instead, or make the repository public.
+          </Note>
+        )}
+        {choices.host === "vercel" && (
+          <Note>
+            Once the repository is created, you'll connect it to Vercel, which needs an account there, free for
+            non-commercial sites.
           </Note>
         )}
       </Question>
