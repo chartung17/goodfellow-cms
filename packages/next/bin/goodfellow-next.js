@@ -24,7 +24,7 @@ if (command !== "finish" && command !== "index") {
     [
       "Usage: goodfellow-next finish [folder]",
       "       goodfellow-next index [folder]",
-      "       goodfellow-next update [--to fixes|latest|<release>] [--publish]",
+      "       goodfellow-next update [--to fixes|automatic|latest|<release>] [--publish]",
       "",
       "finish  Gets the exported site in folder (default: out) ready to publish: puts the files",
       "        Next.js uses to load pages ahead where browsers look for them, and indexes it for search.",

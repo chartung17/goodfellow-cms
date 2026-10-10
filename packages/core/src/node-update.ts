@@ -2,7 +2,7 @@ import { spawn } from "node:child_process";
 import { appendFile, mkdir, readFile, rm, writeFile } from "node:fs/promises";
 import { dirname, join, resolve } from "node:path";
 import { findBuildCause } from "./build-problems.js";
-import { INSTALLED_RECORD_FILE } from "./content/paths.js";
+import { INSTALLED_RECORD_FILE, UPDATES_FILE } from "./content/paths.js";
 import type { FileChange } from "./content/store.js";
 import {
   type FetchJson,
@@ -15,11 +15,14 @@ import {
 } from "./registry.js";
 import {
   chooseUpdate,
+  compareReleases,
   NPM_REGISTRY,
+  parseUpdateSettings,
   releaseVersion,
   releaseVersions,
   siteVersion,
   type UpdateResult,
+  updateSettingsFile,
   VERSION_PACKAGE,
 } from "./updates.js";
 
@@ -29,7 +32,12 @@ export type RunCommand = (command: string, args: string[], cwd: string) => Promi
 export interface UpdateOptions {
   /** The site's folder. Defaults to the current folder. */
   root?: string;
-  /** `fixes` (the default) for the newest fixes of the site's release, `latest`, or a release such as `0.5.0`. */
+  /**
+   * `fixes` (the default) for the newest fixes of the site's release; `automatic`
+   * for the same, unless `content/updates.json` turns automatic updates off, as
+   * the nightly update does; `latest`; or a release such as `0.5.0`. An older
+   * release goes back to it, and skips the site's release from then on.
+   */
   to?: string;
   /** Publishes the update, once the site has built with it, as a commit pushed to `branch`. */
   publish?: boolean;
@@ -87,25 +95,34 @@ export async function update(options: UpdateOptions = {}): Promise<UpdateResult>
   const log = options.log ?? ((line: string) => console.log(line));
   const env = options.env ?? process.env;
 
+  const read = (path: string) => readFile(join(root, path), "utf8").catch(() => undefined);
   const packageText = await readFile(join(root, "package.json"), "utf8");
   const from = siteVersion(packageText);
   if (!from) {
     throw new Error(`${join(root, "package.json")} doesn't use a published release of ${VERSION_PACKAGE}.`);
   }
+  const settingsText = await read(UPDATES_FILE);
+  const settings = parseUpdateSettings(settingsText);
+  const target = options.to ?? "fixes";
+  if (target === "automatic" && !settings.automatic) {
+    log(`Automatic updates are turned off in ${UPDATES_FILE}, so Goodfellow ${from} stays as it is.`);
+    return { state: "up-to-date", from, paused: true };
+  }
   const to = chooseUpdate(
     from,
     releaseVersions(await fetchJson(`${NPM_REGISTRY}/${VERSION_PACKAGE}`)),
-    options.to ?? "fixes",
+    target === "automatic" ? "fixes" : target,
+    settings.skip,
   );
   if (!to) {
     log(`Goodfellow ${from} is up to date.`);
     return { state: "up-to-date", from };
   }
-  log(`Updating Goodfellow from ${from} to ${to}…`);
+  const rollback = compareReleases(to, from) < 0;
+  log(rollback ? `Going back from Goodfellow ${from} to ${to}…` : `Updating Goodfellow from ${from} to ${to}…`);
 
   // Every file the update writes, as it was, to put back if the update doesn't work.
   const originals = new Map<string, string | undefined>();
-  const read = (path: string) => readFile(join(root, path), "utf8").catch(() => undefined);
   const remember = async (path: string) => {
     if (!originals.has(path)) originals.set(path, await read(path));
   };
@@ -130,7 +147,7 @@ export async function update(options: UpdateOptions = {}): Promise<UpdateResult>
   const failed = async (result: Omit<UpdateResult, "state" | "from" | "to">): Promise<UpdateResult> => {
     await restore();
     log(`The update to ${to} didn't work, so nothing changed.`);
-    return { state: "failed", from, to, ...result };
+    return { state: "failed", from, to, ...(rollback && { rollback }), ...result };
   };
 
   // Every Goodfellow package to the same release, and Puck to the version that release uses.
@@ -155,6 +172,13 @@ export async function update(options: UpdateOptions = {}): Promise<UpdateResult>
   await apply({ path: "package.json", content: `${JSON.stringify(site, null, 2)}\n` });
   await remember("package-lock.json");
 
+  // Going back skips the release the site went back from, so automatic updates don't install it again;
+  // choosing a release no longer skips it.
+  const exact = releaseVersion(target) === to;
+  const skip = [...settings.skip.filter((version) => !(exact && version === to)), ...(rollback ? [from] : [])];
+  const settingsFile = updateSettingsFile({ ...settings, skip });
+  if (settingsFile !== updateSettingsFile(settings)) await apply({ path: UPDATES_FILE, content: settingsFile });
+
   // Blocks from Goodfellow's registry, from the release being installed.
   const kept: string[] = [];
   let record = parseInstalledRecord(await read(INSTALLED_RECORD_FILE));
@@ -169,6 +193,11 @@ export async function update(options: UpdateOptions = {}): Promise<UpdateResult>
       kept.push(...plan.kept);
     } catch (error) {
       if (!(error instanceof RegistryError)) throw error;
+      // A block newer than the release the site goes back to stays as it is.
+      if (rollback && error.problem.code === "unreachable") {
+        log(`The block ${name} isn't in Goodfellow ${to}'s blocks, so it stays as it is.`);
+        continue;
+      }
       log(`The block ${name} couldn't be updated: ${error.problem.code}.`);
       return failed({ step: "blocks" });
     }
@@ -189,7 +218,7 @@ export async function update(options: UpdateOptions = {}): Promise<UpdateResult>
     const paths = [...originals.keys()];
     const steps: string[][] = [
       ["add", "--all", "--", ...paths],
-      [...AUTHOR, "commit", "--message", `Update Goodfellow to ${to}`],
+      [...AUTHOR, "commit", "--message", rollback ? `Go back to Goodfellow ${to}` : `Update Goodfellow to ${to}`],
       ["push", "origin", `HEAD:refs/heads/${branch}`],
     ];
     for (const args of steps) {
@@ -204,7 +233,11 @@ export async function update(options: UpdateOptions = {}): Promise<UpdateResult>
     }
   }
 
-  log(`Updated Goodfellow from ${from} to ${to}.`);
+  log(
+    rollback
+      ? `Went back from Goodfellow ${from} to ${to}. Updates won't install ${from} again.`
+      : `Updated Goodfellow from ${from} to ${to}.`,
+  );
   if (kept.length > 0) log(`Kept these block files as they were, since someone changed them:\n  ${kept.join("\n  ")}`);
-  return { state: "updated", from, to, kept };
+  return { state: "updated", from, to, kept, ...(rollback && { rollback }) };
 }

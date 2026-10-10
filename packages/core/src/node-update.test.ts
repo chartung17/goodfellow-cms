@@ -6,6 +6,7 @@ import { formatBuildCause } from "./build-problems.js";
 import { serializeContent } from "./content/serialize.js";
 import { type RunCommand, update } from "./node-update.js";
 import { hashText } from "./registry.js";
+import { parseUpdateSettings, updateSettingsFile } from "./updates.js";
 
 const REGISTRY = "https://registry.example/{name}.json";
 const BLOCK = "blocks/installed/shadcn-faq/block.tsx";
@@ -142,6 +143,52 @@ describe("goodfellow update", () => {
       state: "up-to-date",
       from: "0.5.0",
     });
+  });
+
+  it("doesn't install fixes automatically when the site's settings turn that off", async () => {
+    await site();
+    await mkdir(join(root, "content"), { recursive: true });
+    await writeFile(join(root, "content/updates.json"), updateSettingsFile({ automatic: false, skip: [] }));
+    const { ran, run } = commands();
+    const options = { root, fetchJson, run, registry: REGISTRY, log: () => {}, env: {} };
+    expect(await update({ ...options, to: "automatic" })).toEqual({ state: "up-to-date", from: "0.4.1", paused: true });
+    expect(ran).toEqual([]);
+    // Installing them by hand still works.
+    expect(await update({ ...options, to: "fixes" })).toMatchObject({ state: "updated", to: "0.4.2" });
+  });
+
+  it("goes back to an older release, and skips the one it left until it's chosen again", async () => {
+    await site();
+    const withFix = async (url: string) =>
+      url === "https://registry.npmjs.org/@goodfellow-cms/react"
+        ? { versions: { "0.4.1": {}, "0.4.2": {}, "0.4.3": {}, "0.5.0": {} } }
+        : fetchJson(url);
+    const { ran, run } = commands();
+    const options = { root, fetchJson: withFix, run, registry: REGISTRY, log: () => {}, env: {} };
+    await update({ ...options, to: "0.4.2" });
+    ran.length = 0;
+
+    const back = await update({ ...options, to: "0.4.1", publish: true });
+    expect(back).toEqual({ state: "updated", from: "0.4.2", to: "0.4.1", kept: [], rollback: true });
+    expect(JSON.parse(await read("package.json")).dependencies["@goodfellow-cms/react"]).toBe("0.4.1");
+    expect(parseUpdateSettings(await read("content/updates.json"))).toEqual({
+      version: 1,
+      automatic: true,
+      skip: ["0.4.2"],
+    });
+    expect(ran).toContain(
+      "git -c user.name=Goodfellow updates -c user.email=updates@goodfellow.invalid commit --message Go back to Goodfellow 0.4.1",
+    );
+    expect(ran.find((line) => line.startsWith("git add"))).toContain("content/updates.json");
+
+    // Later fixes still install; choosing the skipped release installs it and no longer skips it.
+    expect(await update({ ...options, to: "automatic" })).toMatchObject({
+      state: "updated",
+      from: "0.4.1",
+      to: "0.4.3",
+    });
+    await update({ ...options, to: "0.4.2" });
+    expect(parseUpdateSettings(await read("content/updates.json")).skip).toEqual(["0.4.3"]);
   });
 
   it("goes back as it was if someone published meanwhile", async () => {

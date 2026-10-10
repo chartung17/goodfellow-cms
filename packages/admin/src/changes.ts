@@ -27,6 +27,9 @@ import {
   serializeMarkdownEntry,
   storedCode,
   TITLE_FIELD,
+  UPDATES_FILE,
+  type UpdateSettings,
+  updateSettingsFile,
 } from "@goodfellow-cms/core";
 import type { Data } from "@puckeditor/core";
 import { formattedHtml, htmlToMarkdown } from "./markdown-text.js";
@@ -132,6 +135,11 @@ export function movePageChanges(page: Page, to: string, menus: Menus, updateLink
 
 export function siteSettingsFileChange(settings: SiteSettings): FileChange {
   return { path: SITE_FILE, content: serializeContent({ ...settings, version: CURRENT_VERSION.site }) };
+}
+
+/** Whether fixes install each night, and the releases updates skip. */
+export function updateSettingsFileChange(settings: Pick<UpdateSettings, "automatic" | "skip">): FileChange {
+  return { path: UPDATES_FILE, content: updateSettingsFile(settings) };
 }
 
 /** Custom CSS as stored: ending in one newline, or empty. */

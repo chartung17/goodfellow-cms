@@ -23,7 +23,9 @@ Options:
   --out <dir>     Build output folder (default: dist)
   --base <path>   Serve the site from a subfolder, such as /my-repo/ (also GOODFELLOW_BASE)
   --port <port>   Port for dev or preview
-  --to <release>  For update: fixes (the default), latest, or a release such as 0.5.0
+  --to <release>  For update: fixes (the default), automatic (fixes, unless
+                  content/updates.json turns them off), latest, or a release
+                  such as 0.5.0; an older one goes back to it and skips this one
   --publish       For update: publish the update to the site's main branch once it builds
   -h, --help      Show this help
 `;

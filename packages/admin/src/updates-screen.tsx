@@ -1,16 +1,22 @@
 import {
   type AvailableUpdates,
   availableUpdates,
+  compareReleases,
+  type GitBackend,
   NPM_REGISTRY,
+  parseUpdateSettings,
   releaseVersions,
   siteVersion,
+  UPDATES_FILE,
   type UpdateRun,
+  type UpdateSettings,
   UpdatesError,
   type UpdatesSetup,
   VERSION_PACKAGE,
 } from "@goodfellow-cms/core";
 import { useCallback, useEffect, useState } from "react";
 import { useAdmin, useSiteContent } from "./admin-context.js";
+import { updateSettingsFileChange } from "./changes.js";
 import { OwnerTokenActive, OwnerTokenForm } from "./owner-token.js";
 import { SettingsTabs } from "./settings-screen.js";
 import { type StringKey, useStrings } from "./strings.js";
@@ -20,6 +26,8 @@ import { Button, ErrorMessage } from "./ui.js";
 const RELEASES_URL = "https://github.com/chartung17/goodfellow-cms/releases";
 /** How often the screen checks on an update while one is running. */
 const CHECK_INTERVAL = 15_000;
+/** How many versions of `package.json` to look through for the release before this one. */
+const HISTORY_DEPTH = 30;
 
 const STEP_TEXT: Record<string, StringKey> = {
   build: "updates.failed.build",
@@ -28,11 +36,32 @@ const STEP_TEXT: Record<string, StringKey> = {
   publish: "updates.failed.publish",
 };
 
+/** The update settings couldn't be published. */
+class SaveError extends Error {
+  override name = "SaveError";
+  constructor(override readonly cause: unknown) {
+    super("The update settings couldn't be published.");
+  }
+}
+
 function formatDate(date: string | undefined): string {
   const parsed = date ? new Date(date) : undefined;
   return parsed && !Number.isNaN(parsed.getTime())
     ? new Intl.DateTimeFormat(undefined, { dateStyle: "medium", timeStyle: "short" }).format(parsed)
     : "";
+}
+
+/** The newest release the site had before `current` that's older than it, from `package.json`'s history. */
+async function previousRelease(
+  versions: Pick<GitBackend, "history" | "readAt">,
+  current: string,
+): Promise<string | undefined> {
+  const history = await versions.history("package.json", { perPage: HISTORY_DEPTH });
+  for (const { revision } of history) {
+    const version = siteVersion((await versions.readAt("package.json", revision)) ?? "");
+    if (version && compareReleases(version, current) < 0) return version;
+  }
+  return undefined;
 }
 
 /** The site's Goodfellow release, the fixes and releases it can update to, and its nightly update job. */
@@ -56,6 +85,9 @@ export function UpdatesScreen() {
 
 interface Loaded {
   current?: string;
+  /** The release before it, which an owner can go back to. */
+  previous?: string;
+  settings: UpdateSettings;
   available: AvailableUpdates;
   setup: UpdatesSetup;
   last?: UpdateRun;
@@ -64,7 +96,7 @@ interface Loaded {
 
 function UpdatesPanel() {
   const t = useStrings();
-  const { updates, versions, editors, ownerAccess, account } = useAdmin();
+  const { updates, versions, editors, ownerAccess, account, readFile, publish } = useAdmin();
   const { revision } = useSiteContent();
   const host = account?.hostName ?? "";
   const [loaded, setLoaded] = useState<Loaded>();
@@ -76,8 +108,9 @@ function UpdatesPanel() {
   const load = useCallback(async () => {
     if (!updates) return;
     try {
-      const [packageJson, metadata, setup, last, people] = await Promise.all([
+      const [packageJson, settingsText, metadata, setup, last, people] = await Promise.all([
         versions?.readAt("package.json", revision),
+        readFile(UPDATES_FILE),
         window
           .fetch(`${NPM_REGISTRY}/${VERSION_PACKAGE}`, { headers: { accept: "application/vnd.npm.install-v1+json" } })
           .then((response) => (response.ok ? response.json() : undefined))
@@ -87,9 +120,14 @@ function UpdatesPanel() {
         editors?.list().catch(() => undefined),
       ]);
       const current = packageJson ? siteVersion(packageJson) : undefined;
+      const settings = parseUpdateSettings(settingsText);
+      const previous =
+        current && versions ? await previousRelease(versions, current).catch(() => undefined) : undefined;
       setLoaded({
         current,
-        available: current ? availableUpdates(current, releaseVersions(metadata)) : {},
+        previous,
+        settings,
+        available: current ? availableUpdates(current, releaseVersions(metadata), settings.skip) : {},
         setup,
         last,
         // Without a list of editors, the host decides who may update when asked.
@@ -99,7 +137,7 @@ function UpdatesPanel() {
     } catch (caught) {
       setError(caught);
     }
-  }, [updates, versions, editors, revision]);
+  }, [updates, versions, editors, readFile, revision]);
 
   useEffect(() => {
     void load();
@@ -133,11 +171,17 @@ function UpdatesPanel() {
       () => updates?.start(target) ?? Promise.resolve(),
       () => setStarted(true),
     );
+  // The settings are content, published like any other change; publishing reloads the site, and so this screen.
+  const saveSettings = (settings: Pick<UpdateSettings, "automatic" | "skip">, message: string) =>
+    act(async () => {
+      const result = await publish([updateSettingsFileChange(settings)], message);
+      if (!result.ok) throw new SaveError(result.error);
+    });
 
   if (!updates) return null;
   if (error) return <ErrorMessage message={t("updates.error.load")} error={error} />;
   if (!loaded) return <p role="status">{t("updates.loading")}</p>;
-  const { current, available, setup, last, owner } = loaded;
+  const { current, previous, settings, available, setup, last, owner } = loaded;
   const needsToken = problem instanceof UpdatesError && problem.problem === "not-allowed" && ownerAccess;
 
   return (
@@ -160,9 +204,28 @@ function UpdatesPanel() {
       {current && setup !== "missing" && (
         <>
           <h2 className="gfa-section-title">{t("updates.fixes.title")}</h2>
+          <label className="gfa-checkbox">
+            <input
+              type="checkbox"
+              checked={settings.automatic}
+              disabled={busy || !owner}
+              onChange={(event) =>
+                void saveSettings(
+                  { ...settings, automatic: event.target.checked },
+                  t(event.target.checked ? "updates.automatic.turnOn" : "updates.automatic.turnOff"),
+                )
+              }
+            />
+            {t("updates.automatic.label")}
+          </label>
+          <p className="gfa-hint">{t(owner ? "updates.automatic.hint" : "updates.automatic.onlyOwners")}</p>
           {available.fixes ? (
             <>
-              <p>{t("updates.fixes.ready", { version: available.fixes })}</p>
+              <p>
+                {t(settings.automatic ? "updates.fixes.ready" : "updates.fixes.readyPaused", {
+                  version: available.fixes,
+                })}
+              </p>
               <div>
                 <Button variant="primary" disabled={busy || running} onClick={() => void start("fixes")}>
                   {t("updates.fixes.now")}
@@ -193,15 +256,65 @@ function UpdatesPanel() {
               )}
             </>
           )}
+
+          {previous && owner && (
+            <>
+              <h2 className="gfa-section-title">{t("updates.back.title")}</h2>
+              <p>{t("updates.back.body", { current, version: previous })}</p>
+              <div>
+                <Button
+                  disabled={busy || running}
+                  onClick={() => {
+                    if (window.confirm(t("updates.back.confirm", { version: previous }))) void start(previous);
+                  }}
+                >
+                  {t("updates.back.button", { version: previous })}
+                </Button>
+              </div>
+            </>
+          )}
+
+          {settings.skip.length > 0 && (
+            <>
+              <h2 className="gfa-section-title">{t("updates.skipped.title")}</h2>
+              <p>{t("updates.skipped.body")}</p>
+              <ul className="gfa-update-skipped">
+                {settings.skip.map((version) => (
+                  <li key={version} className="gfa-update-skip">
+                    <span>{version}</span>
+                    {owner && (
+                      <Button
+                        variant="ghost"
+                        disabled={busy}
+                        onClick={() =>
+                          void saveSettings(
+                            { ...settings, skip: settings.skip.filter((skipped) => skipped !== version) },
+                            t("updates.skipped.allowMessage", { version }),
+                          )
+                        }
+                      >
+                        {t("updates.skipped.allow", { version })}
+                      </Button>
+                    )}
+                  </li>
+                ))}
+              </ul>
+            </>
+          )}
         </>
       )}
 
       {needsToken && <OwnerTokenForm onReady={() => setProblem(undefined)} />}
       {problem !== undefined && !needsToken && (
         <ErrorMessage
-          message={t(problem instanceof UpdatesError ? `updates.error.${problem.problem}` : "updates.error.other", {
-            host,
-          })}
+          message={t(
+            problem instanceof UpdatesError
+              ? `updates.error.${problem.problem}`
+              : problem instanceof SaveError
+                ? "updates.error.save"
+                : "updates.error.other",
+            { host },
+          )}
           error={problem}
         />
       )}
@@ -224,10 +337,11 @@ function LastRun({ run }: { run?: UpdateRun }) {
   if (run.state === "running") message = t("updates.last.running");
   else if (run.state === "updated") {
     message = result?.to
-      ? t("updates.last.updated", { date, version: result.to })
+      ? t(result.rollback ? "updates.last.wentBack" : "updates.last.updated", { date, version: result.to })
       : t("updates.last.updatedSome", { date });
-  } else if (run.state === "up-to-date") message = t("updates.last.upToDate", { date });
-  else if (run.state === "failed") {
+  } else if (run.state === "up-to-date") {
+    message = t(result?.paused ? "updates.last.paused" : "updates.last.upToDate", { date });
+  } else if (run.state === "failed") {
     const why = result?.step && STEP_TEXT[result.step];
     message = `${t("updates.last.failed", { date })}${why ? ` ${t(why, { version: result?.to ?? "" })}` : ""}`;
   } else message = t("updates.last.unknown", { date });

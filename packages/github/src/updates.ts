@@ -1,4 +1,11 @@
-import { GitApiError, type SiteUpdates, siteVersion, type UpdateRun, UpdatesError } from "@goodfellow-cms/core";
+import {
+  compareReleases,
+  GitApiError,
+  type SiteUpdates,
+  siteVersion,
+  type UpdateRun,
+  UpdatesError,
+} from "@goodfellow-cms/core";
 import { type ApiOptions, githubJson, githubRequest } from "./api.js";
 
 /** The starters' GitHub Pages workflow, which runs `goodfellow update` each night and when it's dispatched. */
@@ -63,7 +70,12 @@ export function githubUpdates(
         const before = siteVersion((await files.readAt("package.json", run.head_sha)) ?? "");
         const now = siteVersion((await files.read("package.json")) ?? "");
         if (!before || !now || before === now) return { state: "up-to-date", ...base };
-        return { state: "updated", ...base, result: { state: "updated", from: before, to: now } };
+        const rollback = compareReleases(now, before) < 0;
+        return {
+          state: "updated",
+          ...base,
+          result: { state: "updated", from: before, to: now, ...(rollback && { rollback }) },
+        };
       }
       return undefined;
     },

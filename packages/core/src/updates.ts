@@ -5,6 +5,12 @@
  */
 
 import type { BuildCause } from "./build-problems.js";
+import { ContentError } from "./content/errors.js";
+import { parseContentFile } from "./content/load.js";
+import { UPDATES_FILE } from "./content/paths.js";
+import { type UpdateSettings, updateSettingsSchema } from "./content/schemas.js";
+import { serializeContent } from "./content/serialize.js";
+import { CURRENT_VERSION } from "./migrations/index.js";
 
 /** npm's registry, which answers browsers too. */
 export const NPM_REGISTRY = "https://registry.npmjs.org";
@@ -22,6 +28,13 @@ function parse(version: string): Parts | undefined {
 
 function compare(a: Parts, b: Parts): number {
   return a[0] - b[0] || a[1] - b[1] || a[2] - b[2];
+}
+
+/** Negative when release `a` is older than `b`, positive when it's newer, and 0 when they're the same or either isn't a release. */
+export function compareReleases(a: string, b: string): number {
+  const first = parse(a);
+  const second = parse(b);
+  return first && second ? compare(first, second) : 0;
 }
 
 /** A release version without a range's `^` or `~`, or `undefined` if it isn't one. */
@@ -50,14 +63,19 @@ export interface AvailableUpdates {
   newer?: string;
 }
 
-export function availableUpdates(current: string, versions: readonly string[]): AvailableUpdates {
+/** Releases in `skip`, such as one the site went back from, are left out. */
+export function availableUpdates(
+  current: string,
+  versions: readonly string[],
+  skip: readonly string[] = [],
+): AvailableUpdates {
   const now = parse(current);
   if (!now) return {};
   let fixes: Parts | undefined;
   let newer: Parts | undefined;
   for (const version of versions) {
     const parts = parse(version);
-    if (!parts || compare(parts, now) <= 0) continue;
+    if (!parts || compare(parts, now) <= 0 || skip.includes(parts.join("."))) continue;
     if (parts[0] === now[0] && parts[1] === now[1]) {
       if (!fixes || compare(parts, fixes) > 0) fixes = parts;
     } else if (!newer || compare(parts, newer) > 0) {
@@ -69,17 +87,38 @@ export function availableUpdates(current: string, versions: readonly string[]): 
 
 /**
  * The release to update to: `fixes` for the newest release with the same
- * major and minor version, `latest` for the newest of all, or a release
- * itself. `undefined` when there's nothing newer.
+ * major and minor version, `latest` for the newest of all, leaving out the
+ * releases in `skip`, or a release itself, which may be older to go back to
+ * it. `undefined` when there's nothing to install.
  */
-export function chooseUpdate(current: string, versions: readonly string[], target: string): string | undefined {
-  const available = availableUpdates(current, versions);
+export function chooseUpdate(
+  current: string,
+  versions: readonly string[],
+  target: string,
+  skip: readonly string[] = [],
+): string | undefined {
+  const available = availableUpdates(current, versions, skip);
   if (target === "fixes") return available.fixes;
   if (target === "latest") return available.newer ?? available.fixes;
   const wanted = releaseVersion(target);
-  const now = parse(current);
-  const parts = wanted ? parse(wanted) : undefined;
-  return wanted && now && parts && versions.includes(wanted) && compare(parts, now) > 0 ? wanted : undefined;
+  return wanted && versions.includes(wanted) && compareReleases(wanted, current) !== 0 ? wanted : undefined;
+}
+
+/** A site that has no `content/updates.json` installs fixes on its own and skips nothing. */
+export const DEFAULT_UPDATE_SETTINGS: UpdateSettings = { version: 1, automatic: true, skip: [] };
+
+/** The site's update settings from `content/updates.json`'s text, or the defaults when it has none. Throws a `ContentError` if it can't be used. */
+export function parseUpdateSettings(text: string | undefined): UpdateSettings {
+  if (text === undefined) return DEFAULT_UPDATE_SETTINGS;
+  const result = parseContentFile("updates", updateSettingsSchema, UPDATES_FILE, text);
+  if (!result.ok) throw new ContentError([result.problem]);
+  return result.value;
+}
+
+/** `content/updates.json`'s text for these settings, with the skipped releases oldest first. */
+export function updateSettingsFile(settings: Pick<UpdateSettings, "automatic" | "skip">): string {
+  const skip = [...new Set(settings.skip)].sort(compareReleases);
+  return serializeContent({ version: CURRENT_VERSION.updates, automatic: settings.automatic, skip });
 }
 
 /** The site's Goodfellow version, from its `package.json`. */
@@ -108,6 +147,10 @@ export interface UpdateResult {
   cause?: BuildCause;
   /** Installed blocks' files someone changed, which the update left as they were. */
   kept?: string[];
+  /** For an automatic update that didn't run, because the site's settings turn them off. */
+  paused?: boolean;
+  /** When `to` is older: the site went back to it, and `from` is now skipped. */
+  rollback?: boolean;
 }
 
 /** Starts the line `goodfellow update` prints about what it did. */
@@ -158,7 +201,7 @@ export interface SiteUpdates {
   /** Turns on what the host needs, such as letting the job publish and running it each night. */
   enable?(): Promise<void>;
   lastRun(): Promise<UpdateRun | undefined>;
-  /** Runs the update job now: `fixes` for the newest fixes, or a release, such as a newer one an owner chose. */
+  /** Runs the update job now: `fixes` for the newest fixes, or a release, such as a newer one an owner chose or an older one to go back to. */
   start(target: string): Promise<void>;
 }
 

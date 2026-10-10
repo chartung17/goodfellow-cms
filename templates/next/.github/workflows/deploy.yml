@@ -1,7 +1,8 @@
 # Builds the site and publishes it with GitHub Pages whenever the main branch
 # changes (including every Publish in the admin panel), and once a night so
 # date-based content stays current. Each night it first installs Goodfellow's
-# newest fixes, and publishes them only if the site still builds with them.
+# newest fixes, and publishes them only if the site still builds with them,
+# unless content/updates.json turns automatic updates off.
 # In the repository's Settings → Pages, set "Source" to "GitHub Actions".
 # See README.md.
 name: Deploy to GitHub Pages
@@ -14,7 +15,7 @@ on:
   workflow_dispatch:
     inputs:
       update:
-        description: "Update Goodfellow first: fixes, latest, or a release such as 0.5.0. Leave empty to only build."
+        description: "Update Goodfellow first: fixes, latest, or a release such as 0.5.0 (an older one goes back to it). Leave empty to only build."
         required: false
         default: ""
 
@@ -45,7 +46,7 @@ jobs:
       - run: npm ci
       - id: update
         env:
-          TO: ${{ inputs.update || 'fixes' }}
+          TO: ${{ inputs.update || 'automatic' }}
         run: npx goodfellow-next update --publish --to "$TO"
 
   build:

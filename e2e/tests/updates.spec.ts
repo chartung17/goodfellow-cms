@@ -86,3 +86,55 @@ test("a GitLab site turns on automatic updates, and shows why the last one wasn'
   await page.getByText("Details", { exact: true }).click();
   await expect(page.getByText("blocks/installed/shadcn-faq/block.tsx")).toBeVisible();
 });
+
+test("an owner turns automatic fixes off, goes back to the previous release, and allows a skipped one again", async ({
+  page,
+}) => {
+  const fake = fakeGitLab({
+    project: "parish/site",
+    files: siteFiles(".gitlab-ci.yml"),
+    tokens: { "glpat-test": { username: "maria", accessLevel: 40 } },
+  });
+  fake.repo.write("package.json", JSON.stringify({ dependencies: { "@goodfellow-cms/react": "0.4.3" } }));
+  await routeToFake(page, "https://gitlab.com/api", fake.handle);
+  await fakeNpm(page);
+
+  await page.goto(`${GITLAB_SITE}/admin/#/settings/updates`);
+  await page.getByText("Or sign in with an access token").click();
+  await page.getByLabel("Access token").fill("glpat-test");
+  await page.getByRole("button", { name: "Sign in", exact: true }).click();
+  await expect(page.getByText("This site uses Goodfellow 0.4.3.")).toBeVisible();
+
+  // Turning automatic fixes off publishes the site's update settings.
+  const automatic = page.getByLabel("Install fixes automatically each night");
+  await expect(automatic).toBeChecked();
+  await automatic.click();
+  await expect(automatic).not.toBeChecked();
+  await expect
+    .poll(() => fake.repo.files().get("content/updates.json"))
+    .toBe('{\n  "version": 1,\n  "automatic": false,\n  "skip": []\n}\n');
+
+  // Going back runs the update job with the release before this one.
+  page.once("dialog", (dialog) => dialog.accept());
+  await page.getByRole("button", { name: "Go back to 0.4.1" }).click();
+  await expect(page.getByText("An update is running now.", { exact: false })).toBeVisible();
+  expect(fake.updateRuns.at(-1)?.variables).toEqual([
+    { key: "GOODFELLOW_UPDATE", variable_type: "env_var", value: "0.4.1" },
+  ]);
+
+  // Once it's done, the release it went back from isn't offered again until an owner allows it.
+  const run = fake.updateRuns.at(-1);
+  if (run) {
+    run.status = "success";
+    run.trace = 'goodfellow-update {"state":"updated","from":"0.4.3","to":"0.4.1","kept":[],"rollback":true}';
+  }
+  fake.repo.write("package.json", JSON.stringify({ dependencies: { "@goodfellow-cms/react": "0.4.1" } }));
+  fake.repo.write("content/updates.json", '{\n  "version": 1,\n  "automatic": true,\n  "skip": ["0.4.3"]\n}\n');
+  await page.reload();
+  await expect(page.getByText("the site went back to Goodfellow 0.4.1.", { exact: false })).toBeVisible();
+  await expect(page.getByText("The site has every fix for its release.")).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Releases that won't be installed" })).toBeVisible();
+  await page.getByRole("button", { name: "Allow 0.4.3 again" }).click();
+  await expect(page.getByText("Fixes up to Goodfellow 0.4.3 are ready.", { exact: false })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Releases that won't be installed" })).toHaveCount(0);
+});
