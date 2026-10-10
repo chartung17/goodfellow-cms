@@ -15,8 +15,9 @@ test("finds pages with the search box, from the site's own index", async ({ page
   // The search box starts working once the page's scripts have loaded.
   await page.waitForLoadState("networkidle");
 
-  await page.getByRole("searchbox").fill("zzzz-nothing-like-this");
-  await expect(page.getByText("Nothing matches “zzzz-nothing-like-this”.")).toBeVisible();
+  // Letters that make no word, or the start of one: Pagefind matches the start of words, and "zzzz" matched "Z".
+  await page.getByRole("searchbox").fill("qxjvwk");
+  await expect(page.getByText("Nothing matches “qxjvwk”.")).toBeVisible();
 });
 
 test("shows a documentation page with its navigation, headings and highlighted, copyable code", async ({
