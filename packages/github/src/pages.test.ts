@@ -49,11 +49,21 @@ describe("GitHub Pages domains", () => {
   it("requires HTTPS once the certificate is ready, and not before", async () => {
     const { fake, pages } = await signIn();
     await pages.connect("example.org", { apex: true });
-    expect(await pages.status("example.org")).toEqual({ verified: true, certificate: "pending", httpsOnly: false });
+    expect(await pages.status("example.org")).toEqual({
+      verified: true,
+      certificate: "pending",
+      httpsOnly: false,
+      primary: true,
+    });
     await expect(pages.secure("example.org")).rejects.toMatchObject({ problem: "not-ready" });
     if (fake.pages.current) fake.pages.current.certificate = "approved";
     await pages.secure("example.org");
-    expect(await pages.status("example.org")).toEqual({ verified: true, certificate: "ready", httpsOnly: true });
+    expect(await pages.status("example.org")).toEqual({
+      verified: true,
+      certificate: "ready",
+      httpsOnly: true,
+      primary: true,
+    });
     await pages.disconnect("example.org");
     expect(await pages.site()).toEqual({ url: "https://someone.github.io/parish/", domain: undefined });
   });

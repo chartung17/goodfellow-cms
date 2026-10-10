@@ -51,13 +51,23 @@ describe("GitLab Pages domains", () => {
   it("verifies the domain once its record is in place, then requires HTTPS and makes it the primary domain", async () => {
     const { fake, pages } = await signIn();
     await pages.connect("example.org", { apex: true });
-    expect(await pages.status("example.org")).toEqual({ verified: false, certificate: "pending", httpsOnly: true });
+    expect(await pages.status("example.org")).toEqual({
+      verified: false,
+      certificate: "pending",
+      httpsOnly: true,
+      primary: false,
+    });
     await expect(pages.secure("example.org")).rejects.toMatchObject({ problem: "not-ready" });
     fake.pages?.dnsReady.add("example.org");
     expect((await pages.status("example.org")).verified).toBe(true);
     const domain = fake.pages?.domains.get("example.org");
     if (domain) domain.certificate = true;
-    expect(await pages.status("example.org")).toEqual({ verified: true, certificate: "ready", httpsOnly: true });
+    expect(await pages.status("example.org")).toEqual({
+      verified: true,
+      certificate: "ready",
+      httpsOnly: true,
+      primary: false,
+    });
     await pages.secure("example.org");
     expect(fake.pages?.primaryDomain).toBe("example.org");
     await pages.disconnect("example.org");

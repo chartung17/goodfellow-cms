@@ -70,6 +70,10 @@ If the host serves the site from a subfolder, such as `/your-site/` on GitHub Pa
 
 1. Go to your profile's **Preferences → Applications** (or a group's **Settings → Applications**) and add an application.
 2. Set the **Redirect URI** to the admin panel's address with a trailing slash, such as `https://your-site.example/admin/`, leave **Confidential** off, and choose the `api` scope.
-3. Copy the **Application ID** into the config: `gitlab({ project: "your-name/your-site", clientId: "…" })`.
+3. Copy the **Application ID** into the config: `gitlab({ project: "your-name/your-site", clientId: "…" })`. If the site moves to a domain of its own later, add its new admin address as a redirect URI too.
 
 Every editor needs permission to change the repository: on GitHub, write access; on GitLab, the Developer role or higher.
+
+## Your own domain
+
+To put the site at a domain of your own, such as `example.org`, connect it in the admin panel: see [Custom domains](/docs/custom-domains).

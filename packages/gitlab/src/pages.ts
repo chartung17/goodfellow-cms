@@ -84,7 +84,7 @@ export function gitlabPages(api: ApiOptions, project: string): PagesDomains {
   }
 
   async function pages(): Promise<PagesResponse | undefined> {
-    const response = await gitlabRequest(api, pagesPath, { allow: [403, 404] });
+    const response = await gitlabRequest(api, pagesPath, { allow: [404] }).catch(notAllowed);
     return response.ok ? ((await response.json()) as PagesResponse) : undefined;
   }
 
@@ -163,6 +163,8 @@ export function gitlabPages(api: ApiOptions, project: string): PagesDomains {
         verified: found.verified,
         certificate: found.certificate && !found.certificate.expired ? "ready" : "pending",
         httpsOnly: settings?.force_https === true,
+        // GitLab before 17.8 has no primary domain, and sends nobody anywhere.
+        primary: settings?.primary_domain === undefined || settings.primary_domain === domain,
       };
     },
     async secure(domain) {

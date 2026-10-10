@@ -12,6 +12,7 @@ import {
   isDemoStore,
   loadSiteContent,
   MEDIA_DIR,
+  type PagesDomains,
   type RegistrySources,
   SignInError,
   type SiteContent,
@@ -72,6 +73,8 @@ interface AdminContextValue {
   registries: RegistrySources;
   /** In a demo, the store keeping the visitor's changes in their browser. */
   demo?: DemoStore;
+  /** The git host's own Pages, for connecting a domain, when the backend can. */
+  pages?: PagesDomains;
 }
 
 const AdminContext = createContext<AdminContextValue | null>(null);
@@ -127,6 +130,7 @@ export function AdminProvider({
   );
   const readFile = useCallback((path: string) => store.read(path), [store]);
   const demo = isDemoStore(store) ? store : undefined;
+  const pages = isGitBackend(store) ? store.pages : undefined;
 
   // A demo visitor's uploads aren't on the live site, and their replacements of its files would show the
   // live site's version, so previews show what the visitor saved instead.
@@ -211,6 +215,7 @@ export function AdminProvider({
       readFile,
       registries,
       demo,
+      pages,
     }),
     [
       config,
@@ -228,6 +233,7 @@ export function AdminProvider({
       readFile,
       registries,
       demo,
+      pages,
     ],
   );
 

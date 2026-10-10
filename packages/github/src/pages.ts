@@ -76,7 +76,7 @@ export function githubPages(api: ApiOptions, repo: string, tokenLink: TokenLink)
     async records(domain, options) {
       return githubPagesRecords(repo, domain, options);
     },
-    async status(): Promise<PagesDomainStatus> {
+    async status(domain): Promise<PagesDomainStatus> {
       const found = await githubJson<PagesResponse>(api, path);
       const state = found.https_certificate?.state ?? "";
       return {
@@ -84,6 +84,8 @@ export function githubPages(api: ApiOptions, repo: string, tokenLink: TokenLink)
         verified: true,
         certificate: READY.has(state) ? "ready" : FAILED.has(state) ? "failed" : "pending",
         httpsOnly: found.https_enforced === true,
+        // GitHub sends the github.io address to the custom domain as soon as it's set.
+        primary: found.cname === domain,
       };
     },
     async secure() {

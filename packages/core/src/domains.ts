@@ -38,6 +38,8 @@ export interface PagesDomainStatus {
   certificate: "pending" | "ready" | "failed";
   /** Whether visitors are always sent to the `https://` address. */
   httpsOnly: boolean;
+  /** Whether the host sends visitors from the site's other addresses, its own included, to this domain. */
+  primary: boolean;
 }
 
 export interface ConnectDomainOptions {
