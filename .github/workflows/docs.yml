@@ -58,6 +58,11 @@ jobs:
       - run: pnpm install --frozen-lockfile
       # The packages the docs site is built with, then the site itself, served from /repository-name/.
       - run: pnpm turbo run build --filter='@goodfellow-cms/docs^...'
+      # The starters for the setup page, with lockfiles for the sites it creates: their versions are on npm by now.
+      - run: node scripts/starters.mjs
+        working-directory: docs
+        env:
+          GOODFELLOW_STARTER_LOCKFILES: "1"
       - run: pnpm --filter @goodfellow-cms/docs exec goodfellow build --base "${{ steps.pages.outputs.base_path }}/"
       - uses: actions/upload-pages-artifact@v4
         with:

@@ -6,7 +6,7 @@ section: start
 order: 4
 ---
 
-Setup takes four steps, done once by whoever sets up the site.
+Setup takes four steps, done once by whoever sets up the site. A site made with the [setup page](/new-site) has done the first three, unless it's on Vercel, so start at [step 4](#4-set-up-sign-in).
 
 ## 1. Store the site on GitHub or GitLab
 

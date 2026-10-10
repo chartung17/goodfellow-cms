@@ -41,6 +41,12 @@ importers:
       '@goodfellow-cms/core':
         specifier: workspace:*
         version: link:../packages/core
+      '@goodfellow-cms/github':
+        specifier: workspace:*
+        version: link:../packages/github
+      '@goodfellow-cms/gitlab':
+        specifier: workspace:*
+        version: link:../packages/gitlab
       '@goodfellow-cms/react':
         specifier: workspace:*
         version: link:../packages/react
@@ -60,6 +66,9 @@ importers:
       '@types/react':
         specifier: ^19.2.0
         version: 19.3.0
+      create-goodfellow:
+        specifier: workspace:*
+        version: link:../packages/create-goodfellow
       goodfellow:
         specifier: workspace:*
         version: link:../packages/cli

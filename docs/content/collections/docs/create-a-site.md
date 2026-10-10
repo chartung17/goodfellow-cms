@@ -1,14 +1,25 @@
 ---
 version: 1
 title: Create a site
-description: Make a new Goodfellow site from a starter, and try it on your own computer.
+description: Make a new Goodfellow site from a starter, in your browser or on your own computer.
 section: start
 order: 3
 ---
 
-You need [Node.js](https://nodejs.org) 22 or later.
+## In your browser
+
+The [setup page](/new-site) creates a site without installing anything. It asks the same questions as `create-goodfellow`, below, and what the site is for, so it can recommend a host whose free plan allows it. Then it creates the repository in your GitHub or GitLab account, with the site's files in its first commit, and turns on GitHub Pages or GitLab Pages.
+
+- **Signing in:** on GitHub, paste a token the page links to, with the permissions it needs filled in. Choose **All repositories** under Repository access, since the repository doesn't exist yet. The token is used only in that tab and never saved; delete it on GitHub once the site is created. On GitLab, sign in with GitLab or paste a token.
+- **Private repositories:** GitHub Pages doesn't work with private repositories on GitHub's free plan, and the page says so. GitLab Pages does, and the page makes a private project's site public.
+- **Vercel:** the page creates the repository, then you import it at [vercel.com/new](https://vercel.com/new).
+- **History:** on GitHub, the page also adds a rule that stops anyone rewriting or deleting the main branch's history, where the plan allows it. GitLab does this for every project.
+
+The site's first build starts at once. Once it's online, sign in to its admin panel, at the site's address followed by `/admin/`: see [Editors and sign-in](/docs/sign-in).
 
 ## With create-goodfellow
+
+You need [Node.js](https://nodejs.org) 22 or later.
 
 ```sh
 npm create goodfellow@latest my-site

@@ -66,7 +66,9 @@ These are the hosts' rules, not Goodfellow's, and they can change. Goodfellow's 
 
 ## Getting started
 
-Create a new site with Node 22 or later:
+The quickest way to start is the documentation site's [Create a site](https://chartung17.github.io/goodfellow-cms/new-site/) page, which creates a site in your GitHub or GitLab account and puts it online, from your browser, with nothing to install.
+
+Or create a new site on your computer, with Node 22 or later:
 
 ```sh
 npm create goodfellow@latest my-site
@@ -345,7 +347,7 @@ my-site/
 11. **Demo mode** (done). A site whose config sets `demo: true` (it can only be turned on in the config, never from the admin panel) opens its admin panel to anyone, with no sign-in. Visitors can try everything, from editing pages and collections to the media library, settings and the AI assistant, but nothing is published: their changes stay in their own browser until they start over. The demo starts from a copy of the site's content that the build includes, so the repository can stay private.
 12. **Documentation site** (done). A documentation site built with Goodfellow itself, in `docs/`, and the blocks it needs, which any site can use: code with syntax highlighting, search (with [Pagefind](https://pagefind.app), indexed only on sites that use a search block), navigation within a collection, previous and next links, and an "On this page" list. Collections can store their items as Markdown files, edited in the admin panel's formatted editor or as Markdown. The docs cover why Goodfellow exists and how it compares with alternatives such as WordPress and TinaCMS, guides for site owners and editors, reference docs for developers, and each host's rules for business sites on its free plan. Online at [chartung17.github.io/goodfellow-cms](https://chartung17.github.io/goodfellow-cms/) since step 13.
 13. **Going live** (done). Make the repository public, publish the packages to npm, and put the documentation site online with GitHub Pages. A demo site, made from the parish example in a repository of its own with the published packages, goes online with GitHub Pages too, and the docs link to it.
-14. **Site setup without a developer.** A web page where anyone can create a site from a starter, store it on GitHub or GitLab, and put it online with GitHub Pages, GitLab Pages or Vercel. It asks what the site is for and recommends a host whose free plan allows it, such as GitLab Pages for a business. Builds work out which repository they're in, so nobody has to edit the config.
+14. **Site setup without a developer** (done). The documentation site's [Create a site](https://chartung17.github.io/goodfellow-cms/new-site/) page creates a site from any starter, with the same choices as `create-goodfellow`, in the person's own GitHub or GitLab account, straight from their browser, and puts it online with GitHub Pages, GitLab Pages or Vercel. It asks what the site is for and recommends a host whose free plan allows it, such as GitLab Pages for a business, and warns that GitHub Pages doesn't work with private repositories on GitHub's free plan. On GitHub, people sign in with a token the page links to (step 20's sign-in worker will replace it); on GitLab, with GitLab or a token. The page writes the repository into the site's config, so nobody has to edit it.
 15. **Custom domains.** Connect a domain from the admin panel. Goodfellow sets the domain on the host where it can, lists the records to add at the domain's registrar, with guides for popular registrars, and shows when the domain is working.
 16. **Running a site without a developer.**
     - Invite and remove editors from the admin panel.

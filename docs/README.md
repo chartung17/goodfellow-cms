@@ -22,6 +22,8 @@ When a change to Goodfellow changes what users see or do, update these pages in 
 
 `pnpm build` writes the site to `dist/`, with a search index, since the header has a Search block. `pnpm preview` serves it.
 
+Both `pnpm dev` and `pnpm build` first run `scripts/starters.mjs`, which packs the starters for the [setup page](content/pages/new-site.json) into `public/starters/`. Locally they have no `package-lock.json` files, so the page warns that sites it creates won't build; the published site has them (see `.github/workflows/docs.yml`). To try creating a site for real, set `GOODFELLOW_STARTER_LOCKFILES=1`, which needs the packages' versions to be on npm.
+
 ## Online
 
 The site is at <https://chartung17.github.io/goodfellow-cms/>, published with GitHub Pages by `.github/workflows/docs.yml`. It describes the latest release: the release workflow deploys it after publishing a new version to npm, from that version's commit, so changes to these pages go online with the next release. To publish a fix sooner, run **Deploy docs** in the repository's Actions tab with `master` as the version. See [RELEASING.md](../RELEASING.md).
