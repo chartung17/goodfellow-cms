@@ -208,6 +208,8 @@ export function newCollectionSettings({
   entryName,
   path,
   withEntryFields,
+  kind = "blank",
+  blocks = [],
 }: {
   name: string;
   entryName: string;
@@ -215,7 +217,12 @@ export function newCollectionSettings({
   path?: string;
   /** Whether the site has the Entry field block, for the starting template. */
   withEntryFields: boolean;
+  /** What it starts as: a title and text, or events, with their dates and times, place and summary. */
+  kind?: "blank" | "events";
+  /** The site's blocks, for the starting template. */
+  blocks?: string[];
 }): CollectionFile {
+  if (kind === "events") return eventsCollectionSettings({ name, entryName, path, withEntryFields, blocks });
   const fields: CollectionField[] = [
     { name: TITLE_FIELD, label: "Title", type: "text", required: true },
     { name: "text", label: "Text", type: "richtext" },
@@ -244,6 +251,71 @@ export function newCollectionSettings({
     ...(path !== undefined && { path }),
     fields,
     template: { root: { props: { title: `{${TITLE_FIELD}}` } }, content },
+  };
+}
+
+/** A collection of events: when each happens, where, a summary, a picture and details, in calendars. */
+function eventsCollectionSettings({
+  name,
+  entryName,
+  path,
+  withEntryFields,
+  blocks,
+}: {
+  name: string;
+  entryName: string;
+  path?: string;
+  withEntryFields: boolean;
+  blocks: string[];
+}): CollectionFile {
+  const fields: CollectionField[] = [
+    { name: TITLE_FIELD, label: "Title", type: "text", required: true },
+    { name: "when", label: "Date and time", type: "event", required: true },
+    { name: "place", label: "Place", type: "text", hint: "Such as the hall, or an address." },
+    {
+      name: "summary",
+      label: "Summary",
+      type: "textarea",
+      hint: "One or two sentences, shown in calendars and lists.",
+    },
+    { name: "image", label: "Picture", type: "image" },
+    { name: "text", label: "Details", type: "richtext" },
+  ];
+  const field = (id: string, name: string, style: string, className: string) => ({
+    type: "EntryField",
+    props: { id, field: name, style, className },
+  });
+  const content = withEntryFields
+    ? [
+        field("when", "when", "small", "mx-auto max-w-3xl px-4 pt-12"),
+        field("title", TITLE_FIELD, "title", "mx-auto max-w-3xl px-4 pt-2 pb-2"),
+        field("place", "place", "small", "mx-auto max-w-3xl px-4"),
+        ...(blocks.includes("AddToCalendar")
+          ? [
+              {
+                type: "AddToCalendar",
+                props: {
+                  id: "add",
+                  addLabel: "Add to calendar",
+                  otherCalendarsLabel: "Apple Calendar and others",
+                  className: "mx-auto max-w-3xl px-4 pt-4",
+                },
+              },
+            ]
+          : []),
+        field("image", "image", "text", "mx-auto max-w-3xl px-4 pt-8"),
+        field("text", "text", "text", "mx-auto max-w-3xl px-4 py-8"),
+      ]
+    : [];
+  return {
+    version: 1,
+    name,
+    entryName,
+    ...(path !== undefined && { path }),
+    fields,
+    sort: { field: "when", order: "asc" },
+    calendar: { when: "when", place: "place", summary: "summary" },
+    template: { root: { props: { title: `{${TITLE_FIELD}}`, description: "{summary}" } }, content },
   };
 }
 

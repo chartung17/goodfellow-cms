@@ -119,8 +119,9 @@ describe("build", () => {
     const parishOut = await mkdtemp(join(tmpdir(), "goodfellow-parish-"));
     try {
       const result = await build({ root: parish, outDir: parishOut, base: "/" });
-      // Nine pages, plus four events, three news stories and two bulletins. Staff have no pages of their own.
-      expect(result.pages).toHaveLength(18);
+      // Ten pages, plus five events, three news stories and two bulletins. Staff have no pages of their own.
+      // The calendar has a page for each month, from last month to a year ahead.
+      expect(result.pages).toHaveLength(20 + 14);
       const home = await readFile(join(parishOut, "index.html"), "utf8");
       expect(home).toContain("<title>St. Joseph Parish, Anytown</title>");
       expect(home).toContain("Weekend Masses");
@@ -129,6 +130,19 @@ describe("build", () => {
       expect(bulletin).toContain('href="/media/bulletin-example.pdf"');
       const about = await readFile(join(parishOut, "about/index.html"), "utf8");
       expect(about.indexOf("Fr. Thomas Reed")).toBeLessThan(about.indexOf("Maria Chen"));
+      const { todayIn } = await import("@goodfellow-cms/core");
+      // This month in the parish's time zone, as the build has it.
+      const month = todayIn("America/New_York").slice(0, 7);
+      const calendar = await readFile(join(parishOut, `calendar/${month}/index.html`), "utf8");
+      expect(calendar).toContain('href="/calendar"');
+      // Month pages aren't searched: the calendar's own page is.
+      expect(calendar).not.toContain("data-pagefind-body");
+      const feed = await readFile(join(parishOut, "calendars/events.ics"), "utf8");
+      expect(feed).toContain("SUMMARY:Youth group");
+      expect(feed).toContain("RRULE:FREQ=WEEKLY");
+      expect(await readFile(join(parishOut, "calendars/events/fall-festival.ics"), "utf8")).toContain(
+        "DTSTART;TZID=America/New_York:20261017T110000",
+      );
     } finally {
       await rm(parishOut, { recursive: true, force: true });
     }

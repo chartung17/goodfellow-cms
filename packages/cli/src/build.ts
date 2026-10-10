@@ -2,13 +2,15 @@ import { mkdir, readFile, rm, writeFile } from "node:fs/promises";
 import { dirname, join, relative, resolve } from "node:path";
 import {
   absoluteUrl,
-  allPages,
   applyBasePath,
+  calendarFiles,
   DEMO_CONTENT_PATH,
   demoContent,
   loadSiteContent,
   normalizeBase,
   pageOutputFile,
+  sitePages,
+  todayIn,
 } from "@goodfellow-cms/core";
 import { fileSystemSource } from "@goodfellow-cms/core/node";
 import { writeSearchIndex } from "@goodfellow-cms/core/search-index";
@@ -168,7 +170,7 @@ async function buildSite(options: BuildOptions): Promise<BuildResult> {
       if (config.demo) await writeFile(join(outDir, DEMO_CONTENT_PATH), await demoContent(fileSystemSource(root)));
     }
 
-    const pages = allPages(content);
+    const pages = sitePages(content, todayIn(content.settings.timeZone));
     const written: string[] = [];
     for (const page of pages) {
       const html = applyBasePath(await renderPage(content, page, { stylesheets, ...(islands && { islands }) }), base);
@@ -176,6 +178,13 @@ async function buildSite(options: BuildOptions): Promise<BuildResult> {
       await mkdir(dirname(file), { recursive: true });
       await writeFile(file, html);
       written.push(relative(root, file).split("\\").join("/"));
+    }
+
+    // Calendar files of collections of events, for subscribing and for adding events to calendars.
+    for (const file of calendarFiles(content)) {
+      const target = join(outDir, file.path.slice(1));
+      await mkdir(dirname(target), { recursive: true });
+      await writeFile(target, file.content);
     }
 
     const { url } = content.settings;

@@ -34,6 +34,8 @@ export interface SiteContextValue {
   collection?: Collection;
   /** The entry being rendered, on an entry's page. */
   entry?: Entry;
+  /** On a calendar's month page, the month it shows, as `YYYY-MM`. */
+  month?: string;
   /**
    * The path the site is served from, such as `/my-site/`, when the renderer
    * leaves adding it to blocks: `<SiteLink>` and `<SiteImage>` add it, and
@@ -56,5 +58,6 @@ export function siteMetadata(site: SiteContextValue): Metadata {
     collections: site.collections,
     collection: site.collection,
     entry: site.entry,
+    month: site.month,
   };
 }

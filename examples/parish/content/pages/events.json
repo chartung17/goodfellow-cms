@@ -30,20 +30,36 @@
               }
             },
             {
-              "type": "CollectionList",
+              "type": "Calendar",
               "props": {
-                "id": "CollectionList-upcoming",
+                "id": "Calendar-upcoming",
+                "addLabel": "Add to calendar",
                 "className": "mt-10",
                 "collection": "events",
-                "columns": "3",
-                "dateField": "date",
+                "days": 90,
                 "emptyText": "Nothing on the calendar right now. Check back soon.",
-                "imageField": "image",
-                "layout": "cards",
-                "limit": 0,
-                "order": "default",
-                "show": "upcoming",
-                "summaryField": "summary"
+                "feed": "",
+                "limit": 12,
+                "monthsAfter": 12,
+                "monthsBefore": 1,
+                "nextLabel": "Next month",
+                "otherCalendarsLabel": "Apple Calendar and others",
+                "previousLabel": "Previous month",
+                "subscribeLabel": "Subscribe to the parish calendar",
+                "view": "list",
+                "weekStart": "sunday"
+              }
+            },
+            {
+              "type": "Button",
+              "props": {
+                "id": "Button-calendar",
+                "className": "mt-8",
+                "href": "/calendar",
+                "label": "See the month at a glance",
+                "newTab": false,
+                "size": "md",
+                "variant": "outline"
               }
             },
             {
@@ -63,7 +79,7 @@
                 "className": "",
                 "collection": "events",
                 "columns": "3",
-                "dateField": "date",
+                "dateField": "when",
                 "emptyText": "No past events yet.",
                 "imageField": "",
                 "layout": "list",

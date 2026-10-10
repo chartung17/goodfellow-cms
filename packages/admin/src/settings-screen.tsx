@@ -63,6 +63,7 @@ function cleanSettings(draft: SiteSettings): unknown {
     ...draft,
     url: optional(draft.url),
     externalLinksInNewTab: draft.externalLinksInNewTab || undefined,
+    timeZone: optional(draft.timeZone),
     favicon: optional(draft.favicon),
     socialImage: optional(draft.socialImage),
     logo: draft.logo?.src.trim() ? { src: draft.logo.src.trim(), alt: draft.logo.alt } : undefined,
@@ -85,6 +86,40 @@ function validate(draft: SiteSettings): { settings?: SiteSettings; errors: Recor
   const result = siteSettingsSchema.safeParse(cleanSettings(draft));
   if (result.success) return { settings: result.data, errors: {} };
   return { errors: Object.fromEntries(result.error.issues.map((issue) => [issue.path.join("."), issue.message])) };
+}
+
+/** The time zones this browser knows, such as `America/New_York`. */
+function timeZones(current: string): string[] {
+  const known = typeof Intl.supportedValuesOf === "function" ? Intl.supportedValuesOf("timeZone") : [];
+  return [...new Set([...known, "UTC", ...(current ? [current] : [])])].sort();
+}
+
+/** The time zone events' times are in, with the computer's own suggested. */
+function TimeZoneField({ value, onChange }: { value: string; onChange: (timeZone: string) => void }) {
+  const t = useStrings();
+  const zones = useMemo(() => timeZones(value), [value]);
+  const own = Intl.DateTimeFormat().resolvedOptions().timeZone;
+  return (
+    <Field label={t("general.timeZone")} hint={t("general.timeZoneHint")}>
+      {(props) => (
+        <div className="gfa-inline-form">
+          <select {...props} className="gfa-input" value={value} onChange={(event) => onChange(event.target.value)}>
+            <option value="">{t("general.timeZoneNone")}</option>
+            {zones.map((zone) => (
+              <option key={zone} value={zone}>
+                {zone.replace(/_/g, " ")}
+              </option>
+            ))}
+          </select>
+          {own && own !== value && (
+            <Button onClick={() => onChange(own)}>
+              {t("general.timeZoneUseMine", { zone: own.replace(/_/g, " ") })}
+            </Button>
+          )}
+        </div>
+      )}
+    </Field>
+  );
 }
 
 function GeneralTab({
@@ -124,6 +159,7 @@ function GeneralTab({
       <p className="gfa-hint">{t("general.externalLinksInNewTabHint")}</p>
       <TextField label={t("general.titleTemplate")} hint={t("general.titleTemplateHint")} {...text("titleTemplate")} />
       <TextField label={t("general.language")} hint={t("general.languageHint")} {...text("language")} />
+      <TimeZoneField value={draft.timeZone ?? ""} onChange={(timeZone) => onChange({ ...draft, timeZone })} />
       <MediaField
         label={t("general.logo")}
         value={draft.logo?.src ?? ""}

@@ -43,8 +43,8 @@ Editor's browser                       Git host (GitHub / GitLab)         Static
     - Version history, with a way to restore an earlier version of a page (done).
     - Automatic updates (done): a scheduled job updates Goodfellow, and blocks added from block registries, and publishes the update only if the site still builds. Block updates replace only files nobody has changed. Fixes install on their own; newer releases when an owner chooses them. Owners can turn automatic fixes off, or go back to the previous release, which is then skipped.
     - Plain-language explanations when a rebuild fails (done).
-17. **Calendars.** An Events collection and a Calendar block, worked out when the site builds, so visitors only get HTML.
-    - **Events** have a start and end date and time, an all-day option, a location, and repeats (weekly, monthly or custom, with dates to skip), so a weekly service is one entry. Collections get a date-and-time field for them, and Site settings a time zone.
+17. **Calendars** (done). An Events collection and a Calendar block, worked out when the site builds, so visitors only get HTML.
+    - **Events** have a start and end date and time, an all-day option, a place, and repeats (daily, weekly, monthly or yearly, every so often, on chosen weekdays or the same weekday of the month, until a date, with dates to skip), so a weekly service is one entry. Collections get a date-and-time field for them, which any collection can be a calendar of, and Site settings a time zone. New collections can start as Events.
     - **The Calendar block** shows upcoming events as a list or a month at a time, with a page for each month. The nightly rebuilds keep "upcoming" current.
     - **Calendars kept elsewhere:** the block can also show a public calendar feed (an `.ics` address, such as Google Calendar's), read when the site builds, so editors who keep a Google Calendar go on doing so and the site catches up on its next build.
     - **Subscribing:** the build writes the events as an `.ics` file that visitors can subscribe to, and each event has "Add to calendar" links.

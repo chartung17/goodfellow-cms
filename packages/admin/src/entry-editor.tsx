@@ -4,9 +4,11 @@ import {
   type CollectionField,
   type Entry,
   entryTitle,
+  eventValueProblem,
   findEntry,
   isEmptyValue,
   type SiteContent,
+  type SiteSettings,
 } from "@goodfellow-cms/core";
 import { applyEntry, type SiteContextValue, SiteProvider, siteMetadata } from "@goodfellow-cms/react";
 import {
@@ -26,6 +28,7 @@ import { useEffect, useMemo, useState } from "react";
 import { useAdmin, useSiteContent } from "./admin-context.js";
 import { entryFileChange, storedEntryFields } from "./changes.js";
 import { CollectionLayout, inSentence } from "./collection-screen.js";
+import { EventField } from "./event-field.js";
 import { MarkdownField } from "./markdown-field.js";
 import { MediaChooser } from "./media-library.js";
 import { PuckEditor, SiteFrame } from "./puck-editor.js";
@@ -75,12 +78,14 @@ function aiHint(field: CollectionField, markdown: boolean): AiFieldHint {
   }
 }
 
-function puckField(field: CollectionField, collection: Collection): Field {
+function puckField(field: CollectionField, collection: Collection, settings: SiteSettings): Field {
   const markdown = collection.settings.markdown?.body === field.name;
-  return { ...fieldControl(field, markdown), metadata: { ai: aiHint(field, markdown) } };
+  const control = fieldControl(field, markdown, settings);
+  // The assistant leaves events' dates and times alone: they're structured, and editors know them best.
+  return field.type === "event" ? control : { ...control, metadata: { ai: aiHint(field, markdown) } };
 }
 
-function fieldControl(field: CollectionField, markdown: boolean): Field {
+function fieldControl(field: CollectionField, markdown: boolean, settings: SiteSettings): Field {
   const label = field.required ? `${field.label} *` : field.label;
   if (markdown) {
     return {
@@ -130,6 +135,22 @@ function fieldControl(field: CollectionField, markdown: boolean): Field {
             />
             <Hint text={field.hint} />
           </FieldLabel>
+        ),
+      };
+    case "event":
+      return {
+        type: "custom",
+        label,
+        render: ({ value, onChange, id }) => (
+          <EventField
+            id={id}
+            label={label}
+            hint={field.hint}
+            value={value}
+            onChange={onChange}
+            language={settings.language}
+            timeZone={settings.timeZone}
+          />
         ),
       };
     case "date":
@@ -211,8 +232,9 @@ function EntryPreview({ collection, entry, content, templateConfig, layoutConfig
         collection,
         current,
         content.settings.language,
+        content.settings.timeZone,
       ),
-    [collection, templateConfig, current, content.settings.language],
+    [collection, templateConfig, current, content.settings.language, content.settings.timeZone],
   );
 
   // Blocks such as Entry field fill themselves in with resolveData, as they do when the site is built.
@@ -270,7 +292,9 @@ function EntryEditor({ collection, entry }: { collection: Collection; entry: Ent
     () => ({
       components: {},
       root: {
-        fields: Object.fromEntries(fields.map((field) => [field.name, puckField(field, collection)])) as Fields,
+        fields: Object.fromEntries(
+          fields.map((field) => [field.name, puckField(field, collection, content.settings)]),
+        ) as Fields,
         render: () => (
           <EntryPreview
             collection={collection}
@@ -308,8 +332,15 @@ function EntryEditor({ collection, entry }: { collection: Collection; entry: Ent
       validate={(next) => {
         const values: Record<string, unknown> = next.root.props ?? {};
         const missing = fields.filter((field) => field.required && isEmptyValue(values[field.name]));
-        return missing.length > 0
-          ? t("editEntry.required", { fields: missing.map((field) => field.label).join(", ") })
+        if (missing.length > 0) {
+          return t("editEntry.required", { fields: missing.map((field) => field.label).join(", ") });
+        }
+        const badEvents = fields.filter(
+          (field) =>
+            field.type === "event" && !isEmptyValue(values[field.name]) && eventValueProblem(values[field.name]),
+        );
+        return badEvents.length > 0
+          ? t("editEntry.invalidEvent", { fields: badEvents.map((field) => field.label).join(", ") })
           : undefined;
       }}
       toChanges={(next) => {

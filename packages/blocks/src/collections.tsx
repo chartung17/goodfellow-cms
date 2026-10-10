@@ -7,13 +7,17 @@ import {
   formatFieldValue,
   isDateValue,
   isEmptyValue,
+  isEventLike,
+  isUpcoming,
   type MarkdownOptions,
   type MarkdownPart,
   markdownParts,
   markdownText,
   type SiteSettings,
+  shownOccurrence,
   sortCollectionEntries,
   sortEntries,
+  todayIn,
 } from "@goodfellow-cms/core";
 import { classNameField, cx, SiteImage, SiteLink, templateOnly, useSite } from "@goodfellow-cms/react";
 import type { ComponentConfig, Fields, RichText } from "@puckeditor/core";
@@ -125,8 +129,13 @@ function EntryFieldView({ field, style, value, markdown, copyLabel, className }:
     case "textarea":
       return <p className={cx("whitespace-pre-line", styleClasses[style], className)}>{String(raw)}</p>;
     default: {
-      const text = formatFieldValue(definition, raw, settings.language);
-      const content: ReactNode = definition.type === "date" ? <time dateTime={String(raw)}>{text}</time> : text;
+      const text = formatFieldValue(definition, raw, settings.language, settings.timeZone);
+      let content: ReactNode = text;
+      if (definition.type === "date") content = <time dateTime={String(raw)}>{text}</time>;
+      if (definition.type === "event" && isEventLike(raw)) {
+        const shown = shownOccurrence(raw, todayIn(settings.timeZone));
+        content = <time dateTime={shown?.start ?? raw.start}>{text}</time>;
+      }
       const Tag = style === "title" ? "h1" : style === "heading" ? "h2" : "p";
       return <Tag className={cx(styleClasses[style], className) || undefined}>{content}</Tag>;
     }
@@ -207,27 +216,37 @@ const columnClasses: Record<Columns, string> = {
   "4": "sm:grid-cols-2 lg:grid-cols-4",
 };
 
-/** Today's date as `YYYY-MM-DD`, for showing only upcoming or past entries. Pages are rebuilt nightly to keep this current. */
-function today(): string {
-  return new Date().toISOString().slice(0, 10);
-}
-
-/** The entries a list shows, in order. */
+/** The entries a list shows, in order. `now` is today's date: pages are rebuilt nightly to keep it current. */
 export function listedEntries(
   collection: Collection,
   { dateField, order, show, limit }: Pick<CollectionListProps, "dateField" | "order" | "show" | "limit">,
-  now = today(),
+  now = todayIn(undefined),
 ): Entry[] {
   let entries = collection.entries;
   if (dateField && show !== "all") {
     entries = entries.filter((entry) => {
       const date = entry.content.fields[dateField];
+      // An event that repeats is upcoming until its last time.
+      if (isEventLike(date)) return show === "upcoming" ? isUpcoming(date, now) : !isUpcoming(date, now);
       if (!isDateValue(date)) return false;
       return show === "upcoming" ? date >= now : date < now;
     });
   }
+  const isEventField = collection.settings.fields.some((field) => field.name === dateField && field.type === "event");
   if (order === "title") entries = sortEntries(entries);
-  else if ((order === "newest" || order === "oldest") && dateField) {
+  else if (isEventField && (order !== "default" || collection.settings.sort?.field === dateField)) {
+    // Events that repeat come in order of when they next happen, rather than when they first did.
+    const next = (entry: Entry) => {
+      const value = entry.content.fields[dateField];
+      return isEventLike(value) ? (shownOccurrence(value, now)?.start ?? value.start) : "";
+    };
+    const descending = order === "newest" || (order === "default" && collection.settings.sort?.order === "desc");
+    entries = [...entries].sort((a, b) => {
+      const [x, y] = [next(a), next(b)];
+      if (!x || !y) return x ? -1 : y ? 1 : 0;
+      return descending ? y.localeCompare(x) : x.localeCompare(y);
+    });
+  } else if ((order === "newest" || order === "oldest") && dateField) {
     entries = sortEntries(entries, dateField, order === "newest" ? "desc" : "asc");
   } else entries = sortCollectionEntries(collection.settings, entries);
   return limit > 0 ? entries.slice(0, limit) : entries;
@@ -257,7 +276,7 @@ function CollectionListView({
     ) : null;
   }
 
-  const entries = listedEntries(collection, { dateField, order, show, limit });
+  const entries = listedEntries(collection, { dateField, order, show, limit }, todayIn(settings.timeZone));
   if (entries.length === 0) {
     return emptyText ? <p className={cx("text-muted-foreground", className)}>{emptyText}</p> : null;
   }
@@ -275,7 +294,9 @@ function CollectionListView({
       {entries.map((entry) => {
         const values = entry.content.fields;
         const image = imageField && !isEmptyValue(values[imageField]) ? String(values[imageField]) : undefined;
-        const date = dateField && isDateValue(values[dateField]) ? String(values[dateField]) : undefined;
+        const dateValue = dateField ? values[dateField] : undefined;
+        const shown = isEventLike(dateValue) ? shownOccurrence(dateValue, todayIn(settings.timeZone)) : undefined;
+        const date = shown ? shown.start : isDateValue(dateValue) ? dateValue : undefined;
         const summaryValue = summaryField ? values[summaryField] : undefined;
         const summary = !summaryField
           ? ""
@@ -305,7 +326,7 @@ function CollectionListView({
               <div className={cx("flex flex-col gap-1", cards && "p-4")}>
                 {date && (
                   <time dateTime={date} className="text-sm text-muted-foreground">
-                    {formatFieldValue(fieldOf(dateField), date, settings.language)}
+                    {formatFieldValue(fieldOf(dateField), dateValue, settings.language, settings.timeZone)}
                   </time>
                 )}
                 <h3 className="font-heading text-lg font-semibold">
@@ -389,7 +410,7 @@ export const CollectionList: ComponentConfig<CollectionListProps> = {
         ],
       },
       imageField: { type: "select", label: "Picture", options: choose(["image"]) },
-      dateField: { type: "select", label: "Date", options: choose(["date"]) },
+      dateField: { type: "select", label: "Date", options: choose(["date", "event"]) },
       summaryField: { type: "select", label: "Summary", options: choose(["text", "textarea", "richtext"]) },
     };
     if (props.layout !== "cards") delete resolved.columns;

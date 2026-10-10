@@ -1,7 +1,7 @@
 import { createServer } from "node:http";
 import type { AddressInfo } from "node:net";
 import { resolve } from "node:path";
-import { normalizeBase } from "@goodfellow-cms/core";
+import { CALENDARS_DIR, normalizeBase } from "@goodfellow-cms/core";
 import {
   DEV_API_PREFIX,
   handleDevApi,
@@ -107,10 +107,15 @@ export function withGoodfellow(nextConfig: NextConfig = {}, options: GoodfellowN
       source: `${DEV_API_PREFIX}/:path*`,
       destination: `http://127.0.0.1:${port}${DEV_API_PREFIX}/:path*`,
     };
+    // Calendar files, which `goodfellow-next finish` writes into the export, come from the local backend.
+    const calendars = {
+      source: `/${CALENDARS_DIR}/:file(.+\\.ics)`,
+      destination: `http://127.0.0.1:${port}${DEV_API_PREFIX}/${CALENDARS_DIR}/:file`,
+    };
     return {
       ...config,
       experimental: { reactDebugChannel: false, ...nextConfig.experimental },
-      rewrites: async () => withRewrite(await nextConfig.rewrites?.(), rewrite),
+      rewrites: async () => withRewrite(withRewrite(await nextConfig.rewrites?.(), calendars), rewrite),
     };
   };
 }

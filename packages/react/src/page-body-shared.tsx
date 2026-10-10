@@ -70,7 +70,7 @@ export function createPageBody({ Render, SiteProvider }: Renderers) {
         {/* Search indexes only pages' own content, not their header and footer, and not "Page not found". */}
         <main
           className={cx("gf-main", typeof rootClassName === "string" && rootClassName)}
-          data-pagefind-body={site.path === "/404" ? undefined : ""}
+          data-pagefind-body={site.path === "/404" || site.month ? undefined : ""}
         >
           <Render config={pageConfig} data={page} metadata={metadata} site={site} />
         </main>

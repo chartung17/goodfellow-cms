@@ -1,3 +1,4 @@
+import { eventValueProblem, formatOccurrence, isEventLike, shownOccurrence, todayIn } from "../calendar.js";
 import type { CollectionField, CollectionFile, EntryFile } from "./schemas.js";
 import { TITLE_FIELD } from "./schemas.js";
 import { withoutTags } from "./tags.js";
@@ -49,6 +50,11 @@ export function entryFieldProblems(fields: CollectionField[], values: Record<str
       case "date":
         if (value !== "" && !isDateValue(value)) problems.push(`${field.name} must be a date written as YYYY-MM-DD`);
         break;
+      case "event": {
+        const problem = eventValueProblem(value);
+        if (problem) problems.push(`${field.name} ${problem}`);
+        break;
+      }
       case "select":
         if (value !== "" && !field.options?.some((option) => option.value === value)) {
           problems.push(`${field.name} must be one of: ${field.options?.map((option) => option.value).join(", ")}`);
@@ -64,6 +70,7 @@ export function entryFieldProblems(fields: CollectionField[], values: Record<str
 /** Whether a field has no value worth showing. */
 export function isEmptyValue(value: unknown): boolean {
   if (value === undefined || value === null) return true;
+  if (typeof value === "object") return !isEventLike(value);
   if (typeof value === "string") return richTextToPlainText(value) === "" && !/<img\b/i.test(value);
   return false;
 }
@@ -92,12 +99,23 @@ function dateFormat(language: string): Intl.DateTimeFormat {
 /**
  * A field's value as plain text, the way it appears where a placeholder like
  * `{date}` is used: dates are written out in the site's language, choices show
- * their label, and rich text loses its formatting.
+ * their label, and rich text loses its formatting. An event shows when it
+ * next happens in the site's time zone, as of when the page is built.
  */
-export function formatFieldValue(field: CollectionField | undefined, value: unknown, language = "en"): string {
+export function formatFieldValue(
+  field: CollectionField | undefined,
+  value: unknown,
+  language = "en",
+  timeZone?: string,
+): string {
   if (value === undefined || value === null) return "";
   if (!field) return typeof value === "string" ? value : String(value);
   switch (field.type) {
+    case "event": {
+      if (!isEventLike(value)) return "";
+      const shown = shownOccurrence(value, todayIn(timeZone));
+      return shown ? formatOccurrence(shown, language) : "";
+    }
     case "date":
       return isDateValue(value) ? dateFormat(language).format(new Date(`${value}T00:00:00Z`)) : String(value);
     case "select":
@@ -125,6 +143,8 @@ export function sortEntries(entries: Entry[], field: string = TITLE_FIELD, order
   const direction = order === "asc" ? 1 : -1;
   const sortValue = (entry: Entry) => {
     const value = entry.content.fields[field];
+    // Events sort by when they start.
+    if (isEventLike(value)) return value.start;
     if (typeof value === "string") return value.trim() === "" ? undefined : value.toLocaleLowerCase();
     return typeof value === "number" ? value : undefined;
   };

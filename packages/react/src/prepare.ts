@@ -77,6 +77,7 @@ export function applyPageEntry(configs: PuckConfigs, content: SiteContent, page:
     found.collection,
     found.entry,
     content.settings.language,
+    content.settings.timeZone,
   );
   return { ...page, content: { ...page.content, data: data as Page["content"]["data"] } };
 }
@@ -167,6 +168,7 @@ export async function preparePage(
     path: page.path,
     collections: content.collections,
     ...(found && { collection: found.collection, entry: found.entry }),
+    ...(page.month && { month: page.month }),
     ...options,
   };
   // An entry's page is its collection's template, with the entry's values filled in.

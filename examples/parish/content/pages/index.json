@@ -257,7 +257,7 @@
                 "className": "",
                 "collection": "events",
                 "columns": "3",
-                "dateField": "date",
+                "dateField": "when",
                 "emptyText": "Nothing on the calendar right now. Check back soon.",
                 "imageField": "image",
                 "layout": "cards",

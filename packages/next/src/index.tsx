@@ -1,6 +1,5 @@
 import {
   absoluteUrl,
-  allPages,
   demoContent,
   type GoodfellowConfig,
   getPageHead,
@@ -9,7 +8,9 @@ import {
   normalizePagePath,
   type Page,
   type SiteContent,
+  sitePages,
   themeToCss,
+  todayIn,
   withBase,
 } from "@goodfellow-cms/core";
 import { fileSystemSource, readMediaSizes } from "@goodfellow-cms/core/node";
@@ -70,8 +71,13 @@ function pathOf(segments: string[] | undefined): string {
   }
 }
 
+/** Every page the site's export has: its pages, entries' pages and calendars' month pages. */
+function exportedPages(content: SiteContent): Page[] {
+  return sitePages(content, todayIn(content.settings.timeZone));
+}
+
 function findPage(content: SiteContent, path: string): Page | undefined {
-  return allPages(content).find((page) => page.path === path);
+  return exportedPages(content).find((page) => page.path === path);
 }
 
 function toAbsolute(siteUrl: string | undefined, url: string | undefined): string | undefined {
@@ -140,7 +146,7 @@ export function goodfellowPages(config: GoodfellowConfig, options: GoodfellowPag
   return {
     /** Every page's address, so Next.js builds them all. Any other address is "not found". */
     async generateStaticParams(): Promise<Array<{ path: string[] }>> {
-      return allPages(await site())
+      return exportedPages(await site())
         .filter((page) => page.path !== "/404")
         .map((page) => ({ path: page.path === "/" ? [] : page.path.slice(1).split("/") }));
     },
@@ -214,7 +220,7 @@ export function goodfellowPages(config: GoodfellowConfig, options: GoodfellowPag
       const content = await site();
       const url = content.settings.url;
       if (!url) return [];
-      return allPages(content)
+      return exportedPages(content)
         .filter((page) => page.path !== "/404")
         .map((page) => ({ url: absoluteUrl(url, page.path) }));
     },

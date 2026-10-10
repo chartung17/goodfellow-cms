@@ -1,5 +1,10 @@
 {
   "version": 1,
+  "calendar": {
+    "place": "place",
+    "summary": "summary",
+    "when": "when"
+  },
   "entryName": "Event",
   "fields": [
     {
@@ -9,16 +14,10 @@
       "required": true
     },
     {
-      "type": "date",
-      "label": "Date",
-      "name": "date",
+      "type": "event",
+      "label": "Date and time",
+      "name": "when",
       "required": true
-    },
-    {
-      "type": "text",
-      "hint": "Such as 7:00 pm, or 11:00 am to 5:00 pm.",
-      "label": "Time",
-      "name": "time"
     },
     {
       "type": "text",
@@ -46,7 +45,7 @@
   "name": "Events",
   "path": "/events/{slug}",
   "sort": {
-    "field": "date",
+    "field": "when",
     "order": "asc"
   },
   "template": {
@@ -64,7 +63,7 @@
               "props": {
                 "id": "EntryField-date",
                 "className": "",
-                "field": "date",
+                "field": "when",
                 "style": "small"
               }
             },
@@ -89,15 +88,6 @@
                   {
                     "type": "EntryField",
                     "props": {
-                      "id": "EntryField-time",
-                      "className": "",
-                      "field": "time",
-                      "style": "text"
-                    }
-                  },
-                  {
-                    "type": "EntryField",
-                    "props": {
                       "id": "EntryField-place",
                       "className": "",
                       "field": "place",
@@ -107,6 +97,15 @@
                 ],
                 "justify": "start",
                 "wrap": true
+              }
+            },
+            {
+              "type": "AddToCalendar",
+              "props": {
+                "id": "AddToCalendar-event",
+                "addLabel": "Add to calendar",
+                "className": "mt-4",
+                "otherCalendarsLabel": "Apple Calendar and others"
               }
             },
             {

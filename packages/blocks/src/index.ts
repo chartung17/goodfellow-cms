@@ -1,4 +1,5 @@
 import type { Config } from "@puckeditor/core";
+import { AddToCalendar, Calendar } from "./calendar.js";
 import { Code } from "./code.js";
 import { CollectionList, EntryField } from "./collections.js";
 import { ContactDetails } from "./contact.js";
@@ -8,6 +9,18 @@ import { Flex, Grid, Section, Space } from "./layout.js";
 import { Menu, SiteBrand } from "./navigation.js";
 import { Search } from "./search.js";
 
+export {
+  AddToCalendar,
+  type AddToCalendarProps,
+  Calendar,
+  type CalendarItem,
+  type CalendarProps,
+  collectionItems,
+  fetchFeed,
+  googleCalendarLink,
+  outlookLink,
+  readFeed,
+} from "./calendar.js";
 export { Code, type CodeProps, CodeView } from "./code.js";
 export {
   CollectionList,
@@ -76,7 +89,9 @@ export const blocks = {
   Search,
   CollectionNav,
   CollectionList,
+  Calendar,
   EntryField,
+  AddToCalendar,
   EntryPager,
   OnThisPage,
 };
@@ -86,5 +101,8 @@ export const categories = {
   layout: { title: "Layout", components: ["Section", "Grid", "Flex", "Space"] },
   content: { title: "Content", components: ["Heading", "Text", "Button", "Image", "Code", "ContactDetails"] },
   navigation: { title: "Navigation", components: ["Menu", "SiteBrand", "Search", "CollectionNav"] },
-  collections: { title: "Collections", components: ["CollectionList", "EntryField", "EntryPager", "OnThisPage"] },
+  collections: {
+    title: "Collections",
+    components: ["CollectionList", "Calendar", "EntryField", "AddToCalendar", "EntryPager", "OnThisPage"],
+  },
 } satisfies Config["categories"];

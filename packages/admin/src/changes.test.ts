@@ -309,6 +309,33 @@ describe("collections", () => {
     ).toEqual([]);
   });
 
+  it("starts collections of events as calendars, with dates and times, a place and a summary", () => {
+    const created = collectionFileSchema.parse(
+      newCollectionSettings({
+        name: "Events",
+        entryName: "Event",
+        path: "/events/{slug}",
+        withEntryFields: true,
+        kind: "events",
+        blocks: ["EntryField", "AddToCalendar"],
+      }),
+    );
+    expect(created.fields.map((field) => `${field.name}:${field.type}`)).toEqual([
+      "title:text",
+      "when:event",
+      "place:text",
+      "summary:textarea",
+      "image:image",
+      "text:richtext",
+    ]);
+    expect(created.calendar).toEqual({ when: "when", place: "place", summary: "summary" });
+    expect(created.sort).toEqual({ field: "when", order: "asc" });
+    expect(created.template.content.map((block) => block.type)).toContain("AddToCalendar");
+    // Without the block, the template leaves it out.
+    const plain = newCollectionSettings({ name: "Events", entryName: "Event", withEntryFields: true, kind: "events" });
+    expect(plain.template.content.map((block) => block.type)).not.toContain("AddToCalendar");
+  });
+
   it("names things uniquely", () => {
     expect(uniqueName("talk", ["talk", "talk-2"])).toBe("talk-3");
     expect(uniqueName("", [], "item")).toBe("item");

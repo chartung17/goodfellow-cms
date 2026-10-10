@@ -42,6 +42,10 @@ interface Draft {
   sortOrder: "asc" | "desc";
   /** The formatted-text field that is the body of entries' Markdown files, or "" for JSON files. */
   markdownBody: string;
+  /** For a calendar, the date and time field of its events, and the fields shown beside them, or "" for none. */
+  calendarWhen: string;
+  calendarPlace: string;
+  calendarSummary: string;
   fields: DraftField[];
 }
 
@@ -57,6 +61,9 @@ function toDraft(settings: CollectionFile): Draft {
     sortField: settings.sort?.field ?? TITLE_FIELD,
     sortOrder: settings.sort?.order ?? "asc",
     markdownBody: settings.markdown?.body ?? "",
+    calendarWhen: settings.calendar?.when ?? "",
+    calendarPlace: settings.calendar?.place ?? "",
+    calendarSummary: settings.calendar?.summary ?? "",
     fields: settings.fields.map((field) => ({
       key: newKey(),
       name: field.name,
@@ -108,8 +115,14 @@ function fromDraft(settings: CollectionFile, draft: Draft): CollectionFile {
   }));
   const sortField = fields.some((field) => field.name === draft.sortField) ? draft.sortField : TITLE_FIELD;
   const isDefaultSort = sortField === TITLE_FIELD && draft.sortOrder === "asc";
-  const { path: _path, sort: _sort, markdown: _markdown, ...rest } = settings;
+  const { path: _path, sort: _sort, markdown: _markdown, calendar: _calendar, ...rest } = settings;
   const body = fields.find((field) => field.name === draft.markdownBody && field.type === "richtext");
+  // A calendar's fields that were removed, or whose type no longer fits, are left out.
+  const fieldOf = (name: string, types: FieldType[]) =>
+    fields.find((field) => field.name === name && types.includes(field.type))?.name;
+  const when = fieldOf(draft.calendarWhen, CALENDAR_TYPES.when);
+  const place = fieldOf(draft.calendarPlace, CALENDAR_TYPES.place);
+  const summary = fieldOf(draft.calendarSummary, CALENDAR_TYPES.summary);
   return {
     ...rest,
     name: draft.name.trim(),
@@ -118,8 +131,16 @@ function fromDraft(settings: CollectionFile, draft: Draft): CollectionFile {
     fields,
     ...(!isDefaultSort && { sort: { field: sortField, order: draft.sortOrder } }),
     ...(body && { markdown: { body: body.name } }),
+    ...(when && { calendar: { when, ...(place && { place }), ...(summary && { summary }) } }),
   };
 }
+
+/** The kinds of field a calendar's settings can name. */
+const CALENDAR_TYPES: Record<"when" | "place" | "summary", FieldType[]> = {
+  when: ["event"],
+  place: ["text", "textarea"],
+  summary: ["text", "textarea", "richtext"],
+};
 
 const typeLabels: Record<FieldType, StringKey> = {
   text: "fields.type.text",
@@ -127,6 +148,7 @@ const typeLabels: Record<FieldType, StringKey> = {
   richtext: "fields.type.richtext",
   number: "fields.type.number",
   date: "fields.type.date",
+  event: "fields.type.event",
   link: "fields.type.link",
   image: "fields.type.image",
   select: "fields.type.select",
@@ -303,6 +325,84 @@ function MarkdownSetting({
             </select>
           )}
         </Field>
+      )}
+    </>
+  );
+}
+
+/** Whether the collection is a calendar of events, and which fields say when and where they are. */
+function CalendarSetting({
+  draft,
+  names,
+  onChange,
+}: {
+  draft: Draft;
+  names: DraftField[];
+  onChange: (changes: Partial<Pick<Draft, "calendarWhen" | "calendarPlace" | "calendarSummary">>) => void;
+}) {
+  const t = useStrings();
+  const ofTypes = (types: FieldType[]) => names.filter((field) => field.name && types.includes(field.type));
+  const dates = ofTypes(CALENDAR_TYPES.when);
+  const current = dates.find((field) => field.name === draft.calendarWhen);
+  const select = (
+    label: StringKey,
+    value: string,
+    choices: DraftField[],
+    change: (name: string) => void,
+    withNone: boolean,
+  ) => (
+    <Field label={t(label)}>
+      {(props) => (
+        <select {...props} className="gfa-input" value={value} onChange={(event) => change(event.target.value)}>
+          {withNone && <option value="">{t("collectionSettings.calendarNone")}</option>}
+          {choices.map((field) => (
+            <option key={field.key} value={field.name}>
+              {field.label || field.name}
+            </option>
+          ))}
+        </select>
+      )}
+    </Field>
+  );
+  return (
+    <>
+      <label className="gfa-checkbox">
+        <input
+          type="checkbox"
+          checked={current !== undefined}
+          disabled={dates.length === 0}
+          onChange={(event) => onChange({ calendarWhen: event.target.checked ? (dates[0]?.name ?? "") : "" })}
+        />
+        {t("collectionSettings.calendar")}
+      </label>
+      <p className="gfa-hint">
+        {t(dates.length === 0 ? "collectionSettings.calendarNeedsDate" : "collectionSettings.calendarHint")}
+      </p>
+      {current && (
+        <div className="gfa-inline-form">
+          {dates.length > 1 &&
+            select(
+              "collectionSettings.calendarWhen",
+              current.name ?? "",
+              dates,
+              (calendarWhen) => onChange({ calendarWhen }),
+              false,
+            )}
+          {select(
+            "collectionSettings.calendarPlace",
+            draft.calendarPlace,
+            ofTypes(CALENDAR_TYPES.place),
+            (calendarPlace) => onChange({ calendarPlace }),
+            true,
+          )}
+          {select(
+            "collectionSettings.calendarSummary",
+            draft.calendarSummary,
+            ofTypes(CALENDAR_TYPES.summary),
+            (calendarSummary) => onChange({ calendarSummary }),
+            true,
+          )}
+        </div>
       )}
     </>
   );
@@ -532,6 +632,8 @@ export function CollectionSettingsScreen({ collection }: { collection: Collectio
           {draft.markdownBody !== (collection.settings.markdown?.body ?? "") && collection.entries.length > 0 && (
             <p className="gfa-hint">{t("collectionSettings.markdownConverts")}</p>
           )}
+
+          <CalendarSetting draft={draft} names={names} onChange={(changes) => setDraft({ ...draft, ...changes })} />
 
           <h2 className="gfa-section-title">{t("fields.title")}</h2>
           <p className="gfa-hint">{t("fields.intro")}</p>
