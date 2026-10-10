@@ -5,6 +5,8 @@ import {
   normalizeBase,
   type Page,
   type SiteContent,
+  type SiteSettings,
+  setLinkTargets,
 } from "@goodfellow-cms/core";
 import type { Config, Data, Metadata } from "@puckeditor/core";
 // The server entry works everywhere and has no browser-only code, so Server Components can prepare pages too.
@@ -98,9 +100,27 @@ export interface PreparedLayout {
   footer: Data;
 }
 
-function rebaser(options: RenderOptions) {
+/** Says where rich text's links open, as `<SiteLink>` does for blocks' own links: see `setLinkTargets()`. */
+function linkTargetsInHtml(value: unknown, settings: SiteSettings): unknown {
+  if (typeof value === "string") {
+    return value.includes("<a ")
+      ? setLinkTargets(value, { newTab: settings.externalLinksInNewTab === true, siteUrl: settings.url })
+      : value;
+  }
+  if (Array.isArray(value)) return value.map((item) => linkTargetsInHtml(item, settings));
+  if (value && typeof value === "object") {
+    return Object.fromEntries(Object.entries(value).map(([key, item]) => [key, linkTargetsInHtml(item, settings)]));
+  }
+  return value;
+}
+
+/** What rich text needs once resolved: the base path, and where its links open. */
+function rebaser(options: RenderOptions, settings: SiteSettings) {
   const base = normalizeBase(options.base);
-  return <T>(value: T): T => (base === "/" ? value : (withBaseInHtml(value, base) as T));
+  return <T>(value: T): T => {
+    const rebased = base === "/" ? value : (withBaseInHtml(value, base) as T);
+    return linkTargetsInHtml(rebased, settings) as T;
+  };
 }
 
 /**
@@ -125,7 +145,7 @@ export async function prepareLayout(
     prepareData(content.header.data, configs.layout, metadata),
     prepareData(content.footer.data, configs.layout, metadata),
   ]);
-  const rebase = rebaser(options);
+  const rebase = rebaser(options, content.settings);
   return { site, layoutConfig: configs.layout, header: rebase(header), footer: rebase(footer) };
 }
 
@@ -159,7 +179,7 @@ export async function preparePage(
     prepareData(content.header.data, configs.layout, metadata),
     prepareData(content.footer.data, configs.layout, metadata),
   ]);
-  const rebase = rebaser(options);
+  const rebase = rebaser(options, content.settings);
   return {
     site,
     page: applied,

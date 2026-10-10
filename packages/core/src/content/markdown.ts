@@ -1,5 +1,6 @@
 import { Marked, type Token, type Tokens } from "marked";
 import { parse as parseYaml, stringify as stringifyYaml } from "yaml";
+import { isExternalLink, NEW_TAB } from "../external-links.js";
 import { CURRENT_VERSION } from "../migrations/index.js";
 import type { CollectionFile } from "./schemas.js";
 
@@ -170,6 +171,8 @@ export interface MarkdownOptions {
    * plain. Its result is used as it is, so it must escape the code itself.
    */
   highlight?(code: string, language: string): string | undefined;
+  /** Makes links to other sites open in a new tab. `siteUrl` is the site's own address, whose links don't. */
+  externalLinks?: { newTab: boolean; siteUrl?: string };
 }
 
 /** A part of rendered Markdown: HTML, or a code block that isn't inside anything else. */
@@ -199,7 +202,9 @@ function markdownRenderer(options: MarkdownOptions) {
       link({ href, title, tokens }) {
         const text = this.parser.parseInline(tokens);
         if (!isSafeUrl(href)) return text;
-        return `<a href="${escapeHtml(href)}"${title ? ` title="${escapeHtml(title)}"` : ""}>${text}</a>`;
+        const newTab = options.externalLinks?.newTab && isExternalLink(href, options.externalLinks.siteUrl);
+        const target = newTab ? ` target="${NEW_TAB.target}" rel="${NEW_TAB.rel}"` : "";
+        return `<a href="${escapeHtml(href)}"${title ? ` title="${escapeHtml(title)}"` : ""}${target}>${text}</a>`;
       },
       image({ href, title, text }) {
         if (!isSafeUrl(href)) return escapeHtml(text);

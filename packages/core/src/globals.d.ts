@@ -15,4 +15,5 @@ declare const crypto: {
 declare class URL {
   constructor(url: string, base?: string);
   readonly href: string;
+  readonly origin: string;
 }

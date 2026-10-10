@@ -171,6 +171,18 @@ describe("renderPage", () => {
     expect(html).not.toMatch(/<script|onclick|onerror|javascript:/i);
   });
 
+  it("opens rich text's links in the same tab, or other sites' in a new tab if the settings say so", async () => {
+    const body = '<p><a href="https://github.com">GitHub</a> and <a href="/about">About</a></p>';
+    const page = makePage([{ type: "Body", props: { id: "b", body } }]);
+    const newTabs = await renderPage(makeContent({ settings: { ...settings, externalLinksInNewTab: true } }), page);
+    expect(newTabs).toContain('<a target="_blank" rel="noopener noreferrer" href="https://github.com">GitHub</a>');
+    expect(newTabs).toContain('<a target="_self" rel="" href="/about">About</a>');
+    // Puck would open every link in a new tab, marked nofollow, without a target of its own.
+    const sameTabs = await renderPage(makeContent(), page);
+    expect(sameTabs).toContain('<a target="_self" rel="" href="https://github.com">GitHub</a>');
+    expect(sameTabs).not.toContain("nofollow");
+  });
+
   it("renders an entry's page from its collection's template", async () => {
     const videos: Collection = {
       id: "videos",

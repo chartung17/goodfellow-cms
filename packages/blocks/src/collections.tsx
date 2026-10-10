@@ -7,9 +7,11 @@ import {
   formatFieldValue,
   isDateValue,
   isEmptyValue,
+  type MarkdownOptions,
   type MarkdownPart,
   markdownParts,
   markdownText,
+  type SiteSettings,
   sortCollectionEntries,
   sortEntries,
 } from "@goodfellow-cms/core";
@@ -158,10 +160,12 @@ const entryField: ComponentConfig<EntryFieldProps> = {
     // A Markdown file's body isn't HTML, so it's rendered here, with its code highlighted, rather than by Puck.
     if (collection?.settings.markdown?.body === props.field && typeof raw === "string") {
       const shiki = /^ {0,3}(```|~~~)/m.test(raw) ? await loadHighlighter() : undefined;
-      const markdown = markdownParts(
-        raw,
-        shiki && { highlight: (code, language) => highlightCode(shiki, code, language) },
-      );
+      const settings = metadata.site as SiteSettings | undefined;
+      const markdownOptions: MarkdownOptions = {
+        externalLinks: { newTab: settings?.externalLinksInNewTab === true, siteUrl: settings?.url },
+      };
+      if (shiki) markdownOptions.highlight = (code, language) => highlightCode(shiki, code, language);
+      const markdown = markdownParts(raw, markdownOptions);
       return { props: { ...props, value: undefined, markdown } };
     }
     return {

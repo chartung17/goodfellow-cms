@@ -131,3 +131,15 @@ describe("markdownParts", () => {
     expect(markdownText("# Hi\n\nSome **bold** & <i>more</i>.")).toBe("Hi Some bold & <i>more</i>.");
   });
 });
+
+describe("markdownToHtml with links to other sites in new tabs", () => {
+  it("opens other sites' links in a new tab when asked, and the site's own in the same tab", () => {
+    const html = markdownToHtml("[GitHub](https://github.com), [About](/about) and [News](https://example.org/news)", {
+      externalLinks: { newTab: true, siteUrl: "https://example.org" },
+    });
+    expect(html).toContain('<a href="https://github.com" target="_blank" rel="noopener noreferrer">GitHub</a>');
+    expect(html).toContain('<a href="/about">About</a>');
+    expect(html).toContain('<a href="https://example.org/news">News</a>');
+    expect(markdownToHtml("[GitHub](https://github.com)")).not.toContain("target");
+  });
+});

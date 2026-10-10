@@ -1,4 +1,4 @@
-import { withBase } from "@goodfellow-cms/core";
+import { isExternalLink, NEW_TAB, withBase } from "@goodfellow-cms/core";
 import type { SiteContextValue, SiteImageProps, SiteLinkProps } from "./site-types.js";
 
 /** Whether a link goes to one of the site's own pages, rather than a file, another site, or a new tab. */
@@ -17,10 +17,14 @@ export function createSiteLinks(useSite: () => SiteContextValue) {
   /**
    * A link. Use it in blocks instead of `<a>`, so links follow the site's base
    * path, and links to the site's own pages use the renderer's link component,
-   * such as Next.js's `next/link`.
+   * such as Next.js's `next/link`. Links to other sites open in a new tab if
+   * the site's settings say so, unless the link says where it opens itself.
    */
-  function SiteLink(props: SiteLinkProps) {
-    const { base, components } = useSite();
+  function SiteLink(given: SiteLinkProps) {
+    const { base, components, settings } = useSite();
+    const newTab =
+      settings?.externalLinksInNewTab && given.target === undefined && isExternalLink(given.href, settings.url);
+    const props = newTab ? { ...given, ...NEW_TAB } : given;
     const Link = components?.Link;
     if (Link && isPageLink(props)) return <Link {...props} />;
     return <a {...props} href={withBase(props.href, base)} />;

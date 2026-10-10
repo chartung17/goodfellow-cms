@@ -61,6 +61,7 @@ function cleanSettings(draft: SiteSettings): unknown {
   return {
     ...draft,
     url: optional(draft.url),
+    externalLinksInNewTab: draft.externalLinksInNewTab || undefined,
     favicon: optional(draft.favicon),
     socialImage: optional(draft.socialImage),
     logo: draft.logo?.src.trim() ? { src: draft.logo.src.trim(), alt: draft.logo.alt } : undefined,
@@ -111,6 +112,15 @@ function GeneralTab({
         placeholder="https://"
         {...text("url")}
       />
+      <label className="gfa-checkbox">
+        <input
+          type="checkbox"
+          checked={draft.externalLinksInNewTab === true}
+          onChange={(event) => onChange({ ...draft, externalLinksInNewTab: event.target.checked })}
+        />
+        {t("general.externalLinksInNewTab")}
+      </label>
+      <p className="gfa-hint">{t("general.externalLinksInNewTabHint")}</p>
       <TextField label={t("general.titleTemplate")} hint={t("general.titleTemplateHint")} {...text("titleTemplate")} />
       <TextField label={t("general.language")} hint={t("general.languageHint")} {...text("language")} />
       <MediaField

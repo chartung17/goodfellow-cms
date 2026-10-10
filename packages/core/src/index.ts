@@ -128,6 +128,7 @@ export {
   memoryDemoStorage,
   parseDemoContent,
 } from "./demo.js";
+export { isExternalLink, type LinkTargetOptions, NEW_TAB, setLinkTargets } from "./external-links.js";
 export {
   credentialStorage,
   type DeployState,

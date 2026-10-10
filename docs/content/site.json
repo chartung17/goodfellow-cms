@@ -1,6 +1,7 @@
 {
   "version": 1,
   "description": "A website builder for people who aren't developers, with no server or database: pages are files in your own GitHub or GitLab repository.",
+  "externalLinksInNewTab": true,
   "favicon": "/media/favicon.svg",
   "language": "en",
   "logo": {

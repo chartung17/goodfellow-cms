@@ -395,6 +395,9 @@ export const defaultStrings = {
   "general.descriptionHint": "Shown by search engines when a page doesn't have its own description.",
   "general.url": "Site address",
   "general.urlHint": "The full public address, such as https://example.org. Used for search engines and link previews.",
+  "general.externalLinksInNewTab": "Open links to other sites in a new tab",
+  "general.externalLinksInNewTabHint":
+    "Applies to every link to another site: menus, buttons and text. Links to this site's own pages open in the same tab.",
   "general.language": "Language code",
   "general.languageHint": "Such as en, es or fr.",
   "general.titleTemplate": "Browser tab title",
