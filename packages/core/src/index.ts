@@ -31,6 +31,7 @@ export {
   type Occurrence,
   type OccurrenceOptions,
   occurrences,
+  repeatRule,
   shownOccurrence,
   todayIn,
   WEEKDAYS,
@@ -242,7 +243,6 @@ export {
   type FeedOccurrence,
   type FeedOptions,
   readCalendar,
-  repeatRule,
 } from "./ics.js";
 export { type ImageSize, imageSize } from "./image-size.js";
 export {

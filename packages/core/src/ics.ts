@@ -2,20 +2,24 @@
  * Calendar files (iCalendar, `.ics`): writing a site's events for visitors to
  * subscribe to or add to their calendars, and reading a calendar kept
  * elsewhere, such as a public Google Calendar, when the site is built.
+ *
+ * ical.js, Mozilla's iCalendar library, reads and writes the files and
+ * expands their repeats. What it can't do is describe a time zone from its
+ * name, so the `VTIMEZONE`s here are worked out from `Intl`.
  */
 
+import ICAL from "ical.js";
 import {
   addDays,
   datePart,
-  type EventRepeat,
   type EventValue,
   formatWallClock,
   isAllDay,
   isTimeZone,
+  MAX_STEPS,
   type Occurrence,
-  occurrences,
+  repeatRule,
   WEEKDAYS,
-  type Weekday,
   wallClock,
   zonedInstant,
   zonedTime,
@@ -48,102 +52,66 @@ export interface CalendarFileOptions {
   now?: Date;
 }
 
-function escapeText(text: string): string {
-  return text.replace(/\\/g, "\\\\").replace(/;/g, "\\;").replace(/,/g, "\\,").replace(/\r?\n/g, "\\n");
+/** A wall-clock date or time as ical.js's time, without a time zone. */
+function icalTime(value: string): ICAL.Time {
+  const date = new Date(wallClock(value) ?? 0);
+  return ICAL.Time.fromData({
+    year: date.getUTCFullYear(),
+    month: date.getUTCMonth() + 1,
+    day: date.getUTCDate(),
+    ...(!isAllDay(value) && { hour: date.getUTCHours(), minute: date.getUTCMinutes() }),
+  });
 }
 
-/** Folds a line to 75 bytes, as calendar files' lines must be, without splitting a character. */
-function fold(line: string): string {
-  const encoder = new TextEncoder();
-  if (encoder.encode(line).length <= 75) return line;
-  const parts: string[] = [];
-  let current = "";
-  let bytes = 0;
-  for (const char of line) {
-    const size = encoder.encode(char).length;
-    const max = parts.length === 0 ? 75 : 74;
-    if (bytes + size > max) {
-      parts.push(current);
-      current = "";
-      bytes = 0;
-    }
-    current += char;
-    bytes += size;
-  }
-  parts.push(current);
-  return parts.join("\r\n ");
+/** A property with a date or time, in the site's time zone where it has one. */
+function timeProperty(name: string, values: string[], timeZone: string | undefined): ICAL.Property {
+  const property = new ICAL.Property(name);
+  if (timeZone && !isAllDay(values[0] ?? "")) property.setParameter("tzid", timeZone);
+  const times = values.map(icalTime);
+  property.resetType(times[0]?.icaltype ?? "date-time");
+  if (times.length === 1 && times[0]) property.setValue(times[0]);
+  else property.setValues(times);
+  return property;
 }
 
-/** `2026-12-24T19:00` → `20261224T190000`; `2026-12-24` → `20261224`. */
-function icsLocal(value: string): string {
-  const date = value.slice(0, 10).replace(/-/g, "");
-  return isAllDay(value) ? date : `${date}T${value.slice(11, 13)}${value.slice(14, 16)}00`;
+/** Calendar apps' own properties for a calendar's name and time zone, which ical.js would write without escaping. */
+const CALENDAR_TEXT = ["x-wr-calname", "x-wr-timezone"];
+
+function describeCalendarText(): void {
+  const properties = ICAL.design.icalendar.property as Record<string, { defaultType: string }>;
+  for (const name of CALENDAR_TEXT) properties[name] ??= { defaultType: "text" };
 }
 
-function icsUtc(instant: Date): string {
-  return `${instant.toISOString().slice(0, 19).replace(/[-:]/g, "")}Z`;
-}
-
-function dateTimeLine(name: string, value: string, timeZone: string | undefined): string {
-  if (isAllDay(value)) return `${name};VALUE=DATE:${icsLocal(value)}`;
-  return timeZone ? `${name};TZID=${timeZone}:${icsLocal(value)}` : `${name}:${icsLocal(value)}`;
-}
-
-const ICS_DAYS: Record<Weekday, string> = { mo: "MO", tu: "TU", we: "WE", th: "TH", fr: "FR", sa: "SA", su: "SU" };
-
-/** An event's repeat as an `RRULE` value, such as `FREQ=WEEKLY;BYDAY=SU`. */
-export function repeatRule(event: EventValue, timeZone?: string): string | undefined {
-  const repeat = event.repeat;
-  if (!repeat) return undefined;
-  const parts = [`FREQ=${{ day: "DAILY", week: "WEEKLY", month: "MONTHLY", year: "YEARLY" }[repeat.every]}`];
-  if (repeat.interval && repeat.interval > 1) parts.push(`INTERVAL=${repeat.interval}`);
-  const startMs = wallClock(event.start) ?? 0;
-  const weekday = WEEKDAYS[(new Date(startMs).getUTCDay() + 6) % 7] ?? "mo";
-  if (repeat.every === "week" && repeat.days?.length) {
-    parts.push(`BYDAY=${repeat.days.map((day) => ICS_DAYS[day]).join(",")}`);
-  }
-  if (repeat.every === "month" && repeat.on === "weekday") {
-    parts.push(`BYDAY=${Math.ceil(new Date(startMs).getUTCDate() / 7)}${ICS_DAYS[weekday]}`);
-  }
-  if (repeat.every === "month" && repeat.on === "last") parts.push(`BYDAY=-1${ICS_DAYS[weekday]}`);
-  if (repeat.until) {
-    if (isAllDay(event.start)) parts.push(`UNTIL=${icsLocal(repeat.until)}`);
-    else if (timeZone) parts.push(`UNTIL=${icsUtc(zonedInstant(`${repeat.until}T23:59`, timeZone))}`);
-    else parts.push(`UNTIL=${icsLocal(`${repeat.until}T23:59`)}`);
-  }
-  return parts.join(";");
-}
-
-/** The dates a repeat skips, as an `EXDATE` line. */
-function skipLine(event: EventValue, timeZone: string | undefined): string | undefined {
-  const skip = event.repeat?.skip ?? [];
-  if (skip.length === 0) return undefined;
-  if (isAllDay(event.start)) return `EXDATE;VALUE=DATE:${skip.map((date) => icsLocal(date)).join(",")}`;
-  const time = event.start.slice(10);
-  const values = skip.map((date) => icsLocal(`${date}${time}`)).join(",");
-  return timeZone ? `EXDATE;TZID=${timeZone}:${values}` : `EXDATE:${values}`;
-}
-
-function eventLines(item: CalendarEvent, timeZone: string | undefined, stamp: string): string[] {
+function eventComponent(item: CalendarEvent, timeZone: string | undefined, stamp: ICAL.Time): ICAL.Component {
   const { event } = item;
-  const lines = ["BEGIN:VEVENT", `UID:${escapeText(item.uid)}`, `DTSTAMP:${stamp}`];
-  lines.push(dateTimeLine("DTSTART", event.start, timeZone));
+  const vevent = new ICAL.Component("vevent");
+  vevent.addPropertyWithValue("uid", item.uid);
+  vevent.addPropertyWithValue("dtstamp", stamp);
+  vevent.addProperty(timeProperty("dtstart", [event.start], timeZone));
   if (isAllDay(event.start)) {
     // An all-day event's end is the day after its last day.
-    lines.push(dateTimeLine("DTEND", addDays(event.end ?? event.start, 1), timeZone));
+    vevent.addProperty(timeProperty("dtend", [addDays(event.end ?? event.start, 1)], timeZone));
   } else if (event.end) {
-    lines.push(dateTimeLine("DTEND", event.end, timeZone));
+    vevent.addProperty(timeProperty("dtend", [event.end], timeZone));
   }
   const rule = repeatRule(event, timeZone);
-  if (rule) lines.push(`RRULE:${rule}`);
-  const skip = skipLine(event, timeZone);
-  if (skip) lines.push(skip);
-  lines.push(`SUMMARY:${escapeText(item.title)}`);
-  if (item.place) lines.push(`LOCATION:${escapeText(item.place)}`);
-  if (item.description) lines.push(`DESCRIPTION:${escapeText(item.description)}`);
-  if (item.url) lines.push(`URL:${item.url}`);
-  lines.push("END:VEVENT");
-  return lines;
+  if (rule) vevent.addPropertyWithValue("rrule", ICAL.Recur.fromString(rule));
+  const skip = event.repeat?.skip ?? [];
+  if (rule && skip.length > 0) {
+    const time = event.start.slice(10);
+    vevent.addProperty(
+      timeProperty(
+        "exdate",
+        skip.map((date) => `${date}${time}`),
+        timeZone,
+      ),
+    );
+  }
+  vevent.addPropertyWithValue("summary", item.title);
+  if (item.place) vevent.addPropertyWithValue("location", item.place);
+  if (item.description) vevent.addPropertyWithValue("description", item.description);
+  if (item.url) vevent.addPropertyWithValue("url", item.url);
+  return vevent;
 }
 
 /** The years a calendar's events need its time zone's rules for. */
@@ -161,23 +129,29 @@ function yearsFor(events: CalendarEvent[], now: Date): [number, number] {
 export function calendarFile(events: CalendarEvent[], options: CalendarFileOptions): string {
   const now = options.now ?? new Date();
   const timeZone = isTimeZone(options.timeZone) ? options.timeZone : undefined;
-  const stamp = icsUtc(now);
-  const lines = [
-    "BEGIN:VCALENDAR",
-    "VERSION:2.0",
-    "PRODID:-//Goodfellow//Calendar//EN",
-    "CALSCALE:GREGORIAN",
-    "METHOD:PUBLISH",
-    `X-WR-CALNAME:${escapeText(options.name)}`,
-  ];
+  describeCalendarText();
+  const calendar = new ICAL.Component("vcalendar");
+  calendar.addPropertyWithValue("version", "2.0");
+  calendar.addPropertyWithValue("prodid", "-//Goodfellow//Calendar//EN");
+  calendar.addPropertyWithValue("calscale", "GREGORIAN");
+  calendar.addPropertyWithValue("method", "PUBLISH");
+  calendar.addPropertyWithValue("x-wr-calname", options.name);
   if (timeZone) {
-    lines.push(`X-WR-TIMEZONE:${timeZone}`);
+    calendar.addPropertyWithValue("x-wr-timezone", timeZone);
     const timed = events.some(({ event }) => !isAllDay(event.start));
-    if (timed) lines.push(...timeZoneLines(timeZone, yearsFor(events, now)));
+    if (timed) calendar.addSubcomponent(timeZoneComponent(timeZone, yearsFor(events, now)));
   }
-  for (const item of events) lines.push(...eventLines(item, timeZone, stamp));
-  lines.push("END:VCALENDAR");
-  return `${lines.map(fold).join("\r\n")}\r\n`;
+  const stamp = ICAL.Time.fromJSDate(now, true);
+  for (const item of events) calendar.addSubcomponent(eventComponent(item, timeZone, stamp));
+
+  // Lines may be 75 bytes long, with the space that continues a folded line, which ical.js doesn't count.
+  const foldLength = ICAL.foldLength;
+  ICAL.foldLength = 74;
+  try {
+    return `${calendar.toString()}\r\n`;
+  } finally {
+    ICAL.foldLength = foldLength;
+  }
 }
 
 // Time zone definitions -------------------------------------------------------
@@ -214,12 +188,6 @@ function transitions(timeZone: string, year: number): Transition[] {
   return found;
 }
 
-function offsetText(minutes: number): string {
-  const sign = minutes < 0 ? "-" : "+";
-  const abs = Math.abs(minutes);
-  return `${sign}${String(Math.floor(abs / 60)).padStart(2, "0")}${String(abs % 60).padStart(2, "0")}`;
-}
-
 /** A transition's yearly rule: the month, weekday and which one of it, such as the last Sunday of March. */
 interface YearlyRule {
   month: number;
@@ -245,35 +213,38 @@ function sameRule(a: YearlyRule, b: YearlyRule): boolean {
   return a.month === b.month && a.weekday === b.weekday && a.n === b.n && a.time === b.time;
 }
 
-/** A `VTIMEZONE` for a time zone, with yearly rules where its changes follow them. */
-function timeZoneLines(timeZone: string, [first, last]: [number, number]): string[] {
-  const lines = ["BEGIN:VTIMEZONE", `TZID:${timeZone}`];
-  const byYear = new Map<number, Transition[]>();
-  for (let year = first; year <= last; year++) byYear.set(year, transitions(timeZone, year));
-  const all = [...byYear.values()].flat();
+function utcOffset(minutes: number): ICAL.UtcOffset {
+  return new ICAL.UtcOffset({
+    factor: minutes < 0 ? -1 : 1,
+    hours: Math.floor(Math.abs(minutes) / 60),
+    minutes: Math.abs(minutes) % 60,
+  });
+}
 
-  const observance = (transition: Transition, rule?: string) => {
-    const kind = transition.to > transition.from ? "DAYLIGHT" : "STANDARD";
-    const lines = [
-      `BEGIN:${kind}`,
-      `DTSTART:${icsLocal(formatWallClock(transition.at + transition.from * MINUTE, true))}`,
-      `TZOFFSETFROM:${offsetText(transition.from)}`,
-      `TZOFFSETTO:${offsetText(transition.to)}`,
-    ];
-    if (rule) lines.push(`RRULE:${rule}`);
-    lines.push(`END:${kind}`);
-    return lines;
-  };
+function observance(transition: Transition, rule?: string): ICAL.Component {
+  const component = new ICAL.Component(transition.to > transition.from ? "daylight" : "standard");
+  component.addPropertyWithValue("dtstart", icalTime(formatWallClock(transition.at + transition.from * MINUTE, true)));
+  component.addPropertyWithValue("tzoffsetfrom", utcOffset(transition.from));
+  component.addPropertyWithValue("tzoffsetto", utcOffset(transition.to));
+  if (rule) component.addPropertyWithValue("rrule", ICAL.Recur.fromString(rule));
+  return component;
+}
+
+/** A `VTIMEZONE` for a time zone, with yearly rules where its changes follow them. */
+function timeZoneComponent(timeZone: string, [first, last]: [number, number]): ICAL.Component {
+  const zone = new ICAL.Component("vtimezone");
+  zone.addPropertyWithValue("tzid", timeZone);
+  const years: Transition[][] = [];
+  for (let year = first; year <= last; year++) years.push(transitions(timeZone, year));
+  const all = years.flat();
 
   if (all.length === 0) {
-    const offset = offsetText(zoneOffset(Date.UTC(last, 0, 1), timeZone));
-    lines.push("BEGIN:STANDARD", "DTSTART:19700101T000000", `TZOFFSETFROM:${offset}`, `TZOFFSETTO:${offset}`);
-    lines.push("END:STANDARD", "END:VTIMEZONE");
-    return lines;
+    const offset = zoneOffset(Date.UTC(last, 0, 1), timeZone);
+    zone.addSubcomponent(observance({ at: Date.UTC(1970, 0, 1) - offset * MINUTE, from: offset, to: offset }));
+    return zone;
   }
 
   // Zones whose clocks change on the same weekday of the same month each year get one rule for each change.
-  const years = [...byYear.values()];
   const pattern = years[0]?.map(ruleOf) ?? [];
   const regular =
     pattern.length > 0 &&
@@ -289,14 +260,13 @@ function timeZoneLines(timeZone: string, [first, last]: [number, number]): strin
     for (const [index, rule] of pattern.entries()) {
       const firstChange = years[0]?.[index];
       if (!firstChange) continue;
-      const day = WEEKDAYS[rule.weekday] ?? "mo";
-      lines.push(...observance(firstChange, `FREQ=YEARLY;BYMONTH=${rule.month + 1};BYDAY=${rule.n}${ICS_DAYS[day]}`));
+      const day = (WEEKDAYS[rule.weekday] ?? "mo").toUpperCase();
+      zone.addSubcomponent(observance(firstChange, `FREQ=YEARLY;BYMONTH=${rule.month + 1};BYDAY=${rule.n}${day}`));
     }
   } else {
-    for (const change of all) lines.push(...observance(change));
+    for (const change of all) zone.addSubcomponent(observance(change));
   }
-  lines.push("END:VTIMEZONE");
-  return lines;
+  return zone;
 }
 
 // Reading ---------------------------------------------------------------------
@@ -310,207 +280,6 @@ export interface FeedOccurrence extends Occurrence {
   url?: string;
 }
 
-interface Property {
-  name: string;
-  params: Record<string, string>;
-  value: string;
-}
-
-interface Component {
-  name: string;
-  properties: Property[];
-  children: Component[];
-}
-
-function unescapeText(text: string): string {
-  return text.replace(/\\([\\;,nN])/g, (_, char: string) => (char === "n" || char === "N" ? "\n" : char));
-}
-
-function parseLine(line: string): Property | undefined {
-  // The value starts at the first colon outside a quoted parameter.
-  let inQuotes = false;
-  let colon = -1;
-  for (let index = 0; index < line.length; index++) {
-    const char = line[index];
-    if (char === '"') inQuotes = !inQuotes;
-    else if (char === ":" && !inQuotes) {
-      colon = index;
-      break;
-    }
-  }
-  if (colon === -1) return undefined;
-  const [name = "", ...rawParams] = line.slice(0, colon).split(";");
-  const params: Record<string, string> = {};
-  for (const param of rawParams) {
-    const equals = param.indexOf("=");
-    if (equals === -1) continue;
-    params[param.slice(0, equals).toUpperCase()] = param.slice(equals + 1).replace(/^"|"$/g, "");
-  }
-  return { name: name.toUpperCase(), params, value: line.slice(colon + 1) };
-}
-
-/** Reads a calendar file's components. */
-function parseComponents(text: string): Component[] {
-  const lines = text
-    .replace(/\r\n?/g, "\n")
-    .replace(/\n[ \t]/g, "")
-    .split("\n");
-  const root: Component = { name: "", properties: [], children: [] };
-  const stack: Component[] = [root];
-  for (const raw of lines) {
-    if (!raw.trim()) continue;
-    const property = parseLine(raw);
-    if (!property) continue;
-    const current = stack[stack.length - 1] ?? root;
-    if (property.name === "BEGIN") {
-      const child: Component = { name: property.value.toUpperCase(), properties: [], children: [] };
-      current.children.push(child);
-      stack.push(child);
-    } else if (property.name === "END") {
-      if (stack.length > 1) stack.pop();
-    } else {
-      current.properties.push(property);
-    }
-  }
-  return root.children;
-}
-
-function property(component: Component, name: string): Property | undefined {
-  return component.properties.find((candidate) => candidate.name === name);
-}
-
-/** A time zone that a feed defines itself, such as Outlook's "Eastern Standard Time". */
-interface FeedZone {
-  observances: Array<{ start: number; offset: number; rule?: Record<string, string> }>;
-}
-
-function parseRule(value: string): Record<string, string> {
-  return Object.fromEntries(
-    value.split(";").flatMap((part) => {
-      const [key, item] = part.split("=");
-      return key && item !== undefined ? [[key.toUpperCase(), item.toUpperCase()]] : [];
-    }),
-  );
-}
-
-/** A date or date and time from a feed: `20261224`, `20261224T190000` or `20261224T190000Z`. */
-function parseIcsTime(value: string): { local: string; utc: boolean } | undefined {
-  const match = /^(\d{4})(\d{2})(\d{2})(?:T(\d{2})(\d{2})(\d{2})?(Z)?)?$/.exec(value.trim());
-  if (!match) return undefined;
-  const [, year, month, day, hour, minute, , z] = match;
-  const date = `${year}-${month}-${day}`;
-  return hour === undefined ? { local: date, utc: false } : { local: `${date}T${hour}:${minute}`, utc: z === "Z" };
-}
-
-/** Offsets of a feed's own time zone, by its observances' rules. */
-function feedZoneOffset(zone: FeedZone, localMs: number): number {
-  let best: { at: number; offset: number } | undefined;
-  for (const observance of zone.observances) {
-    const year = new Date(localMs).getUTCFullYear();
-    const candidates: number[] = [];
-    const rule = observance.rule;
-    if (rule?.FREQ === "YEARLY" && rule.BYMONTH && rule.BYDAY) {
-      const byday = /^(-?\d)?([A-Z]{2})$/.exec(rule.BYDAY);
-      const weekday = WEEKDAYS.findIndex((day) => ICS_DAYS[day] === byday?.[2]);
-      const n = Number(byday?.[1] ?? 1);
-      const time = observance.start % DAY;
-      for (const y of [year - 1, year]) {
-        const month = Number(rule.BYMONTH) - 1;
-        const days = new Date(Date.UTC(y, month + 1, 0)).getUTCDate();
-        let date: number;
-        if (n === -1) {
-          const last = Date.UTC(y, month, days);
-          date = last - ((((new Date(last).getUTCDay() + 6) % 7) - weekday + 7) % 7) * DAY;
-        } else {
-          const first = Date.UTC(y, month, 1);
-          date = first + (((weekday - ((new Date(first).getUTCDay() + 6) % 7) + 7) % 7) + (n - 1) * 7) * DAY;
-        }
-        if (date + time >= observance.start) candidates.push(date + time);
-      }
-    } else {
-      candidates.push(observance.start);
-    }
-    for (const at of candidates) {
-      if (at <= localMs && (!best || at > best.at)) best = { at, offset: observance.offset };
-    }
-  }
-  return best?.offset ?? zone.observances[0]?.offset ?? 0;
-}
-
-function parseOffset(value: string | undefined): number {
-  const match = /^([+-])(\d{2})(\d{2})/.exec(value ?? "");
-  if (!match) return 0;
-  const minutes = Number(match[2]) * 60 + Number(match[3]);
-  return match[1] === "-" ? -minutes : minutes;
-}
-
-function feedZones(components: Component[]): Map<string, FeedZone> {
-  const zones = new Map<string, FeedZone>();
-  for (const calendar of components) {
-    for (const zone of calendar.children.filter((child) => child.name === "VTIMEZONE")) {
-      const id = property(zone, "TZID")?.value;
-      if (!id) continue;
-      const observances = zone.children.flatMap((child) => {
-        const start = parseIcsTime(property(child, "DTSTART")?.value ?? "");
-        const startMs = start ? wallClock(start.local) : undefined;
-        if (startMs === undefined) return [];
-        const rule = property(child, "RRULE")?.value;
-        return [
-          {
-            start: startMs,
-            offset: parseOffset(property(child, "TZOFFSETTO")?.value),
-            ...(rule && { rule: parseRule(rule) }),
-          },
-        ];
-      });
-      zones.set(id, { observances });
-    }
-  }
-  return zones;
-}
-
-/** A feed's time, as an instant: UTC, in a named zone, in the feed's own zone, or floating (the site's). */
-type Clock = (local: string, utc: boolean, zone?: string) => number;
-
-function clockFor(zones: Map<string, FeedZone>, siteZone: string | undefined): Clock {
-  return (local, utc, zone) => {
-    const ms = wallClock(local) ?? 0;
-    if (utc) return ms;
-    if (zone && isTimeZone(zone)) return zonedInstant(local, zone).getTime();
-    const own = zone ? zones.get(zone) : undefined;
-    if (own) return ms - feedZoneOffset(own, ms) * MINUTE;
-    return zonedInstant(local, siteZone).getTime();
-  };
-}
-
-/** A feed's `RRULE`, as this module's repeats can express it, with its `COUNT`. */
-function feedRepeat(
-  rule: Record<string, string>,
-  untilDate: string | undefined,
-): {
-  repeat?: EventRepeat;
-  count?: number;
-} {
-  const every = { DAILY: "day", WEEKLY: "week", MONTHLY: "month", YEARLY: "year" }[rule.FREQ ?? ""] as
-    | EventRepeat["every"]
-    | undefined;
-  if (!every) return {};
-  const repeat: EventRepeat = { every };
-  const interval = Number(rule.INTERVAL);
-  if (Number.isInteger(interval) && interval > 1) repeat.interval = interval;
-  const days = (rule.BYDAY ?? "").split(",").filter(Boolean);
-  if (every === "week" && days.length) {
-    repeat.days = days.flatMap((day) => {
-      const found = WEEKDAYS.find((weekday) => ICS_DAYS[weekday] === day.slice(-2));
-      return found ? [found] : [];
-    });
-  }
-  if (every === "month" && days.length) repeat.on = days[0]?.startsWith("-1") ? "last" : "weekday";
-  if (untilDate) repeat.until = untilDate;
-  const count = Number(rule.COUNT);
-  return { repeat, ...(Number.isInteger(count) && count > 0 && { count }) };
-}
-
 export interface FeedOptions {
   /** The site's time zone, which the occurrences are given in. */
   timeZone?: string;
@@ -519,117 +288,144 @@ export interface FeedOptions {
   to: string;
 }
 
+/** A feed's calendars, or none if it isn't one. */
+function parseCalendars(text: string): ICAL.Component[] {
+  try {
+    const parsed = ICAL.parse(text);
+    // One calendar, or a list of them.
+    const roots = (typeof parsed[0] === "string" ? [parsed] : parsed) as unknown[];
+    return roots.map((root) => new ICAL.Component(root as never)).filter((root) => root.name === "vcalendar");
+  } catch {
+    return [];
+  }
+}
+
+/**
+ * Describes the time zones a calendar names but doesn't describe, as most do
+ * for the zones `Intl` knows, so ical.js can tell when their times happen.
+ */
+function addMissingZones(calendar: ICAL.Component, years: [number, number]): void {
+  const described = new Set(
+    calendar.getAllSubcomponents("vtimezone").map((zone) => String(zone.getFirstPropertyValue("tzid"))),
+  );
+  for (const event of calendar.getAllSubcomponents("vevent")) {
+    for (const property of event.getAllProperties()) {
+      const tzid = property.getParameter("tzid");
+      const name = Array.isArray(tzid) ? tzid[0] : tzid;
+      if (!name || described.has(name) || !isTimeZone(name)) continue;
+      calendar.addSubcomponent(timeZoneComponent(name, years));
+      described.add(name);
+    }
+  }
+}
+
+/** The site's own times for a feed's: dates stay dates, and times without a time zone are the site's. */
+function siteTime(time: ICAL.Time, siteZone: string | undefined): string {
+  const date = `${String(time.year).padStart(4, "0")}-${String(time.month).padStart(2, "0")}-${String(time.day).padStart(2, "0")}`;
+  if (time.isDate) return date;
+  if (time.zone === ICAL.Timezone.localTimezone) {
+    return `${date}T${String(time.hour).padStart(2, "0")}:${String(time.minute).padStart(2, "0")}`;
+  }
+  return zonedTime(new Date(time.toUnixTime() * 1000), siteZone);
+}
+
+/** When a feed's time happens, for knowing when to stop expanding a repeat. */
+function instantOf(time: ICAL.Time, siteZone: string | undefined): number {
+  return time.zone === ICAL.Timezone.localTimezone || time.isDate
+    ? zonedInstant(siteTime(time, siteZone), siteZone).getTime()
+    : time.toUnixTime() * 1000;
+}
+
+/**
+ * ical.js moves a yearly February 29 to March 1 in other years, where other
+ * calendars skip them, so a feed's plain yearly rule on that date says it in full.
+ */
+function keepLeapDay(event: ICAL.Event): void {
+  const start = event.startDate;
+  if (start.month !== 2 || start.day !== 29) return;
+  for (const property of event.component.getAllProperties("rrule")) {
+    const rule = property.getFirstValue() as ICAL.Recur;
+    if (rule.freq !== "YEARLY" || Object.keys(rule.parts).length > 0) continue;
+    rule.setComponent("BYMONTH", [2]);
+    rule.setComponent("BYMONTHDAY", [29]);
+  }
+}
+
+function textOf(event: ICAL.Event, name: string): string | undefined {
+  const value = event.component.getFirstPropertyValue(name);
+  return typeof value === "string" && value !== "" ? value : undefined;
+}
+
 /**
  * The events in a calendar file between two dates, in the site's time zone,
  * oldest first. Repeats, skipped dates, changed and cancelled occurrences are
  * followed. Anything a feed says that can't be read is left out.
  */
 export function readCalendar(text: string, options: FeedOptions): FeedOccurrence[] {
-  const components = parseComponents(text);
-  const clock = clockFor(feedZones(components), options.timeZone);
   const siteZone = isTimeZone(options.timeZone) ? options.timeZone : undefined;
-  const events = components.flatMap((calendar) => calendar.children.filter((child) => child.name === "VEVENT"));
-
-  /** A feed time, as the site's wall-clock time: dates stay dates. */
-  const toSite = (prop: Property | undefined): string | undefined => {
-    const parsed = prop ? parseIcsTime(prop.value) : undefined;
-    if (!parsed) return undefined;
-    if (isAllDay(parsed.local)) return parsed.local;
-    return zonedTime(new Date(clock(parsed.local, parsed.utc, prop?.params.TZID)), siteZone);
-  };
-
-  // Changed occurrences replace the ones their RECURRENCE-ID names.
-  const overridden = new Map<string, Set<string>>();
-  for (const event of events) {
-    const uid = property(event, "UID")?.value;
-    const id = toSite(property(event, "RECURRENCE-ID"));
-    if (!uid || !id) continue;
-    const set = overridden.get(uid) ?? new Set<string>();
-    set.add(id);
-    overridden.set(uid, set);
-  }
-
+  // A day either side, since moving to the site's time zone can change an occurrence's date.
+  const stop = zonedInstant(addDays(options.to, 2), siteZone).getTime();
+  const years: [number, number] = [Number(options.from.slice(0, 4)) - 1, Number(options.to.slice(0, 4)) + 1];
   const found: FeedOccurrence[] = [];
-  for (const event of events) {
-    if (property(event, "STATUS")?.value.toUpperCase() === "CANCELLED") continue;
-    const startProp = property(event, "DTSTART");
-    const parsedStart = startProp ? parseIcsTime(startProp.value) : undefined;
-    if (!startProp || !parsedStart) continue;
-    const uid = property(event, "UID")?.value ?? `${parsedStart.local}-${found.length}`;
-    const allDay = isAllDay(parsedStart.local);
-    const zone = startProp.params.TZID;
 
-    // Repeats are worked out in the event's own time, then each occurrence moved to the site's.
-    const sourceStart = parsedStart.local;
-    const endProp = property(event, "DTEND");
-    const parsedEnd = endProp ? parseIcsTime(endProp.value) : undefined;
-    let sourceEnd: string | undefined;
-    if (parsedEnd) {
-      if (allDay) sourceEnd = addDays(parsedEnd.local.slice(0, 10), -1);
-      else {
-        const endMs = clock(parsedEnd.local, parsedEnd.utc, endProp?.params.TZID);
-        const startMs = clock(sourceStart, parsedStart.utc, zone);
-        sourceEnd = formatWallClock((wallClock(sourceStart) ?? 0) + (endMs - startMs), true);
-      }
+  for (const calendar of parseCalendars(text)) {
+    addMissingZones(calendar, years);
+    const events: ICAL.Event[] = [];
+    const changes: ICAL.Event[] = [];
+    for (const component of calendar.getAllSubcomponents("vevent")) {
+      try {
+        const event = new ICAL.Event(component);
+        // Checks its start can be read, since ical.js reads times only when they're asked for.
+        if (!event.startDate) continue;
+        (event.isRecurrenceException() ? changes : events).push(event);
+      } catch {}
     }
-    const ruleText = property(event, "RRULE")?.value;
-    const rule = ruleText ? parseRule(ruleText) : undefined;
-    let untilDate: string | undefined;
-    if (rule?.UNTIL) {
-      const until = parseIcsTime(rule.UNTIL);
-      if (until) untilDate = isAllDay(until.local) ? until.local : datePart(until.local);
-    }
-    const { repeat, count } = rule && !property(event, "RECURRENCE-ID") ? feedRepeat(rule, untilDate) : {};
-
-    const skips = new Set<string>();
-    for (const exdate of event.properties.filter((prop) => prop.name === "EXDATE")) {
-      for (const value of exdate.value.split(",")) {
-        const parsed = parseIcsTime(value);
-        if (!parsed) continue;
-        if (isAllDay(parsed.local) || !parsed.utc) skips.add(datePart(parsed.local));
-        else
-          skips.add(
-            datePart(zonedTime(new Date(clock(parsed.local, true)), zone && isTimeZone(zone) ? zone : siteZone)),
-          );
-      }
+    // Changed occurrences replace the ones their RECURRENCE-ID names; ones without their event stand alone.
+    for (const change of changes) {
+      const event = events.find((candidate) => candidate.uid === change.uid && candidate.isRecurring());
+      if (event) event.relateException(change);
+      else events.push(change);
     }
 
-    const source: EventValue = {
-      start: sourceStart,
-      ...(sourceEnd && sourceEnd !== sourceStart && { end: sourceEnd }),
-      ...(repeat && { repeat: { ...repeat, ...(skips.size && { skip: [...skips] }) } }),
-    };
-    // A day either side, since moving to the site's time zone can change an occurrence's date.
-    const window = { from: addDays(options.from, -1), to: addDays(options.to, 1) };
-    const times = occurrences(source, { ...window, ...(count !== undefined && { count }) });
-    const replaced = overridden.get(uid);
-    const title = unescapeText(property(event, "SUMMARY")?.value ?? "");
-    const place = property(event, "LOCATION")?.value;
-    const description = property(event, "DESCRIPTION")?.value;
-    const url = property(event, "URL")?.value;
-
-    for (const time of times) {
-      let start = time.start;
-      let end = time.end;
-      if (!allDay) {
-        const offset = clock(time.start, parsedStart.utc, zone) - (wallClock(time.start) ?? 0);
-        start = zonedTime(new Date((wallClock(time.start) ?? 0) + offset), siteZone);
-        if (time.end) end = zonedTime(new Date((wallClock(time.end) ?? 0) + offset), siteZone);
-      }
-      // The master event's occurrences that a changed one replaces are left out.
-      if (!property(event, "RECURRENCE-ID") && replaced?.has(start)) continue;
-      const lastDay = datePart(end ?? start);
-      if (lastDay < options.from || datePart(start) > options.to) continue;
+    const add = (item: ICAL.Event, start: ICAL.Time, end: ICAL.Time) => {
+      if (textOf(item, "status")?.toUpperCase() === "CANCELLED") return;
+      const first = siteTime(start, siteZone);
+      // An all-day event's end is the day after its last day.
+      const last = start.isDate && end.isDate ? addDays(siteTime(end, siteZone), -1) : siteTime(end, siteZone);
+      const ends = last > first ? last : undefined;
+      if (datePart(ends ?? first) < options.from || datePart(first) > options.to) return;
+      const url = textOf(item, "url");
+      const place = textOf(item, "location");
+      const description = textOf(item, "description");
       found.push({
-        uid,
-        title: title || "(no title)",
-        start,
-        ...(end && { end }),
-        allDay,
-        ...(place && { place: unescapeText(place) }),
-        ...(description && { description: unescapeText(description) }),
+        uid: item.uid ?? first,
+        title: textOf(item, "summary") ?? "(no title)",
+        start: first,
+        ...(ends && { end: ends }),
+        allDay: start.isDate,
+        ...(place && { place }),
+        ...(description && { description }),
         ...(url && /^https?:\/\//i.test(url) && { url }),
       });
+    };
+
+    for (const event of events) {
+      try {
+        if (!event.isRecurring()) {
+          add(event, event.startDate, event.endDate);
+          continue;
+        }
+        keepLeapDay(event);
+        const iterator = event.iterator();
+        for (let steps = 0; steps < MAX_STEPS; steps++) {
+          const next = iterator.next();
+          if (!next || instantOf(next, siteZone) > stop) break;
+          const details = event.getOccurrenceDetails(next);
+          add(details.item, details.startDate, details.endDate);
+        }
+      } catch {
+        // Leaves out an event whose times or repeats can't be read.
+      }
     }
   }
   return found.sort((a, b) => a.start.localeCompare(b.start) || a.title.localeCompare(b.title));

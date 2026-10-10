@@ -7,7 +7,12 @@
  * done as if they were UTC, so a weekly 9:00 event stays at 9:00 across
  * daylight saving changes; only `zonedInstant()` and `zonedTime()` turn them
  * into instants and back.
+ *
+ * Repeats are expanded by ical.js, Mozilla's iCalendar library, from the same
+ * rules the site's calendar files give other calendars (`repeatRule()`).
  */
+
+import ICAL from "ical.js";
 
 export const WEEKDAYS = ["mo", "tu", "we", "th", "fr", "sa", "su"] as const;
 export type Weekday = (typeof WEEKDAYS)[number];
@@ -252,25 +257,53 @@ export function cleanEventValue(value: EventValue): EventValue {
   return cleaned;
 }
 
-/** The nth weekday of the month a date is on: 1 for the first Tuesday, and so on. */
-function weekOfMonth(ms: number): number {
-  return Math.ceil(new Date(ms).getUTCDate() / 7);
+// Repeats ---------------------------------------------------------------------
+
+const ICS_DAYS: Record<Weekday, string> = { mo: "MO", tu: "TU", we: "WE", th: "TH", fr: "FR", sa: "SA", su: "SU" };
+
+/** `2026-12-24T19:00` → `20261224T190000`; `2026-12-24` → `20261224`, as calendar files write them. */
+function icsLocal(value: string): string {
+  const date = value.slice(0, 10).replace(/-/g, "");
+  return isAllDay(value) ? date : `${date}T${value.slice(11, 13)}${value.slice(14, 16)}00`;
 }
 
-/** The date of the nth (or last, for `n` of -1) given weekday in a month, or `undefined` if there isn't one. */
-function nthWeekday(year: number, month: number, weekday: number, n: number): number | undefined {
-  const days = daysInMonth(year, month);
-  if (n === -1) {
-    const last = Date.UTC(year, month, days);
-    return last - ((weekdayIndex(last) - weekday + 7) % 7) * DAY;
+/** An instant as calendar files write it in UTC: `20261224T190000Z`. */
+function icsUtc(instant: Date): string {
+  return `${instant.toISOString().slice(0, 19).replace(/[-:]/g, "")}Z`;
+}
+
+/**
+ * An event's repeat as a calendar rule (`RRULE`), such as `FREQ=WEEKLY;BYDAY=SU`.
+ * With a time zone, a timed event's `UNTIL` is in UTC, as calendar files need;
+ * without one, it's the wall-clock end of its last day.
+ */
+export function repeatRule(event: EventValue, timeZone?: string): string | undefined {
+  const repeat = event.repeat;
+  if (!repeat) return undefined;
+  const parts = [`FREQ=${{ day: "DAILY", week: "WEEKLY", month: "MONTHLY", year: "YEARLY" }[repeat.every]}`];
+  if (repeat.interval && repeat.interval > 1) parts.push(`INTERVAL=${repeat.interval}`);
+  const startMs = wallClock(event.start) ?? 0;
+  const weekday = WEEKDAYS[weekdayIndex(startMs)] ?? "mo";
+  if (repeat.every === "week" && repeat.days?.length) {
+    parts.push(`BYDAY=${repeat.days.map((day) => ICS_DAYS[day]).join(",")}`);
   }
-  const first = Date.UTC(year, month, 1);
-  const date = first + (((weekday - weekdayIndex(first) + 7) % 7) + (n - 1) * 7) * DAY;
-  return new Date(date).getUTCMonth() === month ? date : undefined;
+  if (repeat.every === "month" && repeat.on === "weekday") {
+    parts.push(`BYDAY=${Math.ceil(new Date(startMs).getUTCDate() / 7)}${ICS_DAYS[weekday]}`);
+  }
+  if (repeat.every === "month" && repeat.on === "last") parts.push(`BYDAY=-1${ICS_DAYS[weekday]}`);
+  // Said in full, since some calendars, ical.js among them, otherwise move February 29 to March 1 in other years.
+  if (repeat.every === "year" && event.start.slice(5, 10) === "02-29") parts.push("BYMONTH=2;BYMONTHDAY=29");
+  if (repeat.until) {
+    if (isAllDay(event.start)) parts.push(`UNTIL=${icsLocal(repeat.until)}`);
+    else if (timeZone && isTimeZone(timeZone)) {
+      parts.push(`UNTIL=${icsUtc(zonedInstant(`${repeat.until}T23:59`, timeZone))}`);
+    } else parts.push(`UNTIL=${icsLocal(`${repeat.until}T23:59`)}`);
+  }
+  return parts.join(";");
 }
 
 /** The longest any expansion runs, so a mistyped repeat can't stall a build. */
-const MAX_STEPS = 20_000;
+export const MAX_STEPS = 20_000;
 
 export interface OccurrenceOptions {
   /** The first date to include, as `YYYY-MM-DD`: occurrences that end on or after it. */
@@ -279,8 +312,6 @@ export interface OccurrenceOptions {
   to: string;
   /** At most this many. */
   limit?: number;
-  /** At most this many occurrences counted from the event's start, as an `.ics` file's `COUNT` says. */
-  count?: number;
 }
 
 /**
@@ -299,18 +330,12 @@ export function occurrences(event: EventValue, options: OccurrenceOptions): Occu
   if (fromMs === undefined || lastMs === undefined) return [];
   const toMs = lastMs + DAY - 1;
   const limit = options.limit ?? Number.POSITIVE_INFINITY;
-  const repeat = event.repeat;
-  const untilMs = repeat?.until ? (wallClock(repeat.until) ?? 0) + DAY - 1 : Number.POSITIVE_INFINITY;
-  const skip = new Set(repeat?.skip ?? []);
-  const timeOfDay = startMs % DAY;
+  const skip = new Set(event.repeat?.skip ?? []);
 
   const found: Occurrence[] = [];
-  let counted = 0;
   /** Adds one start, and says whether to go on. */
   const take = (ms: number): boolean => {
-    if (ms > toMs || ms > untilMs) return false;
-    counted++;
-    if (options.count !== undefined && counted > options.count) return false;
+    if (ms > toMs) return false;
     const last = ms + (duration ?? 0);
     const ends = allDay ? last + DAY - 1 : last;
     if (ends >= fromMs && !skip.has(formatWallClock(ms, false))) {
@@ -323,61 +348,25 @@ export function occurrences(event: EventValue, options: OccurrenceOptions): Occu
     return found.length < limit;
   };
 
-  if (!repeat) {
+  const rule = repeatRule(event);
+  if (!rule) {
     take(startMs);
     return found;
   }
-
-  const interval = repeat.interval && repeat.interval > 0 ? repeat.interval : 1;
+  // Wall-clock times, without a time zone, as everything here is.
   const start = new Date(startMs);
-  let steps = 0;
-  switch (repeat.every) {
-    case "day":
-      for (let ms = startMs; steps++ < MAX_STEPS; ms += interval * DAY) if (!take(ms)) break;
-      break;
-    case "week": {
-      const days = (repeat.days?.length ? repeat.days : [WEEKDAYS[weekdayIndex(startMs)] ?? "mo"])
-        .map((day) => WEEKDAYS.indexOf(day))
-        .sort((a, b) => a - b);
-      const monday = startMs - timeOfDay - weekdayIndex(startMs) * DAY;
-      weeks: for (let week = monday; steps++ < MAX_STEPS; week += interval * 7 * DAY) {
-        for (const day of days) {
-          const ms = week + day * DAY + timeOfDay;
-          if (ms < startMs) continue;
-          if (!take(ms)) break weeks;
-        }
-      }
-      break;
-    }
-    case "month": {
-      const weekday = weekdayIndex(startMs);
-      const n = repeat.on === "last" ? -1 : weekOfMonth(startMs);
-      for (let index = 0; steps++ < MAX_STEPS; index += interval) {
-        const year = start.getUTCFullYear() + Math.floor((start.getUTCMonth() + index) / 12);
-        const month = (start.getUTCMonth() + index) % 12;
-        let day: number | undefined;
-        if (repeat.on === "weekday" || repeat.on === "last") day = nthWeekday(year, month, weekday, n);
-        else if (start.getUTCDate() <= daysInMonth(year, month)) day = Date.UTC(year, month, start.getUTCDate());
-        if (day === undefined) {
-          if (Date.UTC(year, month, 1) > toMs) break;
-          continue;
-        }
-        if (day + timeOfDay < startMs) continue;
-        if (!take(day + timeOfDay)) break;
-      }
-      break;
-    }
-    case "year":
-      for (let index = 0; steps++ < MAX_STEPS; index += interval) {
-        const year = start.getUTCFullYear() + index;
-        // February 29 happens only in leap years.
-        if (start.getUTCDate() > daysInMonth(year, start.getUTCMonth())) {
-          if (Date.UTC(year, 0, 1) > toMs) break;
-          continue;
-        }
-        if (!take(Date.UTC(year, start.getUTCMonth(), start.getUTCDate()) + timeOfDay)) break;
-      }
-      break;
+  const iterator = ICAL.Recur.fromString(rule).iterator(
+    ICAL.Time.fromData({
+      year: start.getUTCFullYear(),
+      month: start.getUTCMonth() + 1,
+      day: start.getUTCDate(),
+      ...(!allDay && { hour: start.getUTCHours(), minute: start.getUTCMinutes() }),
+    }),
+  );
+  for (let steps = 0; steps < MAX_STEPS; steps++) {
+    const next = iterator.next();
+    if (!next) break;
+    if (!take(Date.UTC(next.year, next.month - 1, next.day, next.hour, next.minute))) break;
   }
   return found;
 }

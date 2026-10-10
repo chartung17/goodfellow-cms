@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
-import { calendarFile, readCalendar, repeatRule } from "./ics.js";
+import { repeatRule } from "./calendar.js";
+import { calendarFile, readCalendar } from "./ics.js";
 
 const now = new Date("2026-10-10T12:00:00Z");
 
@@ -204,6 +205,37 @@ describe("reading calendar files", () => {
     ].join("\r\n");
     const read = readCalendar(feed, { ...window, timeZone: "UTC" });
     expect(read.map((item) => item.start)).toEqual(["2026-10-10T13:00", "2026-12-10T14:00"]);
+  });
+
+  it("follows rules the site's own events don't have", () => {
+    const feed = [
+      "BEGIN:VCALENDAR",
+      "BEGIN:VEVENT",
+      "UID:council",
+      "DTSTART;TZID=America/New_York:20261005T190000",
+      "DURATION:PT90M",
+      "RRULE:FREQ=MONTHLY;BYDAY=1MO,3MO;COUNT=4",
+      "RDATE;TZID=America/New_York:20261028T190000",
+      "SUMMARY:Parish council",
+      "END:VEVENT",
+      "BEGIN:VEVENT",
+      "UID:birthday",
+      "DTSTART;VALUE=DATE:20240229",
+      "RRULE:FREQ=YEARLY",
+      "SUMMARY:Leap-day birthday",
+      "END:VEVENT",
+      "END:VCALENDAR",
+    ].join("\r\n");
+    const read = readCalendar(feed, { from: "2026-10-01", to: "2028-12-31", timeZone: "America/New_York" });
+    expect(read.filter((item) => item.uid === "council").map((item) => `${item.start} ${item.end}`)).toEqual([
+      "2026-10-05T19:00 2026-10-05T20:30",
+      "2026-10-19T19:00 2026-10-19T20:30",
+      "2026-10-28T19:00 2026-10-28T20:30",
+      "2026-11-02T19:00 2026-11-02T20:30",
+      "2026-11-16T19:00 2026-11-16T20:30",
+    ]);
+    // February 29 only in leap years, as other calendars show it.
+    expect(read.filter((item) => item.uid === "birthday").map((item) => item.start)).toEqual(["2028-02-29"]);
   });
 
   it("leaves out what it can't read", () => {
