@@ -2,6 +2,7 @@ import type { BuildProblem } from "./build-problems.js";
 import type { ContentStore } from "./content/store.js";
 import type { PagesDomains } from "./domains.js";
 import type { OwnerAccess, SiteEditors } from "./editors.js";
+import type { SiteUpdates } from "./updates.js";
 
 /** The person signed in to the admin panel. */
 export interface GitUser {
@@ -61,6 +62,8 @@ export interface GitBackend extends ContentStore {
   readonly editors?: SiteEditors;
   /** A second token for changing editors and Pages settings, where signing in can't. */
   readonly ownerAccess?: OwnerAccess;
+  /** The site's nightly update job: its last run, and running it now. Absent where the backend can't. */
+  readonly updates?: SiteUpdates;
   /** Forgets the saved sign-in. */
   signOut(): void;
 }

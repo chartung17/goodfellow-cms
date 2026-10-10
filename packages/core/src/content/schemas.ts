@@ -94,6 +94,17 @@ export const menusFileSchema = z.object({
 });
 
 export type MenusFile = z.output<typeof menusFileSchema>;
+
+/** How the site updates Goodfellow (`content/updates.json`). */
+export const updateSettingsSchema = z.object({
+  version: z.literal(1),
+  /** Whether the nightly update installs fixes on its own. */
+  automatic: z.boolean().default(true),
+  /** Releases updates never install on their own, such as one the site went back from. */
+  skip: z.array(z.string()).default([]),
+});
+
+export type UpdateSettings = z.output<typeof updateSettingsSchema>;
 export type Menus = MenusFile["menus"];
 export type MenuItem = z.output<typeof menuItem>;
 

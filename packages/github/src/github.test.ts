@@ -302,3 +302,62 @@ describe("version history", () => {
     ]);
   });
 });
+
+describe("updates", () => {
+  const packageJson = (version: string) => JSON.stringify({ dependencies: { "@goodfellow-cms/react": version } });
+
+  async function site(workflow = "run: npx goodfellow update --publish") {
+    const fake = fakeGitHub({
+      repo: "parish/site",
+      files: { ...FILES, "package.json": packageJson("0.4.1"), ".github/workflows/deploy.yml": workflow },
+      tokens: {
+        "test-token": { login: "maria", admin: true },
+        owner: { login: "maria", admin: true, administration: true },
+      },
+    });
+    const backend = await github({ repo: "parish/site", fetch: fake.fetch }).signInWithToken("test-token", false);
+    if (!backend.updates || !backend.ownerAccess) throw new Error("No updates");
+    return { fake, backend, updates: backend.updates, owner: backend.ownerAccess };
+  }
+
+  it("says whether the site's workflow updates Goodfellow", async () => {
+    expect(await (await site()).updates.setup()).toBe("ready");
+    expect(await (await site("run: npx goodfellow build")).updates.setup()).toBe("missing");
+  });
+
+  it("runs the update with an owner token", async () => {
+    const { fake, updates, owner } = await site();
+    await expect(updates.start("fixes")).rejects.toMatchObject({ problem: "not-allowed" });
+    await owner.applyToken("owner");
+    await updates.start("0.5.0");
+    expect(fake.runs.at(-1)).toMatchObject({ event: "workflow_dispatch", inputs: { update: "0.5.0" } });
+    expect(await updates.lastRun()).toMatchObject({ state: "running" });
+  });
+
+  it("tells an update that published a new version from one with nothing to do, and a failed one", async () => {
+    const { fake, backend, updates } = await site();
+    const run = (conclusion: string) => ({
+      id: fake.runs.length + 1,
+      sha: fake.repo.head(),
+      event: "schedule",
+      status: "completed" as const,
+      conclusion: conclusion === "success" ? ("success" as const) : ("failure" as const),
+      jobs: [{ name: "update", conclusion, steps: [] }],
+    });
+    expect(await updates.lastRun()).toBeUndefined();
+
+    fake.runs.push(run("success"));
+    expect(await updates.lastRun()).toMatchObject({ state: "up-to-date" });
+
+    fake.runs.push(run("success"));
+    fake.repo.write("package.json", packageJson("0.4.3"), "Update Goodfellow to 0.4.3", "Goodfellow updates");
+    await backend.revision();
+    expect(await updates.lastRun()).toMatchObject({
+      state: "updated",
+      result: { state: "updated", from: "0.4.1", to: "0.4.3" },
+    });
+
+    fake.runs.push(run("failure"));
+    expect(await updates.lastRun()).toMatchObject({ state: "failed" });
+  });
+});

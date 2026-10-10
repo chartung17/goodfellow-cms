@@ -1,6 +1,11 @@
 # Builds the site and publishes it with GitLab Pages whenever the default
-# branch changes (including every Publish in the admin panel). For nightly
-# rebuilds, add a schedule under Build → Pipeline schedules. See README.md.
+# branch changes (including every Publish in the admin panel). On scheduled
+# pipelines, which the admin panel's Updates screen sets up to run each night,
+# it first installs Goodfellow's newest fixes, unless content/updates.json turns
+# automatic updates off (or the release GOODFELLOW_UPDATE names), and publishes
+# them only if the site still builds with them. That
+# needs "Allow Git push requests to the repository" under Settings → CI/CD →
+# Job token permissions, which the Updates screen turns on. See README.md.
 pages:
   image: node:22
   cache:
@@ -9,6 +14,11 @@ pages:
     paths: [.npm/]
   script:
     - npm ci --cache .npm --prefer-offline
+    - |
+      if [ "$CI_PIPELINE_SOURCE" = "schedule" ] || [ -n "$GOODFELLOW_UPDATE" ]; then
+        git remote set-url origin "https://gitlab-ci-token:${CI_JOB_TOKEN}@${CI_SERVER_FQDN:-$CI_SERVER_HOST}/${CI_PROJECT_PATH}.git"
+        npx goodfellow update --publish --to "${GOODFELLOW_UPDATE:-automatic}" || echo "The update wasn't published; building the site as it is."
+      fi
     # Pages may serve the site from a subfolder, such as https://group.gitlab.io/site/.
     - export GOODFELLOW_BASE="$(node -e 'console.log(new URL(process.env.CI_PAGES_URL).pathname)')"
     - npx goodfellow build

@@ -1327,3 +1327,18 @@ body,
 .gfa-build-problem p {
   margin: 0;
 }
+
+/* Releases updates skip, each with a way to allow it again. */
+.gfa-update-skipped {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 0.25rem;
+}
+
+.gfa-update-skip {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}

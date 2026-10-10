@@ -88,6 +88,7 @@ export {
   RESERVED_PAGE_PATHS,
   SITE_FILE,
   SLUG_PLACEHOLDER,
+  UPDATES_FILE,
 } from "./content/paths.js";
 export { sanitizeHtml } from "./content/sanitize.js";
 export {
@@ -113,6 +114,8 @@ export {
   type Theme,
   type ThemeColor,
   TITLE_FIELD,
+  type UpdateSettings,
+  updateSettingsSchema,
 } from "./content/schemas.js";
 export { serializeContent } from "./content/serialize.js";
 export {
@@ -216,6 +219,7 @@ export {
   planBlockChanges,
   planInstall,
   planRemove,
+  planUpdate,
   REGISTRY_PACKAGES,
   RegistryError,
   type RegistryItem,
@@ -225,6 +229,8 @@ export {
   registryIndexSchema,
   registryItemSchema,
   SHADCN_REGISTRY,
+  type UpdateOptions,
+  type UpdatePlan,
 } from "./registry.js";
 export { SEARCH_ATTRIBUTE, SEARCH_INDEX_DIR } from "./search.js";
 export {
@@ -263,3 +269,26 @@ export {
 } from "./site-setup.js";
 export { DEFAULT_RADIUS, DEFAULT_THEME_COLORS, escapeStyleText, googleFontsUrl, themeToCss } from "./theme.js";
 export { trimChars } from "./trim.js";
+export {
+  type AvailableUpdates,
+  availableUpdates,
+  chooseUpdate,
+  compareReleases,
+  DEFAULT_UPDATE_SETTINGS,
+  findUpdateResult,
+  formatUpdateResult,
+  NPM_REGISTRY,
+  parseUpdateSettings,
+  releaseVersion,
+  releaseVersions,
+  type SiteUpdates,
+  siteVersion,
+  UPDATE_RESULT_MARKER,
+  type UpdateResult,
+  type UpdateRun,
+  UpdatesError,
+  type UpdatesProblem,
+  type UpdatesSetup,
+  updateSettingsFile,
+  VERSION_PACKAGE,
+} from "./updates.js";

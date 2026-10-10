@@ -29,6 +29,7 @@ import { SignInGate } from "./sign-in.js";
 import { defaultStrings, type Strings, StringsProvider, useStrings } from "./strings.js";
 import { setThemeChoice, type ThemeChoice, useApplyThemeChoice, useThemeChoice } from "./theme.js";
 import { Button, Dialog, ErrorMessage } from "./ui.js";
+import { UpdatesScreen } from "./updates-screen.js";
 import { AppLink } from "./use-link.js";
 import { VersionsScreen } from "./versions-screen.js";
 
@@ -104,6 +105,7 @@ function Screen() {
   if (section === "layout") return <LayoutEditorScreen part={sub === "footer" ? "footer" : "header"} />;
   if (section === "settings" && sub === "domain") return <DomainScreen />;
   if (section === "settings" && sub === "editors") return <EditorsScreen />;
+  if (section === "settings" && sub === "updates") return <UpdatesScreen />;
   if (section === "versions") return <VersionsScreen file={params.get("file") ?? ""} />;
   if (section === "settings") {
     const tab = SETTINGS_TABS.includes(sub as SettingsTab) ? (sub as SettingsTab) : "general";
