@@ -1,5 +1,6 @@
 import type { CollectionField, CollectionFile, EntryFile } from "./schemas.js";
 import { TITLE_FIELD } from "./schemas.js";
+import { withoutTags } from "./tags.js";
 
 /** A group of similar entries sharing one set of fields and one template. */
 export interface Collection {
@@ -69,18 +70,15 @@ export function isEmptyValue(value: unknown): boolean {
 
 const ENTITIES: Record<string, string> = { amp: "&", lt: "<", gt: ">", quot: '"', "#39": "'", apos: "'", nbsp: " " };
 
+/** Tags that end a line, which become spaces in plain text. */
+const BREAKS = /^<(br|\/p|\/h[1-6]|\/li|\/blockquote)\b/i;
+
 /** Rich text as plain text: tags removed, common entities decoded and whitespace collapsed. */
 export function richTextToPlainText(html: string): string {
-  return (
-    html
-      .replace(/<(br|\/p|\/h[1-6]|\/li|\/blockquote)\b[^<>]*>/gi, " ")
-      .replace(/<[^<>]*>/g, "")
-      // What's left of a tag that never closed, such as `<b` at the end.
-      .replace(/[<>]/g, "")
-      .replace(/&(amp|lt|gt|quot|#39|apos|nbsp);/g, (_, name: string) => ENTITIES[name] ?? "")
-      .replace(/\s+/g, " ")
-      .trim()
-  );
+  return withoutTags(html, (tag) => (BREAKS.test(tag) ? " " : ""))
+    .replace(/&(amp|lt|gt|quot|#39|apos|nbsp);/g, (_, name: string) => ENTITIES[name] ?? "")
+    .replace(/\s+/g, " ")
+    .trim();
 }
 
 function dateFormat(language: string): Intl.DateTimeFormat {

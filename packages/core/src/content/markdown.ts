@@ -3,6 +3,7 @@ import { parse as parseYaml, stringify as stringifyYaml } from "yaml";
 import { isExternalLink, NEW_TAB } from "../external-links.js";
 import { CURRENT_VERSION } from "../migrations/index.js";
 import type { CollectionFile } from "./schemas.js";
+import { withoutTags } from "./tags.js";
 
 /**
  * Markdown entries: `<slug>.md` files in collections whose settings say
@@ -87,9 +88,7 @@ export function isSafeUrl(url: string): boolean {
 /** Lowercase words joined by hyphens, as GitHub makes heading anchors: "Writing blocks" → `writing-blocks`. */
 export function headingSlug(text: string): string {
   return (
-    text
-      .toLowerCase()
-      .replace(/<[^<>]*>/g, "")
+    withoutTags(text.toLowerCase())
       .replace(/&[a-z]+;|&#\d+;/g, "")
       .replace(/[^\p{L}\p{N}\s-]/gu, "")
       .trim()
