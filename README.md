@@ -144,7 +144,8 @@ The admin panel is at `/admin` on the live site, and while `goodfellow dev` is r
 - **Live styling:** CSS classes typed into a block, and custom CSS (including Tailwind's `@apply`), take effect in the editor immediately, before the site is rebuilt.
 - **Signing in:** on the live site, editors sign in with GitHub or GitLab. GitHub uses an access token, created from a link that fills in the right permissions. GitLab offers one-click sign-in once the site's OAuth application is registered, with an access token as the alternative. Editors choose whether to stay signed in on the device.
 - **Publishing:** each Publish saves every changed file in one commit to the site's main branch. If someone else published changes to other files in the meantime, publishing still goes ahead; if they changed the same files, it stops instead of overwriting their work.
-- **Live status:** after publishing, the top bar shows when the live site has been rebuilt, or that the rebuild failed, with a link to the details. This works with GitHub Pages, GitLab Pages and Vercel.
+- **Live status:** after publishing, the top bar shows when the live site has been rebuilt, or that the rebuild failed. This works with GitHub Pages, GitLab Pages and Vercel.
+- **Failed rebuilds:** **What went wrong?** explains a failed rebuild in plain words: the account's build minutes have run out, the site's packages couldn't be installed, Pages isn't set up, a content file has a problem (with a link to its version history), or the site's code couldn't be built, for example after blocks were added. The host's own details are behind a toggle. `goodfellow build` prints what went wrong on a line the admin panel finds in GitLab's log, and on GitHub Actions as an annotation; on GitHub, the admin panel reads which step of the workflow failed.
 - **Version history:** every page, the header and footer, and each item in a collection have a **Version history**: each published version, who published it and when, with a preview. Restoring a version publishes it again, so the version it replaced stays in the history. Versions that use blocks the site no longer has, or values that no longer fit their fields, can't be restored.
 - **Unpublished changes:** leaving a screen with unpublished changes asks first.
 - **Media:** upload images and files, by choosing them or dropping them onto the **Media** screen, and replace or delete them there. Deleting a file first lists everything that uses it. Wherever an image goes (an Image block, a section's background, the logo, a collection's image field) there's a **Choose image** button, which picks from the library or uploads a new one.
@@ -356,7 +357,7 @@ my-site/
     - Invite and remove editors from the admin panel (done).
     - Version history, with a way to restore an earlier version of a page (done).
     - Automatic updates: a scheduled job updates Goodfellow, and blocks added from block registries, and publishes the update only if the site still builds. Block updates replace only files nobody has changed.
-    - Plain-language explanations when a rebuild fails.
+    - Plain-language explanations when a rebuild fails (done).
 17. **Calendars.** An Events collection and a Calendar block, worked out when the site builds, so visitors only get HTML.
     - **Events** have a start and end date and time, an all-day option, a location, and repeats (weekly, monthly or custom, with dates to skip), so a weekly service is one entry. Collections get a date-and-time field for them, and Site settings a time zone.
     - **The Calendar block** shows upcoming events as a list or a month at a time, with a page for each month. The nightly rebuilds keep "upcoming" current.

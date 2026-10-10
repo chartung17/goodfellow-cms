@@ -1,9 +1,11 @@
+import { resolve } from "node:path";
 import { parseArgs } from "node:util";
 import { ContentError } from "@goodfellow-cms/core";
 import { writeSearchIndex } from "@goodfellow-cms/core/search-index";
 import { build } from "./build.js";
 import { dev } from "./dev.js";
 import { preview } from "./preview.js";
+import { buildCause, reportBuildCause } from "./problems.js";
 import { SiteSetupError } from "./site.js";
 
 const HELP = `Usage: goodfellow <command> [options]
@@ -49,7 +51,14 @@ async function main(): Promise<void> {
       return;
     case "build": {
       const started = performance.now();
-      const result = await build({ root: values.root, outDir: values.out, base });
+      let result: Awaited<ReturnType<typeof build>>;
+      try {
+        result = await build({ root: values.root, outDir: values.out, base });
+      } catch (error) {
+        // For the admin panel, which reads it in the host's log to explain the failure.
+        for (const line of reportBuildCause(buildCause(error, resolve(values.root ?? ".")))) console.log(line);
+        throw error;
+      }
       const seconds = ((performance.now() - started) / 1000).toFixed(1);
       console.log(
         `Built ${result.pages.length} page${result.pages.length === 1 ? "" : "s"} into ${result.outDir} in ${seconds}s`,

@@ -1,3 +1,4 @@
+import type { BuildProblem } from "./build-problems.js";
 import type { ContentStore } from "./content/store.js";
 import type { PagesDomains } from "./domains.js";
 import type { OwnerAccess, SiteEditors } from "./editors.js";
@@ -19,6 +20,8 @@ export interface DeployStatus {
   state: DeployState;
   /** Where to see what happened, such as the build log. */
   detailsUrl?: string;
+  /** For a failed rebuild, why, as far as the host says. */
+  problem?: BuildProblem;
 }
 
 /** One published version of a file. */

@@ -25,6 +25,17 @@ export interface FakeGitHubUser {
   admin?: boolean;
   /** Whether the token has GitHub's Administration permission, which changing collaborators needs. Defaults to false. */
   administration?: boolean;
+  /** Whether the token may read GitHub Actions. Defaults to true. */
+  actions?: boolean;
+}
+
+/** A GitHub Actions workflow run, with its jobs and their steps. */
+export interface FakeRun {
+  id: number;
+  sha: string;
+  status: "queued" | "in_progress" | "completed";
+  conclusion: "success" | "failure" | "startup_failure" | "cancelled" | null;
+  jobs: Array<{ name: string; conclusion: string | null; steps: Array<{ name: string; conclusion: string | null }> }>;
 }
 
 /** A repository invitation that hasn't been accepted yet. */
@@ -98,6 +109,7 @@ export function fakeGitHub(options: FakeGitHubOptions) {
   const repo = new FakeRepo(options.files);
   const tokens = options.tokens ?? { "test-token": { login: "editor", name: "Test Editor" } };
   const deployments: Deployment[] = [];
+  const runs: FakeRun[] = [];
   const requests: Request[] = [];
   let nextDeployment = 1;
   const created = new Map<string, FakeCreatedRepo>();
@@ -177,6 +189,33 @@ export function fakeGitHub(options: FakeGitHubOptions) {
       }
     }
     return undefined;
+  }
+
+  /**
+   * Simulates the deploy workflow failing for a commit at a step, such as
+   * `"Run npm ci"`, in the `build` job or another, or before any step ran.
+   */
+  function failBuild(sha: string, step?: string, job = "build"): FakeRun {
+    const run: FakeRun = {
+      id: runs.length + 1,
+      sha,
+      status: "completed",
+      conclusion: "failure",
+      jobs: [
+        {
+          name: job,
+          conclusion: "failure",
+          steps: step
+            ? [
+                { name: "Set up job", conclusion: "success" },
+                { name: step, conclusion: "failure" },
+              ]
+            : [],
+        },
+      ],
+    };
+    runs.push(run);
+    return run;
   }
 
   /** Simulates an invited person accepting the invitation. */
@@ -475,6 +514,30 @@ export function fakeGitHub(options: FakeGitHubOptions) {
       );
     }
 
+    if (rest === "/actions/runs" || rest.startsWith("/actions/runs/")) {
+      if (user.actions === false) return json({ message: "Resource not accessible by personal access token" }, 403);
+      const htmlUrl = (run: FakeRun) => `https://github.com/${options.repo}/actions/runs/${run.id}`;
+      if (rest === "/actions/runs") {
+        const sha = url.searchParams.get("head_sha");
+        const found = runs.filter((run) => !sha || run.sha === sha);
+        return json({
+          total_count: found.length,
+          workflow_runs: found.map((run) => ({
+            id: run.id,
+            head_sha: run.sha,
+            status: run.status,
+            conclusion: run.conclusion,
+            name: "Deploy to GitHub Pages",
+            path: ".github/workflows/deploy.yml",
+            html_url: htmlUrl(run),
+          })),
+        });
+      }
+      const jobs = rest.match(/^\/actions\/runs\/(\d+)\/jobs$/);
+      const run = runs.find((candidate) => candidate.id === Number(jobs?.[1]));
+      return run ? json({ total_count: run.jobs.length, jobs: run.jobs }) : json({ message: "Not Found" }, 404);
+    }
+
     const compare = rest.match(/^\/compare\/([0-9a-f]{40})\.\.\.([0-9a-f]{40})$/);
     if (compare) {
       return json({ files: repo.changedPaths(compare[1] ?? "", compare[2] ?? "").map((filename) => ({ filename })) });
@@ -514,6 +577,9 @@ export function fakeGitHub(options: FakeGitHubOptions) {
     invitations,
     accept,
     deployments,
+    /** GitHub Actions workflow runs, which tests add with `failBuild()`. */
+    runs,
+    failBuild,
     /** Every request received, for checking what the backend sent. */
     requests,
     /** Simulates someone else publishing. */

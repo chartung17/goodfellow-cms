@@ -8,6 +8,18 @@ order: 2
 
 **Publish** saves what you changed to the site's repository on GitHub or GitLab, as one change, from your own browser. The host then rebuilds the site, usually within a minute or two, and the top of the admin panel shows when the live site has been updated, or that the rebuild failed, with a link to the details.
 
+## If the live site isn't updated
+
+When a rebuild fails, the top of the admin panel says the live site couldn't be updated. Your changes are still published; visitors see the site as it was until a rebuild works, and every publish tries again. **What went wrong?** explains why, in plain words, with the host's own details behind a toggle:
+
+- **The rebuild didn't start:** usually the account the site belongs to has used up its free build minutes for the month, or its billing needs attention.
+- **Packages couldn't be installed:** sometimes a passing problem with the service the packages come from, so publishing again later may work.
+- **Pages isn't set up:** one of the site's owners needs to turn on GitHub Pages or GitLab Pages in the site's settings on the host.
+- **A content file has a problem:** fix it, or put back a version that worked from its [version history](#version-history).
+- **The site's code couldn't be built:** if its blocks changed just before, undo that under **Blocks**; otherwise a developer needs to look at the details.
+
+On GitHub, seeing which step failed needs the token's **Actions** permission, which the sign-in link fills in. Tokens made before it did can still publish, but the admin panel can only say that the rebuild failed.
+
 ## Working with other editors
 
 Several people can edit the same site. If someone else published changes to other pages while you were editing, publishing still goes ahead. If they changed the same page or file, publishing stops and explains what happened, instead of overwriting their work; reload the page to see their version, then make your change again.

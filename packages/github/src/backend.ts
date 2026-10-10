@@ -1,4 +1,6 @@
 import {
+  type BuildProblem,
+  buildStepFor,
   ConflictError,
   type DeployStatus,
   encodeBase64,
@@ -23,6 +25,21 @@ import { githubPages } from "./pages.js";
 interface TreeResponse {
   tree: Array<{ path: string; type: string; sha: string }>;
   truncated: boolean;
+}
+
+interface WorkflowRun {
+  id: number;
+  status: string;
+  conclusion: string | null;
+  name?: string;
+  path?: string;
+  html_url?: string;
+}
+
+interface Job {
+  name: string;
+  conclusion: string | null;
+  steps?: Array<{ name: string; conclusion: string | null }>;
 }
 
 interface CommitResponse {
@@ -219,8 +236,10 @@ export class GitHubBackend implements GitBackend {
   }
 
   /**
-   * Reads the deployment GitHub Pages or Vercel created for a commit. Before
-   * one exists, the site counts as building if it has ever been deployed.
+   * Reads the deployment GitHub Pages or Vercel created for a commit, and for
+   * GitHub Actions, the workflow run that builds it: a build that fails never
+   * creates a deployment. Before either exists, the site counts as building
+   * if it has ever been deployed.
    */
   async deployStatus(revision: string): Promise<DeployStatus> {
     try {
@@ -229,30 +248,72 @@ export class GitHubBackend implements GitBackend {
         `/repos/${this.repo}/deployments?sha=${revision}&per_page=5`,
       );
       const latest = deployments[0];
-      if (!latest) {
-        const any = await githubJson<unknown[]>(this.api, `/repos/${this.repo}/deployments?per_page=1`);
-        return { state: any.length > 0 ? "building" : "unknown" };
+      if (latest) {
+        const [status] = await githubJson<Array<{ state: string; log_url?: string; target_url?: string }>>(
+          this.api,
+          `/repos/${this.repo}/deployments/${latest.id}/statuses?per_page=1`,
+        );
+        const detailsUrl = status?.log_url || status?.target_url || undefined;
+        switch (status?.state) {
+          case "success":
+          case "inactive":
+            return { state: "live", detailsUrl };
+          case "failure":
+          case "error": {
+            const run = await this.workflowRun(revision);
+            return { state: "failed", detailsUrl, problem: run ? await this.runProblem(run) : { step: "deploy" } };
+          }
+          default:
+            return { state: "building", detailsUrl };
+        }
       }
-      const [status] = await githubJson<Array<{ state: string; log_url?: string; target_url?: string }>>(
-        this.api,
-        `/repos/${this.repo}/deployments/${latest.id}/statuses?per_page=1`,
-      );
-      const detailsUrl = status?.log_url || status?.target_url || undefined;
-      switch (status?.state) {
-        case "success":
-        case "inactive":
-          return { state: "live", detailsUrl };
-        case "failure":
-        case "error":
-          return { state: "failed", detailsUrl };
-        default:
-          return { state: "building", detailsUrl };
+      const run = await this.workflowRun(revision);
+      if (run?.status === "completed" && run.conclusion !== "success" && run.conclusion !== "skipped") {
+        return { state: "failed", detailsUrl: run.html_url, problem: await this.runProblem(run) };
       }
+      if (run) return { state: "building", detailsUrl: run.html_url };
+      const any = await githubJson<unknown[]>(this.api, `/repos/${this.repo}/deployments?per_page=1`);
+      return { state: any.length > 0 ? "building" : "unknown" };
     } catch (error) {
       // Tokens without the Deployments permission can still publish; they just can't see deploys.
       if (error instanceof GitApiError) return { state: "unknown" };
       throw error;
     }
+  }
+
+  /** The site's deploy workflow run for a commit, or `undefined` if there's none or the token can't see Actions. */
+  private async workflowRun(revision: string): Promise<WorkflowRun | undefined> {
+    const response = await githubRequest(
+      this.api,
+      `/repos/${this.repo}/actions/runs?head_sha=${revision}&per_page=20`,
+      { allow: [403, 404] },
+    );
+    if (!response.ok) return undefined;
+    const { workflow_runs: runs = [] } = (await response.json()) as { workflow_runs?: WorkflowRun[] };
+    // The workflow that deploys the site, rather than other checks the repository runs.
+    return runs.find((run) => /deploy|pages/i.test(`${run.path ?? ""} ${run.name ?? ""}`)) ?? runs[0];
+  }
+
+  /** Which step of a failed run failed. */
+  private async runProblem(run: WorkflowRun): Promise<BuildProblem> {
+    const response = await githubRequest(this.api, `/repos/${this.repo}/actions/runs/${run.id}/jobs?per_page=50`, {
+      allow: [403, 404],
+    });
+    const jobs = response.ok ? (((await response.json()) as { jobs?: Job[] }).jobs ?? []) : [];
+    const failed = jobs.find((job) => job.conclusion === "failure");
+    if (!failed) {
+      return {
+        step: run.conclusion === "startup_failure" ? "not-started" : "host",
+        detail: run.conclusion ?? undefined,
+      };
+    }
+    const step = failed.steps?.find((candidate) => candidate.conclusion === "failure");
+    // A job that failed without running a step wasn't started, such as when the account's minutes have run out.
+    if (!step) return { step: "not-started", detail: failed.name };
+    return {
+      step: buildStepFor(step.name) ?? (/deploy/i.test(failed.name) ? "deploy" : "build"),
+      detail: `${failed.name}: ${step.name}`,
+    };
   }
 
   signOut(): void {
