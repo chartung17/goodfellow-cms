@@ -1,6 +1,8 @@
+import { trimChars } from "./trim.js";
+
 /** Normalizes a base path to start and end with `/`: `"repo"` → `"/repo/"`. */
 export function normalizeBase(base: string | undefined): string {
-  const trimmed = (base ?? "/").trim().replace(/^\/+|\/+$/g, "");
+  const trimmed = trimChars((base ?? "/").trim(), "/");
   return trimmed ? `/${trimmed}/` : "/";
 }
 

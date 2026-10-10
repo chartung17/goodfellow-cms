@@ -97,12 +97,13 @@ export class DomainError extends Error {
  * `www.example.org`, or `undefined` if it isn't one.
  */
 export function normalizeDomain(input: string): string | undefined {
-  const domain = input
-    .trim()
-    .toLowerCase()
-    .replace(/^[a-z]+:\/\//, "")
-    .replace(/[/?#].*$/, "")
-    .replace(/\.$/, "");
+  const domain = (
+    input
+      .trim()
+      .toLowerCase()
+      .replace(/^[a-z]+:\/\//, "")
+      .split(/[/?#]/, 1)[0] ?? ""
+  ).replace(/\.$/, "");
   const label = /^(?!-)[a-z0-9-]{1,63}(?<!-)$/;
   const labels = domain.split(".");
   return labels.length >= 2 && labels.every((part) => label.test(part)) && !/^\d+$/.test(labels.at(-1) ?? "")

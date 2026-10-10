@@ -1,5 +1,6 @@
 import type { Page } from "./content/load.js";
 import type { SiteSettings } from "./content/schemas.js";
+import { trimChars } from "./trim.js";
 
 /** Everything that goes in a page's `<head>`, worked out from the site settings and the page itself. */
 export interface PageHead {
@@ -21,7 +22,7 @@ function readString(props: Record<string, unknown> | undefined, key: string): st
 
 /** Joins a site address and a page path: `("https://example.org/", "/about")` → `https://example.org/about`. */
 export function absoluteUrl(siteUrl: string, path: string): string {
-  return `${siteUrl.replace(/\/+$/, "")}${path === "/" ? "/" : path}`;
+  return `${trimChars(siteUrl, "/", { start: false })}${path === "/" ? "/" : path}`;
 }
 
 export function getPageHead(settings: SiteSettings, page: Page): PageHead {

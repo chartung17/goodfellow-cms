@@ -89,7 +89,7 @@ export function headingSlug(text: string): string {
   return (
     text
       .toLowerCase()
-      .replace(/<[^>]*>/g, "")
+      .replace(/<[^<>]*>/g, "")
       .replace(/&[a-z]+;|&#\d+;/g, "")
       .replace(/[^\p{L}\p{N}\s-]/gu, "")
       .trim()

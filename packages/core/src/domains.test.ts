@@ -42,6 +42,8 @@ describe("normalizeDomain", () => {
     expect(normalizeDomain("localhost")).toBeUndefined();
     expect(normalizeDomain("not a domain.org")).toBeUndefined();
     expect(normalizeDomain("192.168.0.1")).toBeUndefined();
+    expect(normalizeDomain("example.org?from=a#top")).toBe("example.org");
+    expect(normalizeDomain("example.org#a\nb")).toBe("example.org");
   });
 });
 

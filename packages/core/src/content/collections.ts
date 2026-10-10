@@ -71,12 +71,16 @@ const ENTITIES: Record<string, string> = { amp: "&", lt: "<", gt: ">", quot: '"'
 
 /** Rich text as plain text: tags removed, common entities decoded and whitespace collapsed. */
 export function richTextToPlainText(html: string): string {
-  return html
-    .replace(/<(br|\/p|\/h[1-6]|\/li|\/blockquote)\b[^>]*>/gi, " ")
-    .replace(/<[^>]*>/g, "")
-    .replace(/&(amp|lt|gt|quot|#39|apos|nbsp);/g, (_, name: string) => ENTITIES[name] ?? "")
-    .replace(/\s+/g, " ")
-    .trim();
+  return (
+    html
+      .replace(/<(br|\/p|\/h[1-6]|\/li|\/blockquote)\b[^<>]*>/gi, " ")
+      .replace(/<[^<>]*>/g, "")
+      // What's left of a tag that never closed, such as `<b` at the end.
+      .replace(/[<>]/g, "")
+      .replace(/&(amp|lt|gt|quot|#39|apos|nbsp);/g, (_, name: string) => ENTITIES[name] ?? "")
+      .replace(/\s+/g, " ")
+      .trim()
+  );
 }
 
 function dateFormat(language: string): Intl.DateTimeFormat {

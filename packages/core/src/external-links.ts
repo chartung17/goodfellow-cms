@@ -31,7 +31,7 @@ export interface LinkTargetOptions {
  * where they open are left as they are.
  */
 export function setLinkTargets(html: string, { newTab, siteUrl }: LinkTargetOptions): string {
-  return html.replace(/<a\s[^>]*>/gi, (tag) => {
+  return html.replace(/<a\s[^<>]*>/gi, (tag) => {
     const href = /\shref="([^"]*)"/i.exec(tag)?.[1];
     if (href === undefined || /\starget=/i.test(tag)) return tag;
     const external = newTab && isExternalLink(decodeEntities(href), siteUrl);
@@ -40,6 +40,7 @@ export function setLinkTargets(html: string, { newTab, siteUrl }: LinkTargetOpti
   });
 }
 
+/** Decodes the entities addresses use, in one pass, so `&amp;#47;` stays `&#47;`. */
 function decodeEntities(value: string): string {
-  return value.replace(/&amp;/g, "&").replace(/&#x2F;|&#47;/gi, "/");
+  return value.replace(/&(?:amp|#x2f|#47);/gi, (entity) => (entity.toLowerCase() === "&amp;" ? "&" : "/"));
 }

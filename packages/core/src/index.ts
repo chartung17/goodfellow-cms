@@ -242,3 +242,4 @@ export {
   withoutRepositoryNotes,
 } from "./site-setup.js";
 export { DEFAULT_RADIUS, DEFAULT_THEME_COLORS, escapeStyleText, googleFontsUrl, themeToCss } from "./theme.js";
+export { trimChars } from "./trim.js";

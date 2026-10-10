@@ -68,7 +68,8 @@ const UNSAFE_SVG_ELEMENTS = ["script", "foreignObject", "iframe", "embed", "obje
 
 /**
  * Removes anything from an SVG that could run code if someone opens the
- * file directly: scripts, embedded pages, event handlers and javascript: links.
+ * file directly: scripts, embedded pages, event handlers, and javascript:, vbscript:
+ * and data: links other than images.
  */
 export function cleanSvg(text: string): string | undefined {
   const doc = new DOMParser().parseFromString(text, "image/svg+xml");
@@ -82,7 +83,8 @@ export function cleanSvg(text: string): string | undefined {
       if (
         attribute.name.toLowerCase().startsWith("on") ||
         value.startsWith("javascript:") ||
-        value.startsWith("data:text/html")
+        value.startsWith("vbscript:") ||
+        (value.startsWith("data:") && !value.startsWith("data:image/"))
       ) {
         element.removeAttribute(attribute.name);
       }

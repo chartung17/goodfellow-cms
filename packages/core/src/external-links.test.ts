@@ -32,6 +32,14 @@ describe("setLinkTargets", () => {
     expect(setLinkTargets(html, { newTab: false })).not.toContain("_blank");
   });
 
+  it("decodes an address's entities once, as browsers do", () => {
+    // `https:&amp;#47;&amp;#47;` is the text `https:&#47;&#47;`, not `https://`.
+    expect(setLinkTargets('<a href="https:&amp;#47;&amp;#47;a.example">A</a>', { newTab: true })).toContain(
+      'target="_self"',
+    );
+    expect(setLinkTargets('<a href="https:&#47;&#47;a.example">A</a>', { newTab: true })).toContain('target="_blank"');
+  });
+
   it("keeps a link's own target and rel", () => {
     expect(setLinkTargets('<a href="https://a.example" target="_blank">A</a>', { newTab: false })).toBe(
       '<a href="https://a.example" target="_blank">A</a>',

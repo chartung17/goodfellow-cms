@@ -1,4 +1,4 @@
-import type { ContentStore } from "@goodfellow-cms/core";
+import { type ContentStore, trimChars } from "@goodfellow-cms/core";
 import { extensionOf, MEDIA_URL_PREFIX, mediaPath } from "./media.js";
 
 const TYPES: Record<string, string> = {
@@ -42,7 +42,7 @@ export interface MediaPreviews {
 export function createMediaPreviews(store: ContentStore, siteUrl: string): MediaPreviews {
   const local = new Map<string, string>();
   const loading = new Map<string, Promise<string | undefined>>();
-  const base = siteUrl.replace(/\/+$/, "");
+  const base = trimChars(siteUrl, "/", { start: false });
 
   const remember = (url: string, bytes: Uint8Array) => {
     const previous = local.get(url);

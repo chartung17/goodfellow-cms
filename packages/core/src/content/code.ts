@@ -113,6 +113,6 @@ export function parseHeadCode(html: string): HeadElement[] {
 
 /** Code as it's saved: without trailing spaces at its end, and with a final newline, or `""` for none. */
 export function storedCode(code: string): string {
-  const trimmed = code.replace(/\s+$/, "");
+  const trimmed = code.trimEnd();
   return trimmed.trim() ? `${trimmed}\n` : "";
 }

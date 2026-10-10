@@ -37,6 +37,7 @@ describe("imageSize", () => {
     });
     expect(imageSize(bytes('<?xml version="1.0"?><svg viewBox="0 0 1200 675">'))).toEqual({ width: 1200, height: 675 });
     expect(imageSize(bytes('<svg width="100%" height="100%">'))).toBeUndefined();
+    expect(imageSize(bytes('<svg width=" 64 px " height="32px">'))).toEqual({ width: 64, height: 32 });
   });
 
   it("gives up on other and broken files", () => {
