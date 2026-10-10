@@ -20,7 +20,7 @@ Each editor chooses a service in the AI tab's settings, and it's called straight
 
 | Service | Needs | Cost |
 |---|---|---|
-| Claude | An API key from the [Claude Console](https://platform.claude.com/settings/keys) | Charged per use, roughly a few cents for a page |
+| Claude (Opus 5.5, Sonnet 5.5 or Haiku 4.5) | An API key from the [Claude Console](https://platform.claude.com/settings/keys) | Charged per use, roughly a few cents for a page |
 | OpenAI, Google Gemini, Groq, Mistral, OpenRouter | An API key from the service | Gemini, Groq, Mistral and OpenRouter have free tiers with limits |
 | OVHcloud AI Endpoints | Nothing | Free, about 2 requests a minute |
 | A chat app such as Claude.ai or ChatGPT | Copying the request in and the answer back | Whatever your chat app plan includes |

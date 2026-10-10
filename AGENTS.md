@@ -166,6 +166,31 @@ The admin panel is for people who have never used git.
 - **Admin settings** have a sensible default, so a new site works without configuration.
 - **UI text** goes through Puck's dictionary or our own string table, never hard-coded, so the admin panel can be translated.
 
+## Repository layout
+
+A pnpm workspace managed with Turborepo. Each package's README describes it for its users.
+
+| Path | Package | Purpose |
+|---|---|---|
+| `packages/core` | `@goodfellow-cms/core` | Config, content model, collections, migrations, block registry planning, updates and the `GitBackend` interface. No React or DOM. `@goodfellow-cms/core/node` reads sites from disk, runs the local backend and updates sites. |
+| `packages/github` | `@goodfellow-cms/github` | The GitHub backend, token sign-in and site setup |
+| `packages/gitlab` | `@goodfellow-cms/gitlab` | The GitLab backend, OAuth (PKCE) and token sign-in, and site setup |
+| `packages/react` | `@goodfellow-cms/react` | The page renderer: layout, class names, theme, collection templates and islands |
+| `packages/admin` | `@goodfellow-cms/admin` | The `<Admin>` editor app |
+| `packages/ai` | `@goodfellow-cms/ai` | The AI assistant's requests, answer checking and AI service clients. No React. |
+| `packages/blocks` | `@goodfellow-cms/blocks` | Built-in blocks, which need only Tailwind |
+| `packages/cli` | `goodfellow` | `goodfellow dev`, `build`, `preview`, `index` and `update` |
+| `packages/next` | `@goodfellow-cms/next` | The Next.js adapter: pages as Server Components, static export, the admin panel, and `goodfellow-next` |
+| `packages/registry` | `@goodfellow-cms/registry` | Goodfellow's block registry: blocks built with shadcn/ui, and the format for other registries |
+| `packages/create-goodfellow` | `create-goodfellow` | Creates a new site from the starter or an example |
+| `templates/starter` | | The default site |
+| `templates/next` | | The starter as a Next.js app |
+| `examples/parish` | | A complete example for a made-up parish, with collections and blocks of its own |
+| `docs` | | The documentation site, built with Goodfellow |
+| `e2e` | | End-to-end tests (see Tooling) |
+
+What a site's own files are is described in the docs' Create a site and Content files pages.
+
 ## Tooling
 
 | Purpose | Tool |
@@ -180,6 +205,8 @@ The admin panel is for people who have never used git.
 | Versioning and changelogs | Changesets, every package on one version |
 | Releases | `pnpm release:version`, then the Release workflow (`scripts/release.mjs`); see RELEASING.md |
 | Node | 22 or later |
+
+Get pnpm with `corepack enable` (or `npm install -g pnpm`). The starters and examples use the workspace's own packages (`workspace:*`), so run `pnpm install` from the repo root; `npm install` inside them fails.
 
 Run these from the repo root before every commit. CI runs the same steps.
 
@@ -216,7 +243,7 @@ pnpm test:e2e
 - **Dependencies:** keep runtime dependencies small. Every package that ships to the browser counts against the editor's load time, and anything in `@goodfellow-cms/react` also ships to every visitor of every site.
 - **Changesets:** any change to a published package needs one (`pnpm changeset`). Every package in `packages/` is in one `fixed` group, so they're released together with the same version; a new package goes in that group. Releases are made as RELEASING.md describes: `pnpm release:version` bumps the versions in a pull request, and once it's merged and CI passes on `master`, `.github/workflows/release.yml` runs `scripts/release.mjs publish --ci`, which publishes what npm doesn't have yet (packed with `pnpm pack`, so `workspace:*` becomes the version, then published with npm), tags the release and deploys the docs.
 - **Issues:** `.github/ISSUE_TEMPLATE/` has forms for bug reports and feature requests, and `SECURITY.md` says how to report security problems privately. When a new part of Goodfellow arrives, add it to the bug form's "Where is the problem?" list.
-- **Docs:** when a change affects what users see or do, update README.md (including the roadmap) and the documentation site's pages in `docs/content/collections/docs/` in the same change. They're Markdown items (see `docs/README.md`); a test checks they're in canonical form and that every link between them, heading links included, goes somewhere.
+- **Docs:** when a change affects what users see or do, update the documentation site's pages in `docs/content/collections/docs/`, and the roadmap in README.md, in the same change. The README is kept short: what Goodfellow is, how it works and the roadmap, with everything else in the docs or here. They're Markdown items (see `docs/README.md`); a test checks they're in canonical form and that every link between them, heading links included, goes somewhere.
 
 ## Terminology
 
