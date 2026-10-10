@@ -49,6 +49,8 @@ export type DeployProgress = { revision: string } & DeployStatus;
 export interface Account {
   user: GitUser;
   hostName: string;
+  /** Whether editors sign in by being sent to the host and back, which only works from addresses the host allows. */
+  canRedirect: boolean;
   signOut(): void;
 }
 

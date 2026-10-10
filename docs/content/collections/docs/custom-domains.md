@@ -27,7 +27,7 @@ A few things to know:
 - **www:** for a domain such as `example.org`, the screen lists a `www` record too, so `www.example.org` goes to the site as well.
 - **Add the records straight away:** as soon as a domain is connected, GitHub sends visitors from the site's old address to the new one. Connecting it before adding the records is what GitHub recommends, so nobody else can claim the domain for their own site in between.
 - **GitLab:** connecting a domain also gives the site a unique domain on gitlab.io, if it didn't have one, since the site is then served from the root of both addresses. Its GitLab records include one that proves the domain is yours: leave it in place, as GitLab checks it again now and then.
-- **Sign in with GitLab:** the GitLab application editors sign in with sends them back to the admin panel's address, which changes with the domain. Add the new one, such as `https://example.org/admin/`, to the application's redirect URIs (see [Put it online](/docs/put-it-online#4-set-up-sign-in)).
+- **Sign in with GitLab:** the GitLab application editors sign in with sends them back to the admin panel's address, which changes with the domain. Add the new one, such as `https://example.org/admin/`, to the application's redirect URIs (see [Put it online](/docs/put-it-online#4-set-up-sign-in)). The Domain screen reminds you, with the exact address.
 - **Removing a domain:** **Remove domain** puts the site back at its host's address. Afterwards, delete the records at your registrar, so nobody else can use the domain for a site of theirs.
 
 ## The records

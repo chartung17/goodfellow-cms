@@ -280,6 +280,7 @@ export function Admin({ config, store, host = config.backend, preview, siteUrl =
           account={{
             user: backend.user,
             hostName: host.name,
+            canRedirect: host.canRedirect,
             signOut: () => {
               // Signing out also forgets AI keys, so the next person on this computer can't use them.
               forgetAiKeys();

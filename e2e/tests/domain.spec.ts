@@ -57,6 +57,8 @@ test("connects a domain to a GitHub Pages site, and follows it until it works", 
 
   // Connected on GitHub, and the site's address published, so the next build is served from the domain's root.
   await expect(page.getByRole("heading", { name: "1. Add these records at your registrar" })).toBeVisible();
+  // Signing in with a token works from any address.
+  await expect(page.getByText("to the redirect URIs")).toHaveCount(0);
   expect(fake.pages.current?.cname).toBe("parish.example");
   expect(siteAddress(fake.repo.files().get("content/site.json"))).toBe("https://parish.example");
   const rows = page.locator(".gfa-records tbody tr");
@@ -113,6 +115,8 @@ test("connects a subdomain to a GitLab Pages site once GitLab has verified it", 
   await expect(rows.nth(0)).toContainText("CNAME");
   await expect(rows.nth(0)).toContainText("parish.gitlab.io");
   await expect(rows.nth(1)).toContainText("_gitlab-pages-verification-code.www");
+  // Editors sign in by being sent to GitLab, which sends them back only to addresses it allows.
+  await expect(page.getByText("Add https://www.parish.example/admin/ to the redirect URIs")).toBeVisible();
   await expect(page.getByText("Waiting for GitLab to find the record that proves the domain is yours.")).toBeVisible();
   const code = fake.pages?.domains.get("www.parish.example")?.verificationCode ?? "";
 

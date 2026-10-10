@@ -394,6 +394,8 @@ export const defaultStrings = {
   "domain.intro": "Connect a domain you own, such as example.org, so the site is at that address.",
   "domain.current": "The site is at {address} now.",
   "domain.connected": "Connected to {domain}.",
+  "domain.signIn":
+    "Editors sign in by going to {host} and coming back here. Add {address} to the redirect URIs of the application they sign in with on {host}, or signing in will stop working once the site moves.",
   "domain.local": "Domains are connected in the published site's admin panel, where you sign in with GitHub or GitLab.",
   "domain.demo": "Domains can't be connected in a demo.",
   "domain.loading": "Finding where the site is published…",
