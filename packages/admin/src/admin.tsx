@@ -8,6 +8,7 @@ import { EntriesScreen, TemplateScreen } from "./collection-screen.js";
 import { CollectionSettingsScreen } from "./collection-settings.js";
 import { CollectionsScreen } from "./collections-screen.js";
 import { createDemoStore } from "./demo.js";
+import { DomainScreen } from "./domain-screen.js";
 import { LayoutEditorScreen, PageEditorScreen } from "./editor-screens.js";
 import { EntryEditorScreen } from "./entry-editor.js";
 import { MediaScreen } from "./media-library.js";
@@ -90,6 +91,7 @@ function Screen() {
 
   if (section === "pages" && sub === "edit") return <PageEditorScreen path={params.get("path") ?? "/"} />;
   if (section === "layout") return <LayoutEditorScreen part={sub === "footer" ? "footer" : "header"} />;
+  if (section === "settings" && sub === "domain") return <DomainScreen />;
   if (section === "settings") {
     const tab = SETTINGS_TABS.includes(sub as SettingsTab) ? (sub as SettingsTab) : "general";
     return <SettingsScreen tab={tab} />;
@@ -278,6 +280,7 @@ export function Admin({ config, store, host = config.backend, preview, siteUrl =
           account={{
             user: backend.user,
             hostName: host.name,
+            canRedirect: host.canRedirect,
             signOut: () => {
               // Signing out also forgets AI keys, so the next person on this computer can't use them.
               forgetAiKeys();

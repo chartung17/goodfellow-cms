@@ -128,6 +128,22 @@ export {
   memoryDemoStorage,
   parseDemoContent,
 } from "./demo.js";
+export {
+  type ConnectDomainOptions,
+  checkRecords,
+  type DnsFetch,
+  type DnsRecord,
+  DomainError,
+  type DomainProblem,
+  domainZone,
+  normalizeDomain,
+  type PagesDomainStatus,
+  type PagesDomains,
+  type PagesSite,
+  type RecordCheck,
+  recordsInPlace,
+  registrarName,
+} from "./domains.js";
 export { isExternalLink, type LinkTargetOptions, NEW_TAB, setLinkTargets } from "./external-links.js";
 export {
   credentialStorage,
@@ -226,3 +242,4 @@ export {
   withoutRepositoryNotes,
 } from "./site-setup.js";
 export { DEFAULT_RADIUS, DEFAULT_THEME_COLORS, escapeStyleText, googleFontsUrl, themeToCss } from "./theme.js";
+export { trimChars } from "./trim.js";

@@ -5,6 +5,7 @@ import { codeChallenge, type OAuthTokens, randomString, redirectUri, type TokenR
 
 export { GitLabBackend } from "./backend.js";
 export { redirectUri } from "./oauth.js";
+export { gitlabPagesRecords } from "./pages.js";
 export { type GitLabSetupOptions, gitlabSetup } from "./setup.js";
 
 /** The page's address and how to change it. Replaceable in tests. */

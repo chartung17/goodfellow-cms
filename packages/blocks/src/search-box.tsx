@@ -21,9 +21,12 @@ interface PagefindData {
   meta: { title?: string };
 }
 
-/** Pagefind's excerpts are escaped text with the matches in <mark>; anything else is left out. */
+/** Pagefind's excerpts are escaped text with the matches in <mark>; any other `<` or `>` is shown as text. */
 function excerptHtml(excerpt: string): string {
-  return excerpt.replace(/<(?!\/?mark>)[^>]*>/g, "");
+  return excerpt
+    .split(/(<\/?mark>)/)
+    .map((part) => (/^<\/?mark>$/.test(part) ? part : part.replace(/</g, "&lt;").replace(/>/g, "&gt;")))
+    .join("");
 }
 
 let loaded: Promise<Pagefind> | undefined;
@@ -152,7 +155,7 @@ export function SearchBox({ label, placeholder, noResults, unavailable }: Search
                     <span className="block font-medium">{result.title}</span>
                     <span
                       className="block text-sm text-muted-foreground"
-                      // biome-ignore lint/security/noDangerouslySetInnerHtml: Pagefind's escaped excerpt, with only <mark> kept
+                      // biome-ignore lint/security/noDangerouslySetInnerHtml: Pagefind's excerpt, with everything but <mark> escaped
                       dangerouslySetInnerHTML={{ __html: result.excerpt }}
                     />
                   </SiteLink>

@@ -7,10 +7,13 @@ import {
   GitApiError,
   type GitBackend,
   type GitUser,
+  type PagesDomains,
   SignInError,
+  type TokenLink,
   type WriteOptions,
 } from "@goodfellow-cms/core";
 import { type ApiOptions, githubJson, githubRequest, repoPath } from "./api.js";
+import { githubPages } from "./pages.js";
 
 interface TreeResponse {
   tree: Array<{ path: string; type: string; sha: string }>;
@@ -32,6 +35,8 @@ export interface GitHubBackendOptions {
   branch: string;
   user: GitUser;
   onSignOut: () => void;
+  /** Where to create a token that can change GitHub Pages settings, for connecting a domain. */
+  pagesTokenLink: TokenLink;
 }
 
 /**
@@ -41,6 +46,7 @@ export interface GitHubBackendOptions {
  */
 export class GitHubBackend implements GitBackend {
   readonly user: GitUser;
+  readonly pages: PagesDomains;
   private readonly api: ApiOptions;
   private readonly repo: string;
   private readonly branch: string;
@@ -55,6 +61,7 @@ export class GitHubBackend implements GitBackend {
     this.branch = options.branch;
     this.user = options.user;
     this.onSignOut = options.onSignOut;
+    this.pages = githubPages(this.api, this.repo, options.pagesTokenLink);
   }
 
   async revision(): Promise<string> {

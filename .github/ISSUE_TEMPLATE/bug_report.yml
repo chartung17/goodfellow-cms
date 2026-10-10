@@ -38,6 +38,7 @@ body:
         - The site's pages or blocks
         - Publishing, or signing in to GitHub or GitLab
         - Building or putting the site online
+        - Connecting a domain
         - Creating a site (the setup page or npm create goodfellow)
         - The AI assistant
         - Next.js sites

@@ -7,6 +7,7 @@ import {
   demoContentStore,
   demoStore,
   parseDemoContent,
+  trimChars,
 } from "@goodfellow-cms/core";
 import { mediaUrl } from "./media.js";
 
@@ -54,7 +55,7 @@ export function browserDemoStorage(key: string): DemoStorage {
  * changes kept in their browser.
  */
 export function createDemoStore(siteUrl: string, base?: ContentStore): DemoStore {
-  const root = siteUrl.replace(/\/+$/, "");
+  const root = trimChars(siteUrl, "/", { start: false });
   const content =
     base ??
     demoContentStore(

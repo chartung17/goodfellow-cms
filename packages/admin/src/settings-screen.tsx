@@ -26,6 +26,7 @@ import { PreviewFrame } from "./preview.js";
 import { useUnsavedChanges } from "./router.js";
 import { type StringKey, useStrings } from "./strings.js";
 import { Button, ErrorMessage, Field, TextField } from "./ui.js";
+import { AppLink } from "./use-link.js";
 
 export type SettingsTab = "general" | "theme" | "menus" | "css" | "code";
 export const SETTINGS_TABS: SettingsTab[] = ["general", "theme", "menus", "css", "code"];
@@ -300,6 +301,27 @@ function CodeTab({
 }
 
 /**
+ * The Site settings screens' tabs. Switching between the form's tabs keeps
+ * unpublished changes, so it doesn't ask first; going to Domain, which has
+ * nothing to publish, asks as leaving any screen does.
+ */
+export function SettingsTabs({ tab }: { tab: SettingsTab | "domain" }) {
+  const t = useStrings();
+  return (
+    <nav className="gfa-tabs" aria-label={t("settings.title")}>
+      {SETTINGS_TABS.map((name) => (
+        <a key={name} href={`#/settings/${name}`} className="gfa-tab" aria-current={name === tab ? "page" : undefined}>
+          {t(tabLabels[name])}
+        </a>
+      ))}
+      <AppLink href="#/settings/domain" className="gfa-tab" aria-current={tab === "domain" ? "page" : undefined}>
+        {t("settings.tab.domain")}
+      </AppLink>
+    </nav>
+  );
+}
+
+/**
  * Site settings, theme, menus, custom CSS and the site's own code, with a live
  * preview of the home page (without the code, which never runs in the admin
  * panel). Publishing saves every changed file in one go.
@@ -404,19 +426,7 @@ export function SettingsScreen({ tab }: { tab: SettingsTab }) {
           />
         )}
 
-        <nav className="gfa-tabs" aria-label={t("settings.title")}>
-          {SETTINGS_TABS.map((name) => (
-            // Switching tabs keeps unpublished changes, so it doesn't need the leave confirmation.
-            <a
-              key={name}
-              href={`#/settings/${name}`}
-              className="gfa-tab"
-              aria-current={name === tab ? "page" : undefined}
-            >
-              {t(tabLabels[name])}
-            </a>
-          ))}
-        </nav>
+        <SettingsTabs tab={tab} />
 
         {tab === "general" && <GeneralTab draft={settings} errors={errors} onChange={setSettings} />}
         {tab === "theme" && <ThemeTab draft={settings} errors={errors} onChange={setSettings} />}

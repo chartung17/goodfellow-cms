@@ -55,7 +55,7 @@ function webpSize(bytes: Uint8Array, view: DataView): ImageSize | undefined {
 
 /** A length in an SVG's width or height, in pixels; percentages and other units can't be known. */
 function svgLength(value: string | undefined): number | undefined {
-  const match = value && /^\s*(\d+(?:\.\d+)?)\s*(px)?\s*$/.exec(value);
+  const match = value && /^(\d+(?:\.\d+)?)(?:\s*px)?$/.exec(value.trim());
   return match ? Number(match[1]) : undefined;
 }
 

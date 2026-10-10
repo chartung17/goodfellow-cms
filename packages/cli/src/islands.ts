@@ -3,6 +3,18 @@ import { createRequire } from "node:module";
 import { dirname, extname, join, relative } from "node:path";
 import { type Plugin, parseAst } from "vite";
 
+/**
+ * A string as a JavaScript literal, for building modules. Module names and
+ * paths come from the site's files, so `<`, `>` and line separators are
+ * escaped too, and the code can't be read as anything else wherever it ends up.
+ */
+function jsString(value: string): string {
+  return JSON.stringify(value).replace(
+    /[<>\u2028\u2029]/g,
+    (char) => `\\u${char.charCodeAt(0).toString(16).padStart(4, "0")}`,
+  );
+}
+
 /** The browser's entry for pages with Client Components: it loads each one a page uses and runs it. */
 export const ISLANDS_ENTRY = "virtual:goodfellow/islands";
 const RESOLVED_ISLANDS_ENTRY = `\0${ISLANDS_ENTRY}`;
@@ -172,7 +184,7 @@ export function clientModuleExports(code: string, file: string): ClientModuleExp
 
 /** A name as it's written in `export { … }`, quoted unless it's an identifier. */
 function identifier(name: string): string {
-  return /^[A-Za-z_$][\w$]*$/.test(name) ? name : JSON.stringify(name);
+  return /^[A-Za-z_$][\w$]*$/.test(name) ? name : jsString(name);
 }
 
 /**
@@ -182,17 +194,17 @@ function identifier(name: string): string {
  */
 export function islandModule(file: string, name: string, exports: ClientModuleExports): string {
   const lines = [
-    `import * as __gf_module from ${JSON.stringify(file)};`,
+    `import * as __gf_module from ${jsString(file)};`,
     `import { island as __gf_island } from "@goodfellow-cms/react/island";`,
   ];
   exports.names.forEach((exported, index) => {
     lines.push(
-      `const __gf_export${index} = __gf_island(__gf_module[${JSON.stringify(exported)}], ${JSON.stringify(name)}, ${JSON.stringify(exported)});`,
+      `const __gf_export${index} = __gf_island(__gf_module[${jsString(exported)}], ${jsString(name)}, ${jsString(exported)});`,
       `export { __gf_export${index} as ${identifier(exported)} };`,
     );
   });
   // Names re-exported with `export *` aren't known here, so they're passed on as they are.
-  if (exports.star) lines.push(`export * from ${JSON.stringify(file)};`);
+  if (exports.star) lines.push(`export * from ${jsString(file)};`);
   return `${lines.join("\n")}\n`;
 }
 
@@ -273,9 +285,7 @@ export function islandsPlugin(root: string, modules: ClientModules): Plugin {
       if (id === RESOLVED_ISLANDS_ENTRY) {
         for (const [name, file] of modules) if (!existsSync(file)) modules.delete(name);
         // Each module is loaded only on pages that use it.
-        const loaders = [...modules].map(
-          ([name, file]) => `  ${JSON.stringify(name)}: () => import(${JSON.stringify(file)}),`,
-        );
+        const loaders = [...modules].map(([name, file]) => `  ${jsString(name)}: () => import(${jsString(file)}),`);
         return [
           `import { hydrateIslands } from "@goodfellow-cms/react/hydrate";`,
           "hydrateIslands({",
@@ -288,7 +298,7 @@ export function islandsPlugin(root: string, modules: ClientModules): Plugin {
       const exports = clientExports(file);
       // Changes to the module's exports change this one.
       this.addWatchFile(file);
-      if (!exports) return `export * from ${JSON.stringify(file)};\n`;
+      if (!exports) return `export * from ${jsString(file)};\n`;
       const name = slashes(relative(root, file));
       if (modules.get(name) !== file) {
         modules.set(name, file);

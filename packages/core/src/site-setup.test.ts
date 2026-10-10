@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { planSite, type SiteFiles, siteFileText, sitePackageName } from "./site-setup.js";
+import { planSite, type SiteFiles, siteFileText, sitePackageName, withoutRepositoryNotes } from "./site-setup.js";
 
 const config = `import { defineConfig } from "@goodfellow-cms/core";
 // import { github } from "@goodfellow-cms/github";
@@ -63,5 +63,21 @@ describe("sitePackageName", () => {
   it("makes a valid npm package name", () => {
     expect(sitePackageName("St. Joseph Parish")).toBe("st.-joseph-parish");
     expect(sitePackageName("---")).toBe("my-site");
+    expect(sitePackageName("._My Site!--")).toBe("my-site");
+  });
+});
+
+describe("withoutRepositoryNotes", () => {
+  it("removes the notes for people reading a site in the Goodfellow repository", () => {
+    const note = (text: string) => `<!-- goodfellow-repository -->\n${text}\n<!-- /goodfellow-repository -->\n\n`;
+    expect(withoutRepositoryNotes(`# Site\n\n${note("One")}Text\n\n${note("Two")}End\n`)).toBe(
+      "# Site\n\nText\n\nEnd\n",
+    );
+  });
+
+  it("keeps a note that never ends", () => {
+    expect(withoutRepositoryNotes("A\n<!-- goodfellow-repository -->\nB\n")).toBe(
+      "A\n<!-- goodfellow-repository -->\nB\n",
+    );
   });
 });

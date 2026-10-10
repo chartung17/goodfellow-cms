@@ -1,3 +1,4 @@
+import { trimChars } from "@goodfellow-cms/core";
 import { type AiRequest, parseAnswer } from "./prompt.js";
 
 /** The AI services the assistant can use. Every one is called straight from the editor's browser. */
@@ -199,7 +200,7 @@ async function runClaude(settings: ProviderSettings, request: AiRequest, options
 function baseUrlOf(settings: ProviderSettings): string {
   const base = settings.provider === "custom" ? settings.baseUrl : PROVIDERS[settings.provider].baseUrl;
   if (!base) throw new AiError("service", "No address is set for this AI service.");
-  return base.replace(/\/+$/, "");
+  return trimChars(base, "/", { start: false });
 }
 
 function headersFor(settings: ProviderSettings): Record<string, string> {

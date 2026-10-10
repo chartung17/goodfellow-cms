@@ -1226,3 +1226,8 @@ body,
   font: inherit;
   font-size: 14px;
 }
+
+/* The Domain screen's records: values such as verification codes are long and unbroken. */
+.gfa-records code {
+  overflow-wrap: anywhere;
+}

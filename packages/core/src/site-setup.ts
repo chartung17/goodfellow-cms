@@ -11,6 +11,7 @@ import {
   planInstall,
   type RegistrySources,
 } from "./registry.js";
+import { trimChars } from "./trim.js";
 
 /** The sites a new site can start from. The keys are what `--template` takes. */
 export const TEMPLATES = {
@@ -84,10 +85,8 @@ export const BUNDLED_GITIGNORE = "_gitignore";
 
 /** A valid npm package name from a site's name, such as `My Parish` → `my-parish`. */
 export function sitePackageName(name: string): string {
-  const cleaned = name
-    .toLowerCase()
-    .replace(/[^a-z0-9._-]+/g, "-")
-    .replace(/^[._-]+|[-]+$/g, "");
+  const dashed = name.toLowerCase().replace(/[^a-z0-9._-]+/g, "-");
+  const cleaned = trimChars(trimChars(dashed, "._-", { end: false }), "-", { start: false });
   return cleaned.slice(0, 214) || "my-site";
 }
 
@@ -96,10 +95,7 @@ export function sitePackageName(name: string): string {
  * GitHub or GitLab. Returns `undefined` if it isn't one.
  */
 export function parseRepo(host: Backend["host"], input: string): string | undefined {
-  let path = input
-    .trim()
-    .replace(/\.git$/, "")
-    .replace(/\/+$/, "");
+  let path = trimChars(input.trim().replace(/\.git$/, ""), "/", { start: false });
   const prefix = host === "github" ? /^(?:https?:\/\/)?(?:www\.)?github\.com\//i : /^(?:https?:\/\/)?gitlab\.com\//i;
   path = path.replace(prefix, "");
   const pattern =
@@ -140,12 +136,22 @@ export function configureBackend(config: string, backend: Backend): string {
   return config.replace(importLine, importLine.slice(3)).replace(backendLine, `$1backend: ${call},`);
 }
 
-/** Notes in a site's README for people reading it in the Goodfellow repository, which new sites don't need. */
-const REPOSITORY_NOTE = /<!-- goodfellow-repository -->[\s\S]*?<!-- \/goodfellow-repository -->\n*/g;
+/** Marks notes in a site's README for people reading it in the Goodfellow repository, which new sites don't need. */
+const NOTE_START = "<!-- goodfellow-repository -->";
+const NOTE_END = "<!-- /goodfellow-repository -->";
 
 /** A site's README without the notes for people reading it in the Goodfellow repository. */
 export function withoutRepositoryNotes(readme: string): string {
-  return readme.replace(REPOSITORY_NOTE, "");
+  let result = "";
+  let from = 0;
+  for (;;) {
+    const start = readme.indexOf(NOTE_START, from);
+    const end = start === -1 ? -1 : readme.indexOf(NOTE_END, start + NOTE_START.length);
+    if (end === -1) return result + readme.slice(from);
+    result += readme.slice(from, start);
+    from = end + NOTE_END.length;
+    while (readme.charAt(from) === "\n") from++;
+  }
 }
 
 /** A file of a site: text, or bytes for files that may not be, such as images. */
