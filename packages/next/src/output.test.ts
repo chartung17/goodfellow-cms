@@ -1,6 +1,7 @@
 import { existsSync } from "node:fs";
 import { readdir, readFile } from "node:fs/promises";
 import { join, resolve } from "node:path";
+import { gzipSync } from "node:zlib";
 import { describe, expect, it } from "vitest";
 
 // Built by Turborepo before these tests run: see turbo.json.
@@ -73,6 +74,21 @@ describe("the Next.js template's static export", () => {
     expect(html).toContain("<title>Welcome to our new website | My site</title>");
     expect(html).toMatch(/<style data-precedence="default" data-href="goodfellow-theme">:root\{--background:/);
     expect(await read("404.html")).toContain("<title>Page not found | My site</title>");
+  });
+
+  it("sends visitors only the code their pages run, not the editor", async () => {
+    for (const file of ["index.html", "news/welcome/index.html"]) {
+      const scripts = new Set((await read(file)).match(/\/_next\/static\/chunks\/[^"]+\.js/g));
+      let size = 0;
+      for (const script of scripts) {
+        const code = await read(script.slice(1));
+        // Puck, which comes with all of `@goodfellow-cms/react` when a Client Component imports one part of it.
+        expect(code, script).not.toContain("createUsePuck");
+        size += gzipSync(code).length;
+      }
+      // Next.js and React come to about 185 kB.
+      expect(size, file).toBeLessThan(250_000);
+    }
   });
 
   it("includes the admin panel, without the local backend used in development", async () => {
