@@ -364,23 +364,23 @@ my-site/
     - **Longer forms**, such as surveys and sign-up sheets, can use Google Forms through an allowed embed.
     - **The docs** explain that answers go to the chosen service, not to the site's repository.
 19. **Stock photos from the AI assistant.** When the media library has nothing that fits, the AI assistant can add openly licensed photos from [Openverse](https://openverse.org), which gathers Creative Commons and public domain images from Wikimedia Commons, Flickr and other collections. It's searched straight from the editor's browser with no key, and only photos whose license allows commercial use and changes are offered. Each photo is saved to the media library with its credit, which the site shows as the license requires. A checkbox in the AI panel turns this on or off for each request and is remembered in the browser; a site's config can turn it off for everyone. (Not Unsplash: its API needs a key that a browser can't keep secret, and its rules require showing photos from Unsplash's own addresses rather than the site's media library.)
-20. **Light and dark sites.** A site can have a light and a dark mode, with every theme color set for each in Site settings. Pages follow the visitor's light or dark setting, and blocks follow the theme in both, as the admin panel's own light and dark modes do.
-21. **Sign in with GitHub.** A small Cloudflare Worker that Goodfellow runs for every site, so editors sign in with GitHub instead of pasting a token. GitLab sign-in already works without one.
+20. **Sign in with GitHub.** A small Cloudflare Worker that Goodfellow runs for every site, so editors sign in with GitHub instead of pasting a token. GitLab sign-in already works without one.
     - **Narrow tokens:** site owners install a Goodfellow GitHub App on the repositories they choose. The worker gives the admin panel a token for one repository only, with only the permissions it needs (not workflows or repository settings), lasting an hour and renewed while the editor is signed in. The editor's own GitHub token never leaves the worker, and commits still show the editor as their author.
     - **Only to the site's own address:** the worker hands a token only to an address the repository's site settings list, never to `localhost`, since `goodfellow dev` and `next dev` don't need one.
     - **Rate limits** per editor, per site and overall, kept below Cloudflare's free plan's daily limit.
     - **Token sign-in stays:** when the admin panel can't use the worker, for example because its limit for the day has been reached or a production build is being viewed on `localhost`, editors sign in with a token as they do now.
     - **Protected history:** the site setup page (step 14) signs in through the worker too, and gives new repositories rules that stop anyone rewriting the main branch's history, where the GitHub plan allows it. GitLab protects it by default.
     - **Self-hosting:** site owners can run their own copy of the worker, with their own GitHub App.
-22. **Claude connector.** An MCP server, so editors can work on their sites from Claude: read pages, entries and settings, see the site's blocks, make changes, check them in screenshots, and publish them or submit them for review.
+21. **Claude connector.** An MCP server, so editors can work on their sites from Claude: read pages, entries and settings, see the site's blocks, make changes, check them in screenshots, and publish them or submit them for review.
     - **Ways to use it:**
       - a Claude Desktop extension (a `.mcpb` file) and `claude mcp add` for Claude Code, both running on the editor's computer with a token;
       - **Deploy to Cloudflare** and **Deploy to Vercel** buttons, which set up the server in the site owner's own account (Vercel's free plan is for non-commercial use only);
       - Goodfellow's own Worker, free, added as a custom connector in Claude on the web, on computers and on phones.
     - **Versions:** each site's build writes a description of its blocks and of the content formats it reads, so the server writes only content that site understands. It supports the current and previous minor versions of Goodfellow, and asks older sites to update.
-    - **Tokens:** the hosted and deployed servers sign in through their own GitHub App, separate from step 21's. They keep editors' refresh tokens only encrypted, readable only while Claude is calling, and call GitHub with tokens limited to one repository that last an hour. GitLab's tokens reach every project the editor can and last two hours, which the docs explain.
+    - **Tokens:** the hosted and deployed servers sign in through their own GitHub App, separate from step 20's. They keep editors' refresh tokens only encrypted, readable only while Claude is calling, and call GitHub with tokens limited to one repository that last an hour. GitLab's tokens reach every project the editor can and last two hours, which the docs explain.
     - **Rate limits** per editor, per site and overall, with a plain-language message that Claude passes on when one is reached.
     - **Screenshots** of the live site, and of unpublished changes through a preview page in each site's build, taken with Cloudflare's Browser Rendering.
+22. **Light and dark sites.** A site can have a light and a dark mode, with every theme color set for each in Site settings. Pages follow the visitor's light or dark setting, and blocks follow the theme in both, as the admin panel's own light and dark modes do.
 
 ## Contributing
 
