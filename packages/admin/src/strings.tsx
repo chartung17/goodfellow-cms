@@ -49,7 +49,31 @@ export const defaultStrings = {
   "deploy.building": "Updating the live site…",
   "deploy.live": "The live site is up to date",
   "deploy.failed": "The live site couldn't be updated",
-  "deploy.details": "Details",
+  "build.why": "What went wrong?",
+  "build.title": "Why the live site wasn't updated",
+  "build.saved":
+    "Your changes are published and saved. Visitors see the site as it was until it's rebuilt, which every publish tries again.",
+  "build.notStarted":
+    "{host} didn't start rebuilding the site. That usually means the account the site belongs to has used up its free build minutes for the month, or its billing on {host} needs attention. One of the site's owners can check the account's billing settings on {host}.",
+  "build.install":
+    "The site's packages couldn't be installed, so it couldn't be rebuilt. That's sometimes a passing problem with the service the packages come from, so publishing again later may work. If it keeps happening, a developer needs to look at the details.",
+  "build.pages":
+    "{host} Pages isn't set up for the site, so there's nowhere to put it online. One of the site's owners needs to turn it on in the site's settings on {host}, under Pages.",
+  "build.deploy":
+    "The site was rebuilt, but {host} couldn't put it online. That's usually a passing problem, so the next publish may work. If it keeps happening, check the site's Pages settings on {host}.",
+  "build.host":
+    "A problem on {host}'s side stopped the rebuild. That's usually a passing problem, so the next publish may work.",
+  "build.content":
+    "The site couldn't be rebuilt, because {file} has a problem. Fix it in the admin panel, or put back a version that worked from its version history.",
+  "build.contentHistory": "Version history of {file}",
+  "build.codeChanged":
+    "The site couldn't be rebuilt after its blocks changed. Undo the change under Blocks, by removing what was just added or adding back what was removed, and ask a developer to look at the details.",
+  "build.blocks": "Go to Blocks",
+  "build.codeFile":
+    "The site's code couldn't be rebuilt: there's a problem in {file}. A developer needs to look at the details.",
+  "build.code": "The site couldn't be rebuilt. A developer needs to look at the details.",
+  "build.unknown": "{host} didn't say why the rebuild failed. Its details may help a developer.",
+  "build.hostDetails": "See the details on {host}",
   "loadError.title": "The admin panel couldn't open this site",
   "loadError.contentProblems": "Some of the site's files have problems, so they can't be edited until they're fixed.",
   "loadError.other": "Something went wrong while loading the site. Check your connection and try again.",
@@ -487,7 +511,7 @@ export const defaultStrings = {
   "domain.error.other": "Something went wrong.",
   "owner.token.title": "Use an owner token",
   "owner.token.intro":
-    "Inviting and removing editors, and connecting a domain, need more access on {host} than signing in has. Create a second token for them. It's kept only until you close this tab, and lasts a week; you can delete it on {host} sooner.",
+    "Inviting and removing editors, and connecting a domain, need more access on {host} than signing in has. Create a second token for them. It's kept only until you close this tab, and stops working after a day; you can delete it on {host} sooner.",
   "owner.token.create": "Create an owner token on {host}",
   "owner.token.chooseSite": "If {host} asks what the token can access, choose only this site.",
   "owner.token.paste": "Copy the token and paste it here:",

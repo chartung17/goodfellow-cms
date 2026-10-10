@@ -44,8 +44,8 @@ export type LoadState =
 
 export type PublishResult = { ok: true } | { ok: false; reason: "conflict" | "error"; error: unknown };
 
-/** Whether the latest publish has reached the live site. */
-export type DeployProgress = { revision: string } & DeployStatus;
+/** Whether the latest publish has reached the live site. `previous` is the revision before it. */
+export type DeployProgress = { revision: string; previous?: string } & DeployStatus;
 
 /** The signed-in person, when the admin panel is connected to a git host. */
 export interface Account {
@@ -83,6 +83,8 @@ interface AdminContextValue {
   pages?: PagesDomains;
   /** Earlier versions of the site's files, when the site is stored on a git host. */
   versions?: Pick<GitBackend, "history" | "readAt">;
+  /** The files that changed between two revisions, when the site is stored on a git host. */
+  changedPaths?: (from: string, to: string) => Promise<string[]>;
   /** Who edits the site, when the backend can say. */
   editors?: SiteEditors;
   /** A second token for changing editors and Pages settings, where signing in can't. */
@@ -145,6 +147,10 @@ export function AdminProvider({
   const demo = isDemoStore(store) ? store : undefined;
   const pages = isGitBackend(store) ? store.pages : undefined;
   const versions = isGitBackend(store) ? store : undefined;
+  const changedPaths = useMemo(
+    () => (isGitBackend(store) ? (from: string, to: string) => store.changedPaths(from, to) : undefined),
+    [store],
+  );
   const editors = isGitBackend(store) ? store.editors : undefined;
   // The backend's owner access, with whether it's in use as state, so every screen showing it updates together.
   const backendOwner = isGitBackend(store) ? store.ownerAccess : undefined;
@@ -203,7 +209,7 @@ export function AdminProvider({
         if (error instanceof SignInError && error.problem === "invalid") onSignInError?.(error);
         return { ok: false, reason: error instanceof ConflictError ? "conflict" : "error", error };
       }
-      if (isGitBackend(store)) setDeploy({ revision, state: "building" });
+      if (isGitBackend(store)) setDeploy({ revision, previous: state.revision, state: "building" });
       setState(await loadAndHandle());
       return { ok: true };
     },
@@ -222,7 +228,7 @@ export function AdminProvider({
       if (status.state === "building" && Date.now() - started < DEPLOY_CHECK_LIMIT) {
         timer = setTimeout(check, DEPLOY_CHECK_INTERVAL);
       } else {
-        setDeploy({ revision: deploy.revision, ...status });
+        setDeploy({ revision: deploy.revision, previous: deploy.previous, ...status });
       }
     };
     timer = setTimeout(check, DEPLOY_CHECK_INTERVAL);
@@ -252,6 +258,7 @@ export function AdminProvider({
       demo,
       pages,
       versions,
+      changedPaths,
       editors,
       ownerAccess,
     }),
@@ -274,6 +281,7 @@ export function AdminProvider({
       demo,
       pages,
       versions,
+      changedPaths,
       editors,
       ownerAccess,
     ],

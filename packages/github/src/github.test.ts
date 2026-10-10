@@ -212,13 +212,15 @@ describe("publishing", () => {
 });
 
 describe("deploy status", () => {
-  async function published(deployAfterChecks?: number): Promise<{ backend: GitBackend; revision: string }> {
-    const { backend } = await signedIn({ deployAfterChecks });
+  async function published(
+    deployAfterChecks?: number,
+  ): Promise<{ backend: GitBackend; revision: string; fake: ReturnType<typeof fakeGitHub> }> {
+    const { backend, fake } = await signedIn({ deployAfterChecks });
     const { revision } = await backend.write([{ path: "content/site.json", content: "{}" }], {
       message: "Publish",
       expectedRevision: await backend.revision(),
     });
-    return { backend, revision };
+    return { backend, revision, fake };
   }
 
   it("follows the deployment until it's live", async () => {
@@ -232,6 +234,37 @@ describe("deploy status", () => {
 
   it("reports unknown when the site has never been deployed", async () => {
     const { backend, revision } = await published();
+    expect(await backend.deployStatus(revision)).toEqual({ state: "unknown" });
+  });
+
+  it("says which step of a failed build failed, though a failed build never deploys", async () => {
+    const { backend, revision, fake } = await published();
+    fake.failBuild(revision, "Run npx goodfellow build --base /site/");
+    expect(await backend.deployStatus(revision)).toEqual({
+      state: "failed",
+      detailsUrl: "https://github.com/parish/site/actions/runs/1",
+      problem: { step: "build", detail: "build: Run npx goodfellow build --base /site/" },
+    });
+  });
+
+  it.each([
+    ["Run npm ci", "build", "install"],
+    ["Run actions/configure-pages@v5", "build", "pages"],
+    ["Run actions/deploy-pages@v4", "deploy", "deploy"],
+    [undefined, "build", "not-started"],
+  ])("tells a failed %s step apart", async (step, job, expected) => {
+    const { backend, revision, fake } = await published();
+    fake.failBuild(revision, step, job);
+    expect((await backend.deployStatus(revision)).problem?.step).toBe(expected);
+  });
+
+  it("doesn't need Actions, for tokens that can't see it", async () => {
+    const { backend, fake } = await signedIn({ tokens: { "test-token": { login: "editor", actions: false } } });
+    const { revision } = await backend.write([{ path: "content/site.json", content: "{}" }], {
+      message: "Publish",
+      expectedRevision: await backend.revision(),
+    });
+    fake.failBuild(revision, "Run npm ci");
     expect(await backend.deployStatus(revision)).toEqual({ state: "unknown" });
   });
 });

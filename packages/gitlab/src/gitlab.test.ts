@@ -254,3 +254,45 @@ describe("version history", () => {
     ]);
   });
 });
+
+describe("failed rebuilds", () => {
+  async function published(failure: Parameters<ReturnType<typeof fakeGitLab>["failBuild"]>[1]) {
+    const { fake, host } = setup();
+    const backend = await host.signInWithToken("test-token", false);
+    const { revision } = await backend.write([{ path: "content/site.json", content: "{}" }], {
+      message: "Publish",
+      expectedRevision: await backend.revision(),
+    });
+    fake.failBuild(revision, failure);
+    return backend.deployStatus(revision);
+  }
+
+  it("finds what goodfellow build said in the job's log", async () => {
+    const status = await published({
+      trace: [
+        "\u001b[32;1m$ npm ci --cache .npm --prefer-offline\u001b[0;m",
+        "added 300 packages",
+        "\u001b[32;1m$ npx goodfellow build\u001b[0;m",
+        'goodfellow-build-problem {"kind":"content","file":"content/pages/about.json","message":"isn\'t valid JSON."}',
+        "ERROR: Job failed: exit code 1",
+      ].join("\n"),
+    });
+    expect(status).toMatchObject({
+      state: "failed",
+      problem: {
+        step: "build",
+        cause: { kind: "content", file: "content/pages/about.json", message: "isn't valid JSON." },
+        detail: "pages: script_failure",
+      },
+    });
+  });
+
+  it("tells installing packages, GitLab's own problems and used-up minutes apart", async () => {
+    expect((await published({ trace: "$ npm ci --cache .npm\nnpm ERR! code ERESOLVE\n" })).problem?.step).toBe(
+      "install",
+    );
+    expect((await published({ failureReason: "runner_system_failure" })).problem?.step).toBe("host");
+    expect((await published({ failureReason: "ci_quota_exceeded" })).problem?.step).toBe("not-started");
+    expect((await published({ job: "pages:deploy" })).problem?.step).toBe("deploy");
+  });
+});

@@ -17,7 +17,7 @@ Editors sign in at `/admin` on the live site with their own GitHub or GitLab acc
 
 Owners invite people by their GitHub or GitLab username, and on GitLab by email address too, in which case GitLab helps them make an account if they don't have one. The host emails each person an invitation, which they accept before they can sign in. Invitations can be withdrawn until they're accepted. Nobody can remove themselves or change their own role, so a site always keeps its owner.
 
-- **On GitHub,** signing in can't change who edits the site, since that needs GitHub's Administration permission, which can also delete the repository. The Editors screen asks owners for a second token, an **owner token**, made from a link that fills in the permissions it needs. It's kept only until the browser tab closes, and lasts a week. The Domain screen uses it too, for GitHub Pages settings.
+- **On GitHub,** signing in can't change who edits the site, since that needs GitHub's Administration permission, which can also delete the repository. The Editors screen asks owners for a second token, an **owner token**, made from a link that fills in the permissions it needs. It's kept only until the browser tab closes, and stops working after a day. The Domain screen uses it too, for GitHub Pages settings.
 - **On GitLab,** owners are Maintainers in the site's project, and editors are Developers. GitLab only lets Maintainers publish to the main branch at first, so the Editors screen offers **Let editors publish**, which lets Developers publish too, while still stopping anyone from rewriting the site's history. People in a GitLab group that has the project are listed too, but are changed in the group on GitLab.
 
 ## GitHub

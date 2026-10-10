@@ -215,6 +215,23 @@ export function fakeGitLab(options: FakeGitLabOptions) {
   const codes = new Map<string, { challenge: string; redirectUri: string }>();
   const refreshTokens = new Map<string, FakeGitLabUser>();
   const pipelines = new Map<string, { checks: number }>();
+  /** Failed jobs, by commit, which tests add with `failBuild()`. */
+  const failures = new Map<string, { job: string; failureReason: string; trace: string }>();
+
+  /**
+   * Simulates the pipeline for a commit failing: its `pages` job (or another,
+   * such as `pages:deploy`) fails for a GitLab failure reason, with a log.
+   */
+  function failBuild(sha: string, failure: { job?: string; failureReason?: string; trace?: string } = {}): void {
+    if (!pipelines.has(sha)) pipelines.set(sha, { checks: 0 });
+    failures.set(sha, {
+      job: failure.job ?? "pages",
+      failureReason: failure.failureReason ?? "script_failure",
+      trace: failure.trace ?? "",
+    });
+  }
+
+  const pipelineId = (sha: string) => [...pipelines.keys()].indexOf(sha) + 1;
   const requests: Request[] = [];
   let counter = 0;
   const created = new Map<string, FakeCreatedProject>();
@@ -590,6 +607,11 @@ export function fakeGitLab(options: FakeGitLabOptions) {
     if (statuses) {
       const pipeline = pipelines.get(statuses[1] ?? "");
       if (!pipeline) return json([]);
+      const failure = failures.get(statuses[1] ?? "");
+      if (failure) {
+        const id = pipelineId(statuses[1] ?? "");
+        return json([{ name: failure.job, status: "failed", target_url: `${webUrl}/${options.project}/-/jobs/${id}` }]);
+      }
       pipeline.checks += 1;
       const done = pipeline.checks > (options.deployAfterChecks ?? 0);
       return json([
@@ -597,7 +619,34 @@ export function fakeGitLab(options: FakeGitLabOptions) {
       ]);
     }
 
-    if (rest === "/pipelines") return json([...pipelines.keys()].map((sha, index) => ({ id: index + 1, sha })));
+    if (rest === "/pipelines") {
+      const sha = url.searchParams.get("sha");
+      return json(
+        [...pipelines.keys()]
+          .map((pipelineSha, index) => ({ id: index + 1, sha: pipelineSha }))
+          .filter((pipeline) => !sha || pipeline.sha === sha),
+      );
+    }
+
+    const pipelineJobs = rest.match(/^\/pipelines\/(\d+)\/jobs$/);
+    if (pipelineJobs) {
+      const id = Number(pipelineJobs[1]);
+      const sha = [...pipelines.keys()][id - 1];
+      if (!sha) return json({ message: "404 Not Found" }, 404);
+      const failure = failures.get(sha);
+      return json([
+        failure
+          ? { id, name: failure.job, status: "failed", failure_reason: failure.failureReason }
+          : { id, name: "pages", status: "success" },
+      ]);
+    }
+
+    const trace = rest.match(/^\/jobs\/(\d+)\/trace$/);
+    if (trace) {
+      const sha = [...pipelines.keys()][Number(trace[1]) - 1];
+      const failure = sha ? failures.get(sha) : undefined;
+      return failure ? new Response(failure.trace) : json({ message: "404 Not Found" }, 404);
+    }
 
     return json({ message: "404 Not Found" }, 404);
   }
@@ -607,6 +656,7 @@ export function fakeGitLab(options: FakeGitLabOptions) {
     members,
     invitations,
     protectedBranches,
+    failBuild,
     repo,
     /** Projects created through the API, by full path. */
     created,

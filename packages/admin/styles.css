@@ -1310,3 +1310,20 @@ body,
   margin: 0;
   padding-left: 20px;
 }
+
+/* Failed rebuilds */
+.gfa-deploy .gfa-deploy-why {
+  padding: 0 4px;
+  font-size: inherit;
+  text-decoration: underline;
+}
+
+.gfa-build-problem {
+  display: grid;
+  gap: 8px;
+  max-width: 560px;
+}
+
+.gfa-build-problem p {
+  margin: 0;
+}

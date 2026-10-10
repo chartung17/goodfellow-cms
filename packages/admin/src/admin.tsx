@@ -12,6 +12,7 @@ import { createRoot } from "react-dom/client";
 import { AdminProvider, type PreviewOptions, useAdmin, useSiteContent } from "./admin-context.js";
 import { forgetAiKeys } from "./ai-settings.js";
 import { BlocksScreen } from "./blocks-screen.js";
+import { BuildProblemButton } from "./build-problem.js";
 import { EntriesScreen, TemplateScreen } from "./collection-screen.js";
 import { CollectionSettingsScreen } from "./collection-settings.js";
 import { CollectionsScreen } from "./collections-screen.js";
@@ -118,12 +119,10 @@ function DeployIndicator() {
   return (
     <span className={`gfa-deploy gfa-deploy-${deploy.state}`} role="status">
       {t(deploy.state === "building" ? "deploy.building" : deploy.state === "live" ? "deploy.live" : "deploy.failed")}
-      {deploy.state === "failed" && deploy.detailsUrl && (
+      {deploy.state === "failed" && (
         <>
           {" "}
-          <a href={deploy.detailsUrl} target="_blank" rel="noreferrer">
-            {t("deploy.details")}
-          </a>
+          <BuildProblemButton />
         </>
       )}
     </span>

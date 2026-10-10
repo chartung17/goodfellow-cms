@@ -1,10 +1,13 @@
 import {
+  type BuildProblem,
+  buildStepFor,
   ConflictError,
   type DeployStatus,
   EDITABLE_FOLDERS,
   encodeBase64Bytes,
   type FileChange,
   type FileVersion,
+  findBuildCause,
   GitApiError,
   type GitBackend,
   type GitUser,
@@ -19,6 +22,9 @@ import { gitlabEditors } from "./editors.js";
 import { gitlabPages } from "./pages.js";
 
 const PAGE_SIZE = 100;
+
+/** The color and section codes in GitLab's job logs. */
+const ANSI_CODES = new RegExp(`${String.fromCharCode(27)}\\[[\\d;]*[A-Za-z]`, "g");
 
 export interface GitLabBackendOptions {
   api: ApiOptions;
@@ -239,7 +245,10 @@ export class GitLabBackend implements GitBackend {
         return { state: pipelines.length > 0 ? "building" : "unknown" };
       }
       const failed = statuses.find((status) => status.status === "failed" || status.status === "canceled");
-      if (failed) return { state: "failed", detailsUrl: failed.target_url ?? undefined };
+      if (failed) {
+        const problem = await this.jobProblem(revision).catch(() => undefined);
+        return { state: "failed", detailsUrl: failed.target_url ?? undefined, ...(problem && { problem }) };
+      }
       if (statuses.every((status) => status.status === "success" || status.status === "skipped")) {
         return { state: "live", detailsUrl: statuses[0]?.target_url ?? undefined };
       }
@@ -248,6 +257,41 @@ export class GitLabBackend implements GitBackend {
       if (error instanceof GitApiError) return { state: "unknown" };
       throw error;
     }
+  }
+
+  /** Why a commit's pipeline failed: the failed job's reason, and its log for which command failed and why. */
+  private async jobProblem(revision: string): Promise<BuildProblem | undefined> {
+    const [pipeline] = await gitlabJson<Array<{ id: number }>>(
+      this.api,
+      `/projects/${this.project}/pipelines?${new URLSearchParams({ sha: revision, per_page: "1" })}`,
+    );
+    if (!pipeline) return undefined;
+    const jobs = await gitlabJson<Array<{ id: number; name: string; status: string; failure_reason?: string }>>(
+      this.api,
+      `/projects/${this.project}/pipelines/${pipeline.id}/jobs?per_page=100`,
+    );
+    const failed = jobs.find((job) => job.status === "failed");
+    if (!failed) return undefined;
+    const reason = failed.failure_reason ?? "";
+    const detail = `${failed.name}: ${reason}`;
+    if (reason === "ci_quota_exceeded") return { step: "not-started", detail };
+    if (/runner_system|stuck_or_timeout|scheduler|api_failure|data_integrity|job_execution_timeout/.test(reason)) {
+      return { step: "host", detail };
+    }
+    if (failed.name === "pages:deploy") return { step: "deploy", detail };
+    const response = await gitlabRequest(this.api, `/projects/${this.project}/jobs/${failed.id}/trace`, {
+      allow: [403, 404],
+    });
+    const trace = response.ok ? await response.text() : "";
+    const cause = findBuildCause(trace);
+    // The command that was running when the job failed: GitLab logs each one on a line starting with "$ ".
+    const command = trace
+      .split("\n")
+      .map((line) => line.replace(ANSI_CODES, "").replace(/^.*\r/, ""))
+      .filter((line) => line.startsWith("$ "))
+      .at(-1);
+    const step: BuildProblem["step"] = cause ? "build" : ((command ? buildStepFor(command) : undefined) ?? "build");
+    return { step, detail, ...(cause && { cause }) };
   }
 
   signOut(): void {

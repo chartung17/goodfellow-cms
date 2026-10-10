@@ -1,4 +1,13 @@
 export { applyBasePath, normalizeBase, withBase } from "./base-path.js";
+export {
+  BUILD_CAUSE_MARKER,
+  type BuildCause,
+  type BuildProblem,
+  type BuildStep,
+  buildStepFor,
+  findBuildCause,
+  formatBuildCause,
+} from "./build-problems.js";
 export { type AiConfig, defineConfig, type GoodfellowConfig } from "./config.js";
 export {
   HEAD_TAGS,

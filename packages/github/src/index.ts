@@ -34,6 +34,8 @@ export function githubTokenLinks(repo: string, webUrl = "https://github.com") {
     expires_in: "90",
     contents: "write",
     deployments: "read",
+    // Which step of a failed rebuild failed, so the admin panel can explain it.
+    actions: "read",
   });
   const classic = new URLSearchParams({ scopes: "repo", description: `Goodfellow admin for ${repo}` });
   // Changing editors and GitHub Pages settings needs permissions signing in doesn't ask for, including
@@ -42,7 +44,8 @@ export function githubTokenLinks(repo: string, webUrl = "https://github.com") {
     name: "Goodfellow owner",
     description: `Manage the editors and domain of ${repo}`,
     target_name: repoOwner,
-    expires_in: "7",
+    // GitHub's shortest: the admin panel forgets the token when the tab closes anyway.
+    expires_in: "1",
     administration: "write",
     pages: "write",
   });
