@@ -14,7 +14,7 @@ order: 5
 
 **Site settings** has several tabs, with a preview of the home page that shows changes as you type. Undo and Redo work across every tab.
 
-- **General:** the site's name, its address, the title shown in browser tabs, a description for search engines, the logo, the icon, the image for link previews, whether links to other sites open in a new tab, and the contact details (address, phone number and email address) that the Contact details block shows. Links to the site's own pages always open in the same tab.
+- **General:** the site's name, its address, the title shown in browser tabs, a description for search engines, the logo, the icon, the image for link previews, whether links to other sites open in a new tab, the time zone events' times are in (see [Calendars and events](/docs/calendars#time-zone)), and the contact details (address, phone number and email address) that the Contact details block shows. Links to the site's own pages always open in the same tab.
 - **Colors & fonts:** colors, fonts and how rounded corners are. Fonts are chosen from a searchable list of Google Fonts, each shown in its own typeface.
 - **Menus:** named lists of links, with submenus. The header's Menu block shows one of them.
 - **Custom CSS:** CSS for the whole site, including Tailwind's `@apply`, in a code editor that indents, closes brackets, suggests properties and values, and finds and replaces (Ctrl+F). Tab indents; press Escape, then Tab, to leave it. It shows in the editor at once. Give a block your own class in its "CSS classes" setting, then style that class here.

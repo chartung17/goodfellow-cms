@@ -30,6 +30,7 @@
     },
     "radius": "0.5rem"
   },
+  "timeZone": "America/New_York",
   "title": "St. Joseph Parish",
   "titleTemplate": "%s | St. Joseph Parish"
 }

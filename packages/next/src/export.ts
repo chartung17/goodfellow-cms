@@ -1,5 +1,22 @@
-import { readdir, rename, rm } from "node:fs/promises";
-import { join, relative } from "node:path";
+import { mkdir, readdir, rename, rm, writeFile } from "node:fs/promises";
+import { dirname, join, relative, resolve } from "node:path";
+import { calendarFiles, loadSiteContent } from "@goodfellow-cms/core";
+import { fileSystemSource } from "@goodfellow-cms/core/node";
+
+/**
+ * Writes the calendar files of the site's collections of events into the
+ * export, as `goodfellow build` does: Next.js has no route for them. Returns
+ * how many it wrote.
+ */
+export async function writeCalendarFiles(outDir: string, root = process.cwd()): Promise<number> {
+  const files = calendarFiles(await loadSiteContent(fileSystemSource(resolve(root))));
+  for (const file of files) {
+    const target = join(outDir, file.path.slice(1));
+    await mkdir(dirname(target), { recursive: true });
+    await writeFile(target, file.content);
+  }
+  return files.length;
+}
 
 /**
  * Puts a static export's prefetch files where the browser asks for them.

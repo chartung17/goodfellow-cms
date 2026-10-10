@@ -1342,3 +1342,87 @@ body,
   align-items: center;
   gap: 0.75rem;
 }
+
+/* Choosing what a new collection starts with. */
+.gfa-choice-group {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin: 0;
+  padding: 0;
+  border: 0;
+}
+
+/* An event's dates, times and repeats, in an item's fields. */
+.gfa-event-field {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  min-width: 0;
+  margin: 0;
+  padding: 0;
+  border: 0;
+}
+
+.gfa-event-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: 8px;
+}
+
+.gfa-event-part {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  font-size: 13px;
+  color: var(--gfa-muted);
+}
+
+.gfa-event-row > .gfa-event-part {
+  flex: 1 1 140px;
+}
+
+.gfa-event-repeat {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding-left: 12px;
+  border-left: 2px solid var(--gfa-border);
+}
+
+.gfa-event-interval input {
+  max-width: 6rem;
+}
+
+.gfa-event-days {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 12px;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  font-size: 13px;
+}
+
+.gfa-event-days legend {
+  margin-bottom: 4px;
+  color: var(--gfa-muted);
+}
+
+.gfa-event-skips {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  color: var(--gfa-text);
+}
+
+.gfa-event-skip {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}

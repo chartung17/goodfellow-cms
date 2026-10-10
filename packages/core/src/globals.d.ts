@@ -16,4 +16,5 @@ declare class URL {
   constructor(url: string, base?: string);
   readonly href: string;
   readonly origin: string;
+  readonly hostname: string;
 }

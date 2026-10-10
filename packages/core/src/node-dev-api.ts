@@ -1,7 +1,15 @@
 import { readFile } from "node:fs/promises";
 import type { IncomingMessage, ServerResponse } from "node:http";
 import { join } from "node:path";
-import { ConflictError, type ContentStore, type FileChange } from "./index.js";
+import {
+  CALENDARS_DIR,
+  ConflictError,
+  type ContentSource,
+  type ContentStore,
+  calendarFiles,
+  type FileChange,
+  loadSiteContent,
+} from "./index.js";
 import { InvalidPathError } from "./node-local-files.js";
 
 /** Where the development server exposes the local backend. The admin panel's local store calls these endpoints. */
@@ -98,6 +106,24 @@ function isTrusted(req: IncomingMessage, trustOrigin: DevApiOptions["trustOrigin
  * Handles a request to the development API, or returns `false` if the URL
  * isn't one of its endpoints. Never mounted outside `goodfellow dev`.
  */
+/**
+ * Answers a request for one of the calendar files builds write (`/calendars/…`),
+ * from the site's content as it is now. Says whether the address was one.
+ */
+export async function sendCalendarFile(source: ContentSource, pathname: string, res: ServerResponse): Promise<boolean> {
+  if (!pathname.startsWith(`/${CALENDARS_DIR}/`) || !pathname.endsWith(".ics")) return false;
+  const file = calendarFiles(await loadSiteContent(source)).find((candidate) => candidate.path === pathname);
+  if (!file) {
+    res.statusCode = 404;
+    res.end();
+    return true;
+  }
+  res.statusCode = 200;
+  res.setHeader("Content-Type", "text/calendar; charset=utf-8");
+  res.end(file.content);
+  return true;
+}
+
 export async function handleDevApi(
   store: ContentStore,
   req: IncomingMessage,
@@ -111,6 +137,11 @@ export async function handleDevApi(
 
   if (req.method === "GET" && endpoint.startsWith("registry/")) {
     await sendRegistryFile(res, options.registryDir, endpoint.slice("registry/".length));
+    return true;
+  }
+  // Calendar files are public, as they are on the built site: next dev rewrites /calendars/ here.
+  if (req.method === "GET" && endpoint.startsWith(`${CALENDARS_DIR}/`)) {
+    if (!(await sendCalendarFile(store, `/${endpoint}`, res))) send(res, 404, { error: "not-found" });
     return true;
   }
   if (!isTrusted(req, options.trustOrigin)) {

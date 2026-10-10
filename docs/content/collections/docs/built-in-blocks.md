@@ -25,7 +25,9 @@ Every site has these blocks. Sites can also have [blocks from block registries](
 | Search | A search box for the whole site, with results as you type |
 | Collection navigation | Links to every item in a collection, grouped by one of its choice fields |
 | Collection list | A collection's items as a list or cards |
+| Calendar | Events coming up, or a month at a time, from a collection of events or another calendar (see [Calendars and events](/docs/calendars)) |
 | Entry field | One of the item's fields, in a collection's page design only |
+| Add to calendar | Links that add the item's event to visitors' calendars, in a page design only |
 | Previous and next | Links to the items before and after this one, in a page design only |
 | On this page | The headings of the item's Markdown text, in a page design only |
 

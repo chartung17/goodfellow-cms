@@ -8,7 +8,58 @@ export {
   findBuildCause,
   formatBuildCause,
 } from "./build-problems.js";
+export {
+  addDays,
+  addMonths,
+  cleanEventValue,
+  datePart,
+  datesInMonth,
+  type EventRepeat,
+  type EventValue,
+  eventValueProblem,
+  formatDate,
+  formatMonth,
+  formatOccurrence,
+  formatTime,
+  isAllDay,
+  isEventLike,
+  isMonth,
+  isTimeZone,
+  isUpcoming,
+  monthOf,
+  monthsAround,
+  type Occurrence,
+  type OccurrenceOptions,
+  occurrences,
+  repeatRule,
+  shownOccurrence,
+  todayIn,
+  WEEKDAYS,
+  type Weekday,
+  wallClock,
+  weekdayName,
+  weekdayOf,
+  zonedInstant,
+  zonedTime,
+} from "./calendar.js";
 export { type AiConfig, defineConfig, type GoodfellowConfig } from "./config.js";
+export {
+  type BuildFile,
+  CALENDAR_BLOCK,
+  CALENDARS_DIR,
+  type CalendarMonths,
+  type CollectionEvent,
+  calendarCollections,
+  calendarFilePath,
+  calendarFiles,
+  calendarMonths,
+  collectionEvents,
+  eventFilePath,
+  MAX_CALENDAR_MONTHS,
+  monthPagePath,
+  sitePages,
+  splitMonthPath,
+} from "./content/calendars.js";
 export {
   HEAD_TAGS,
   HeadCodeError,
@@ -185,6 +236,14 @@ export {
   type TokenLink,
 } from "./git.js";
 export { absoluteUrl, getPageHead, type PageHead } from "./head.js";
+export {
+  type CalendarEvent,
+  type CalendarFileOptions,
+  calendarFile,
+  type FeedOccurrence,
+  type FeedOptions,
+  readCalendar,
+} from "./ics.js";
 export { type ImageSize, imageSize } from "./image-size.js";
 export {
   type ContentKind,

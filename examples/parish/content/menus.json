@@ -39,6 +39,10 @@
             "label": "Events"
           },
           {
+            "href": "/calendar",
+            "label": "Calendar"
+          },
+          {
             "href": "/news",
             "label": "News"
           },

@@ -27,6 +27,22 @@ A collection's `_collection.json` has its `name`, `entryName` (what one item is 
 
 An item's JSON file holds `{ "version": 1, "fields": { … } }`.
 
+## Events
+
+A collection with `"calendar": { "when": "when", "place": "place", "summary": "summary" }` is a calendar: `when` names its event field (type `event`), and `place` and `summary` the fields calendars show beside each event. An event field's value is the site's own wall-clock time, in the time zone `content/site.json` names as `timeZone` (such as `"America/New_York"`):
+
+```json
+{
+  "start": "2026-10-04T09:00",
+  "end": "2026-10-04T10:00",
+  "repeat": { "every": "week", "days": ["we", "su"], "skip": ["2026-12-27"], "until": "2027-06-27" }
+}
+```
+
+`start` and `end` are `YYYY-MM-DD` for an all-day event, whose `end` is its last day. `repeat.every` is `day`, `week`, `month` or `year`, with an optional `interval`; weekly repeats can name `days`, and monthly ones say `on` the start's `date` (the default), its `weekday` of the month (the second Tuesday) or the `last` such weekday. `until` and `skip` are dates.
+
+Builds write each calendar collection as `/calendars/<id>.ics`, and each of its events as `/calendars/<id>/<slug>.ics`, and give a page whose Calendar block shows a month at a time a page for each month, such as `/calendar/2026-11`, which takes no address a page or item already has.
+
 ## Markdown items
 
 A collection whose settings have `"markdown": { "body": "body" }` stores each item as `<slug>.md`: the body field is the Markdown text, and every other field is in the front matter, in YAML, beside the version.

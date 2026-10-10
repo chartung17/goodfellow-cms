@@ -64,6 +64,8 @@ export const siteSettingsSchema = z.object({
   socialImage: z.string().optional(),
   /** Whether links to other sites open in a new tab, wherever they are: menus, buttons, rich text and Markdown. */
   externalLinksInNewTab: z.boolean().optional(),
+  /** The time zone events' times are in, such as `America/New_York`. Without one, times are shown as they're written. */
+  timeZone: z.string().optional(),
   /** How to get in touch, shown by the Contact details block wherever it's placed. */
   contact: z
     .object({
@@ -131,7 +133,17 @@ export const layoutFileSchema = pageFileSchema;
 export type LayoutFile = PageFile;
 
 /** The kinds of information an entry can hold. */
-export const FIELD_TYPES = ["text", "textarea", "richtext", "number", "date", "link", "image", "select"] as const;
+export const FIELD_TYPES = [
+  "text",
+  "textarea",
+  "richtext",
+  "number",
+  "date",
+  "event",
+  "link",
+  "image",
+  "select",
+] as const;
 
 export type FieldType = (typeof FIELD_TYPES)[number];
 
@@ -183,6 +195,12 @@ export const collectionFileSchema = z
      * formatted-text field that is the file's Markdown; the other fields are its front matter.
      */
     markdown: z.object({ body: fieldName }).optional(),
+    /**
+     * Makes the collection a calendar: `when` names its event field, and `place`
+     * and `summary` the fields calendars show beside each event. Builds write
+     * its events as calendar files visitors can subscribe to.
+     */
+    calendar: z.object({ when: fieldName, place: fieldName.optional(), summary: fieldName.optional() }).optional(),
     /** The Puck layout every entry's page uses. */
     template: puckDataSchema.default({ root: {}, content: [] }),
   })
@@ -207,6 +225,33 @@ export const collectionFileSchema = z
     }
     if (file.sort && !names.has(file.sort.field)) {
       ctx.addIssue({ code: "custom", path: ["sort", "field"], message: "must be one of the collection's fields" });
+    }
+    if (file.calendar) {
+      const typeOf = (name: string | undefined) => file.fields.find((field) => field.name === name)?.type;
+      if (typeOf(file.calendar.when) !== "event") {
+        ctx.addIssue({
+          code: "custom",
+          path: ["calendar", "when"],
+          message: "must be one of the collection's date and time fields",
+        });
+      }
+      if (file.calendar.place !== undefined && !["text", "textarea"].includes(typeOf(file.calendar.place) ?? "")) {
+        ctx.addIssue({
+          code: "custom",
+          path: ["calendar", "place"],
+          message: "must be one of the collection's text fields",
+        });
+      }
+      if (
+        file.calendar.summary !== undefined &&
+        !["text", "textarea", "richtext"].includes(typeOf(file.calendar.summary) ?? "")
+      ) {
+        ctx.addIssue({
+          code: "custom",
+          path: ["calendar", "summary"],
+          message: "must be one of the collection's text fields",
+        });
+      }
     }
     if (file.markdown) {
       const body = file.fields.find((field) => field.name === file.markdown?.body);

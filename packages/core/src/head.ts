@@ -1,3 +1,4 @@
+import { formatMonth } from "./calendar.js";
 import type { Page } from "./content/load.js";
 import type { SiteSettings } from "./content/schemas.js";
 import { trimChars } from "./trim.js";
@@ -27,7 +28,11 @@ export function absoluteUrl(siteUrl: string, path: string): string {
 
 export function getPageHead(settings: SiteSettings, page: Page): PageHead {
   const props = page.content.data.root.props;
-  const pageTitle = readString(props, "title");
+  const ownTitle = readString(props, "title");
+  // A calendar's month page says which month it shows.
+  const pageTitle = page.month
+    ? [ownTitle || settings.title, formatMonth(page.month, settings.language)].join(": ")
+    : ownTitle;
   const isHome = page.path === "/";
 
   return {

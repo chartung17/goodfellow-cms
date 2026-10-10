@@ -1,7 +1,13 @@
 import { addressPatternProblem, isAddressSegment } from "@goodfellow-cms/core";
 import { type FormEvent, useState } from "react";
 import { useAdmin, useSiteContent } from "./admin-context.js";
-import { addressPatternFor, collectionFileChange, newCollectionSettings, slugify } from "./changes.js";
+import {
+  addressPatternFor,
+  collectionFileChange,
+  newCollectionSettings,
+  siteSettingsFileChange,
+  slugify,
+} from "./changes.js";
 import { type Failure, PublishFailure } from "./publish-failure.js";
 import { collectionHref, navigate } from "./router.js";
 import { useStrings } from "./strings.js";
@@ -11,6 +17,7 @@ function NewCollectionDialog({ onClose }: { onClose: () => void }) {
   const t = useStrings();
   const { config, publish } = useAdmin();
   const { content } = useSiteContent();
+  const [kind, setKind] = useState<"blank" | "events">("blank");
   const [name, setName] = useState("");
   const [entryName, setEntryName] = useState("");
   const [withPages, setWithPages] = useState(true);
@@ -33,6 +40,18 @@ function NewCollectionDialog({ onClose }: { onClose: () => void }) {
       ? t("address.invalid")
       : undefined;
   const valid = !nameError && !entryNameError && !addressError;
+  const ownTimeZone = Intl.DateTimeFormat().resolvedOptions().timeZone;
+  const setsTimeZone = kind === "events" && !content.settings.timeZone && Boolean(ownTimeZone);
+
+  const choose = (next: "blank" | "events") => {
+    setKind(next);
+    // Starts an events collection with its usual names, unless some were typed already.
+    if (next === "events" && !name.trim()) {
+      setName(t("newCollection.eventsName"));
+      if (!addressEdited) setAddress(`/${slugify(t("newCollection.eventsName"))}`);
+    }
+    if (next === "events" && !entryName.trim()) setEntryName(t("newCollection.eventsEntryName"));
+  };
 
   const onSubmit = async (event: FormEvent) => {
     event.preventDefault();
@@ -44,11 +63,13 @@ function NewCollectionDialog({ onClose }: { onClose: () => void }) {
       entryName: entryName.trim(),
       path: withPages ? pattern : undefined,
       withEntryFields: "EntryField" in config.blocks,
+      kind,
+      blocks: Object.keys(config.blocks),
     });
-    const result = await publish(
-      [collectionFileChange(id, settings)],
-      t("newCollection.message", { name: name.trim() }),
-    );
+    // Events need a time zone; a site without one gets this computer's, in the same publish.
+    const changes = [collectionFileChange(id, settings)];
+    if (setsTimeZone) changes.push(siteSettingsFileChange({ ...content.settings, timeZone: ownTimeZone }));
+    const result = await publish(changes, t("newCollection.message", { name: name.trim() }));
     setBusy(false);
     if (result.ok) {
       onClose();
@@ -61,6 +82,18 @@ function NewCollectionDialog({ onClose }: { onClose: () => void }) {
   return (
     <Dialog title={t("newCollection.title")} onClose={onClose}>
       <form onSubmit={onSubmit} className="gfa-form" noValidate>
+        <fieldset className="gfa-choice-group">
+          <legend className="gfa-label">{t("newCollection.kind")}</legend>
+          <label className="gfa-checkbox">
+            <input type="radio" name="kind" checked={kind === "blank"} onChange={() => choose("blank")} />
+            {t("newCollection.kindBlank")}
+          </label>
+          <label className="gfa-checkbox">
+            <input type="radio" name="kind" checked={kind === "events"} onChange={() => choose("events")} />
+            {t("newCollection.kindEvents")}
+          </label>
+          {kind === "events" && <p className="gfa-hint">{t("newCollection.kindEventsHint")}</p>}
+        </fieldset>
         <TextField
           label={t("newCollection.name")}
           hint={t("newCollection.nameHint")}
@@ -94,6 +127,9 @@ function NewCollectionDialog({ onClose }: { onClose: () => void }) {
               setAddressEdited(true);
             }}
           />
+        )}
+        {setsTimeZone && (
+          <p className="gfa-hint">{t("newCollection.timeZone", { zone: ownTimeZone.replace(/_/g, " ") })}</p>
         )}
         <PublishFailure failure={failure} />
         <div className="gfa-dialog-actions">

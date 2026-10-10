@@ -55,6 +55,11 @@ export interface Page {
    * entry's values are filled into the template when the page is rendered.
    */
   entry?: { collection: string; slug: string };
+  /**
+   * Set for a month's page of a calendar (see `sitePages`), such as `2026-11`:
+   * the page it belongs to, shown for that month.
+   */
+  month?: string;
 }
 
 export interface SiteContent {

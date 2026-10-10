@@ -3,7 +3,6 @@ import { readFile } from "node:fs/promises";
 import type { IncomingMessage, ServerResponse } from "node:http";
 import { join, resolve, sep } from "node:path";
 import {
-  allPages,
   CONTENT_DIR,
   ContentError,
   loadSiteContent,
@@ -11,8 +10,16 @@ import {
   normalizePagePath,
   type Page,
   type SiteContent,
+  sitePages,
+  todayIn,
 } from "@goodfellow-cms/core";
-import { fileSystemSource, handleDevApi, localFileStore, localRegistryDir } from "@goodfellow-cms/core/node";
+import {
+  fileSystemSource,
+  handleDevApi,
+  localFileStore,
+  localRegistryDir,
+  sendCalendarFile,
+} from "@goodfellow-cms/core/node";
 import react from "@vitejs/plugin-react";
 import { createServer, type Plugin, type ViteDevServer } from "vite";
 import { ADMIN_ENTRY, adminEntryPlugin, adminHtml } from "./admin-entry.js";
@@ -51,7 +58,7 @@ function findPage(content: SiteContent, pathname: string): { page: Page; status:
   } catch {
     path = "";
   }
-  const pages = allPages(content);
+  const pages = sitePages(content, todayIn(content.settings.timeZone));
   const page = pages.find((candidate) => candidate.path === path);
   if (page) return { page, status: 200 };
   const notFound = pages.find((candidate) => candidate.path === "/404");
@@ -182,6 +189,8 @@ function devPlugin(root: string, styles: () => StylesEntries): Plugin {
             res.end(await server.transformIndexHtml("/admin", html));
             return;
           }
+          // Calendar files, as builds write them, from the content as it is now.
+          if (await sendCalendarFile(fileSystemSource(root), url.pathname, res).catch(() => false)) return;
           if (/\.[a-z0-9]+$/i.test(url.pathname)) return next();
 
           try {

@@ -52,11 +52,11 @@ function fillComponent(component: ComponentData, values: Values, config: Config)
 }
 
 /** Each field's value as it appears in place of its placeholder. */
-export function placeholderValues(collection: Collection, entry: Entry, language: string): Values {
+export function placeholderValues(collection: Collection, entry: Entry, language: string, timeZone?: string): Values {
   return new Map(
     collection.settings.fields.map((field) => [
       field.name,
-      formatFieldValue(field, entry.content.fields[field.name], language),
+      formatFieldValue(field, entry.content.fields[field.name], language, timeZone),
     ]),
   );
 }
@@ -68,8 +68,15 @@ export function placeholderValues(collection: Collection, entry: Entry, language
  * place. Values are plain text, escaped where the text is rich text. Text in
  * braces that isn't a field name is left as it is.
  */
-export function applyEntry(data: Data, config: Config, collection: Collection, entry: Entry, language = "en"): Data {
-  const values = placeholderValues(collection, entry, language);
+export function applyEntry(
+  data: Data,
+  config: Config,
+  collection: Collection,
+  entry: Entry,
+  language = "en",
+  timeZone?: string,
+): Data {
+  const values = placeholderValues(collection, entry, language, timeZone);
   const rootFields = config.root?.fields as Fields | undefined;
   return {
     ...data,
