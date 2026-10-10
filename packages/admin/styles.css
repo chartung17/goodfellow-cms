@@ -1231,3 +1231,82 @@ body,
 .gfa-records code {
   overflow-wrap: anywhere;
 }
+
+/* Version history */
+.gfa-versions-screen {
+  max-width: 1400px;
+}
+
+.gfa-versions-layout {
+  display: grid;
+  grid-template-columns: minmax(260px, 360px) minmax(0, 1fr);
+  gap: 24px;
+  align-items: start;
+}
+
+.gfa-versions {
+  list-style: none;
+  margin: 12px 0;
+  padding: 0;
+  display: grid;
+  gap: 6px;
+}
+
+.gfa-version {
+  display: grid;
+  gap: 2px;
+  width: 100%;
+  padding: 8px 12px;
+  border: 1px solid var(--gfa-border);
+  border-radius: var(--gfa-radius);
+  background: var(--gfa-bg);
+  color: var(--gfa-text);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.gfa-version[aria-pressed="true"] {
+  border-color: var(--gfa-accent);
+  background: var(--gfa-current-bg);
+}
+
+.gfa-version-message {
+  font-weight: 600;
+}
+
+.gfa-version-detail {
+  display: grid;
+  gap: 12px;
+}
+
+.gfa-version-preview {
+  position: relative;
+  height: 70vh;
+  border: 1px solid var(--gfa-border);
+  border-radius: var(--gfa-radius);
+  overflow: hidden;
+}
+
+@media (max-width: 900px) {
+  .gfa-versions-layout {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* Editors */
+.gfa-editor-person {
+  display: grid;
+  gap: 2px;
+}
+
+.gfa-owner-token {
+  padding: 16px;
+  border: 1px solid var(--gfa-border);
+  border-radius: var(--gfa-radius);
+}
+
+.gfa-owner-token ol {
+  margin: 0;
+  padding-left: 20px;
+}

@@ -4,20 +4,31 @@ import {
   encodeBase64,
   encodeBase64Bytes,
   type FileChange,
+  type FileVersion,
   GitApiError,
   type GitBackend,
   type GitUser,
+  type HistoryOptions,
+  type OwnerAccess,
   type PagesDomains,
   SignInError,
+  type SiteEditors,
   type TokenLink,
   type WriteOptions,
 } from "@goodfellow-cms/core";
 import { type ApiOptions, githubJson, githubRequest, repoPath } from "./api.js";
+import { githubEditors, githubOwnerAccess } from "./editors.js";
 import { githubPages } from "./pages.js";
 
 interface TreeResponse {
   tree: Array<{ path: string; type: string; sha: string }>;
   truncated: boolean;
+}
+
+interface CommitResponse {
+  sha: string;
+  commit: { message: string; author?: { name?: string; date?: string } | null };
+  author?: { login: string } | null;
 }
 
 interface GraphQLResponse {
@@ -35,8 +46,8 @@ export interface GitHubBackendOptions {
   branch: string;
   user: GitUser;
   onSignOut: () => void;
-  /** Where to create a token that can change GitHub Pages settings, for connecting a domain. */
-  pagesTokenLink: TokenLink;
+  /** Where to create the owner token, which can change editors and GitHub Pages settings. */
+  ownerTokenLink: TokenLink;
 }
 
 /**
@@ -47,6 +58,8 @@ export interface GitHubBackendOptions {
 export class GitHubBackend implements GitBackend {
   readonly user: GitUser;
   readonly pages: PagesDomains;
+  readonly editors: SiteEditors;
+  readonly ownerAccess: OwnerAccess;
   private readonly api: ApiOptions;
   private readonly repo: string;
   private readonly branch: string;
@@ -61,7 +74,10 @@ export class GitHubBackend implements GitBackend {
     this.branch = options.branch;
     this.user = options.user;
     this.onSignOut = options.onSignOut;
-    this.pages = githubPages(this.api, this.repo, options.pagesTokenLink);
+    const owner = githubOwnerAccess(this.api, this.repo, options.ownerTokenLink);
+    this.ownerAccess = owner.access;
+    this.pages = githubPages(() => owner.api() ?? this.api, this.repo);
+    this.editors = githubEditors(this.api, owner.api, this.repo, this.user.login);
   }
 
   async revision(): Promise<string> {
@@ -94,8 +110,12 @@ export class GitHubBackend implements GitBackend {
   }
 
   async read(path: string): Promise<string | undefined> {
-    const sha = (await this.currentTree()).get(path);
-    if (!sha) return undefined;
+    return this.readFrom(await this.currentTree(), path);
+  }
+
+  private readFrom(tree: Map<string, string>, path: string): Promise<string | undefined> {
+    const sha = tree.get(path);
+    if (!sha) return Promise.resolve(undefined);
     let blob = this.blobs.get(sha);
     if (!blob) {
       blob = githubRequest(this.api, `/repos/${this.repo}/git/blobs/${sha}`, {
@@ -168,6 +188,26 @@ export class GitHubBackend implements GitBackend {
     throw new GitApiError(422, `GitHub couldn't save the changes: ${error?.message ?? "unknown error"}`);
   }
 
+  async history(path: string, { page = 1, perPage = 20 }: HistoryOptions = {}): Promise<FileVersion[]> {
+    const query = new URLSearchParams({
+      sha: this.pinned ?? (await this.revision()),
+      path,
+      per_page: String(perPage),
+      page: String(page),
+    });
+    const commits = await githubJson<CommitResponse[]>(this.api, `/repos/${this.repo}/commits?${query}`);
+    return commits.map((commit) => ({
+      revision: commit.sha,
+      date: commit.commit.author?.date ?? "",
+      author: commit.commit.author?.name || commit.author?.login || undefined,
+      message: commit.commit.message.split("\n")[0] ?? "",
+    }));
+  }
+
+  async readAt(path: string, revision: string): Promise<string | undefined> {
+    return this.readFrom(await this.tree(revision), path);
+  }
+
   async changedPaths(from: string, to: string): Promise<string[]> {
     const comparison = await githubJson<{ files?: Array<{ filename: string; previous_filename?: string }> }>(
       this.api,
@@ -216,6 +256,7 @@ export class GitHubBackend implements GitBackend {
   }
 
   signOut(): void {
+    this.ownerAccess.forget();
     this.onSignOut();
   }
 }

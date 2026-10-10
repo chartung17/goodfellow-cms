@@ -26,24 +26,30 @@ export interface GitHubOptions {
  * repository, which GitHub doesn't let links choose.
  */
 export function githubTokenLinks(repo: string, webUrl = "https://github.com") {
-  const [owner = ""] = repo.split("/");
+  const [repoOwner = ""] = repo.split("/");
   const fineGrained = new URLSearchParams({
     name: "Goodfellow admin",
     description: `Edit ${repo} in its admin panel`,
-    target_name: owner,
+    target_name: repoOwner,
     expires_in: "90",
     contents: "write",
     deployments: "read",
   });
   const classic = new URLSearchParams({ scopes: "repo", description: `Goodfellow admin for ${repo}` });
-  // Connecting a domain also changes GitHub Pages settings, which site owners' tokens need the Pages permission for.
-  const withPages = new URLSearchParams(fineGrained);
-  withPages.set("pages", "write");
-  withPages.set("description", `Edit ${repo} in its admin panel, and connect its domain`);
+  // Changing editors and GitHub Pages settings needs permissions signing in doesn't ask for, including
+  // Administration, which can also delete the repository. So owners make a second token, used for one tab only.
+  const owner = new URLSearchParams({
+    name: "Goodfellow owner",
+    description: `Manage the editors and domain of ${repo}`,
+    target_name: repoOwner,
+    expires_in: "7",
+    administration: "write",
+    pages: "write",
+  });
   return {
     fineGrained: `${webUrl}/settings/personal-access-tokens/new?${fineGrained}`,
     classic: `${webUrl}/settings/tokens/new?${classic}`,
-    withPages: `${webUrl}/settings/personal-access-tokens/new?${withPages}`,
+    owner: `${webUrl}/settings/personal-access-tokens/new?${owner}`,
   };
 }
 
@@ -80,7 +86,7 @@ export function github(options: GitHubOptions): GitHost {
       branch: options.branch ?? repo.default_branch,
       user: { login: user.login, name: user.name ?? undefined, avatarUrl: user.avatar_url },
       onSignOut: () => storage.clear(),
-      pagesTokenLink: { url: links.withPages, label: "domain.token.create" },
+      ownerTokenLink: { url: links.owner, label: "owner.token.create" },
     });
   }
 

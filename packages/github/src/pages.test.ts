@@ -71,7 +71,6 @@ describe("GitHub Pages domains", () => {
   it("says when the sign-in can't change Pages, or the domain is taken", async () => {
     const { pages } = await signIn({ tokens: { "test-token": { login: "editor", pages: false } } });
     await expect(pages.connect("example.org", { apex: true })).rejects.toMatchObject({ problem: "not-allowed" });
-    expect(pages.tokenLink?.url).toContain("pages=write");
     const { pages: taken } = await signIn({ takenDomains: ["example.org"] });
     await expect(taken.connect("example.org", { apex: true })).rejects.toBeInstanceOf(DomainError);
     await expect(taken.connect("example.org", { apex: true })).rejects.toMatchObject({ problem: "taken" });

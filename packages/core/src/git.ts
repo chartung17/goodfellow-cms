@@ -1,5 +1,6 @@
 import type { ContentStore } from "./content/store.js";
 import type { PagesDomains } from "./domains.js";
+import type { OwnerAccess, SiteEditors } from "./editors.js";
 
 /** The person signed in to the admin panel. */
 export interface GitUser {
@@ -20,13 +21,43 @@ export interface DeployStatus {
   detailsUrl?: string;
 }
 
+/** One published version of a file. */
+export interface FileVersion {
+  /** The commit it was published in, which `readAt()` reads the file at. */
+  revision: string;
+  /** When it was published, as an ISO 8601 date. */
+  date: string;
+  /** Who published it, as the host names them. */
+  author?: string;
+  /** What the publish said, such as "Update About". */
+  message: string;
+}
+
+export interface HistoryOptions {
+  /** Which page of versions, from 1 (the newest). */
+  page?: number;
+  /** Versions per page. Defaults to 20. */
+  perPage?: number;
+}
+
 /** A signed-in connection to the git host that stores the site. */
 export interface GitBackend extends ContentStore {
   readonly user: GitUser;
   changedPaths(from: string, to: string): Promise<string[]>;
   deployStatus(revision: string): Promise<DeployStatus>;
+  /**
+   * The published versions of a file, newest first, up to the revision reads
+   * are pinned to. A file that was moved starts again at its new path.
+   */
+  history(path: string, options?: HistoryOptions): Promise<FileVersion[]>;
+  /** A file's text in an earlier version, or `undefined` if it didn't exist then. */
+  readAt(path: string, revision: string): Promise<string | undefined>;
   /** The git host's own Pages, for connecting a custom domain. Absent where the backend can't. */
   readonly pages?: PagesDomains;
+  /** Who can edit the site, and inviting and removing them. Absent where the backend can't. */
+  readonly editors?: SiteEditors;
+  /** A second token for changing editors and Pages settings, where signing in can't. */
+  readonly ownerAccess?: OwnerAccess;
   /** Forgets the saved sign-in. */
   signOut(): void;
 }
@@ -37,7 +68,7 @@ export interface GitBackend extends ContentStore {
  */
 export interface TokenLink {
   url: string;
-  label: "signIn.token.create" | "signIn.token.createBroad" | "domain.token.create";
+  label: "signIn.token.create" | "signIn.token.createBroad" | "owner.token.create";
   hint?: "signIn.token.createBroadHint";
 }
 

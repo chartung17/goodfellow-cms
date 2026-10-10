@@ -14,6 +14,7 @@ import {
 import { useCallback, useEffect, useState } from "react";
 import { useAdmin, useSiteContent } from "./admin-context.js";
 import { siteSettingsFileChange } from "./changes.js";
+import { OwnerTokenActive, OwnerTokenForm } from "./owner-token.js";
 import { SettingsTabs } from "./settings-screen.js";
 import { useStrings } from "./strings.js";
 import { Button, Dialog, ErrorMessage, TextField } from "./ui.js";
@@ -63,10 +64,13 @@ export function DomainScreen() {
   const [site, setSite] = useState<PagesSite | null>();
   const [error, setError] = useState<unknown>();
 
-  useEffect(() => {
+  const loadSite = useCallback(() => {
     if (!pages) return;
+    setError(undefined);
     pages.site().then((found) => setSite(found ?? null), setError);
   }, [pages]);
+
+  useEffect(() => loadSite(), [loadSite]);
 
   const saveAddress = useCallback(
     async (url: string | undefined, message: string) => {
@@ -79,7 +83,7 @@ export function DomainScreen() {
   let body: React.ReactNode;
   if (demo) body = <p>{t("domain.demo")}</p>;
   else if (!pages) body = <p>{t("domain.local")}</p>;
-  else if (error) body = <DomainProblem error={error} />;
+  else if (error) body = <DomainProblem error={error} onRetry={loadSite} />;
   else if (site === undefined) body = <p role="status">{t("domain.loading")}</p>;
   else if (site === null) {
     body = (
@@ -119,29 +123,23 @@ export function DomainScreen() {
       <SettingsTabs tab="domain" />
       <div className="gfa-form">
         <p>{t("domain.intro")}</p>
+        <OwnerTokenActive onForget={loadSite} />
         {body}
       </div>
     </div>
   );
 }
 
-function DomainProblem({ error }: { error: unknown }) {
+/** Explains a problem with the domain; where an owner token would let it work, asks for one, then calls `onRetry`. */
+function DomainProblem({ error, onRetry }: { error: unknown; onRetry: () => void }) {
   const t = useStrings();
-  const { pages, account } = useAdmin();
+  const { ownerAccess, account } = useAdmin();
   const host = account?.hostName ?? "";
   if (!(error instanceof DomainError)) return <ErrorMessage message={t("domain.error.other")} error={error} />;
-  return (
-    <ErrorMessage
-      message={t(`domain.error.${error.problem}`, { host })}
-      action={
-        error.problem === "not-allowed" && pages?.tokenLink ? (
-          <a href={pages.tokenLink.url} target="_blank" rel="noreferrer">
-            {t(pages.tokenLink.label)}
-          </a>
-        ) : undefined
-      }
-    />
-  );
+  if (error.problem === "not-allowed" && ownerAccess && !ownerAccess.active) {
+    return <OwnerTokenForm onReady={onRetry} />;
+  }
+  return <ErrorMessage message={t(`domain.error.${error.problem}`, { host })} />;
 }
 
 function ConnectForm({ current, onConnected }: { current?: string; onConnected: (domain: string) => Promise<void> }) {
@@ -192,7 +190,7 @@ function ConnectForm({ current, onConnected }: { current?: string; onConnected: 
         }}
       />
       <p className="gfa-hint">{t("domain.warning")}</p>
-      {error !== undefined && <DomainProblem error={error} />}
+      {error !== undefined && <DomainProblem error={error} onRetry={() => setError(undefined)} />}
       <div>
         <Button variant="primary" type="submit" disabled={busy || !input.trim()}>
           {busy ? t("domain.connecting") : t("domain.connect")}
@@ -295,7 +293,15 @@ function ConnectedDomain({ domain, onRemoved }: { domain: string; onRemoved: () 
           {t("domain.done", { address })}
         </p>
       )}
-      {error !== undefined && <DomainProblem error={error} />}
+      {error !== undefined && (
+        <DomainProblem
+          error={error}
+          onRetry={() => {
+            setError(undefined);
+            void check();
+          }}
+        />
+      )}
 
       <h2 className="gfa-section-title">{t("domain.records.title")}</h2>
       <p className="gfa-hint">{t("domain.records.hint")}</p>

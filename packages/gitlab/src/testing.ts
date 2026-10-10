@@ -26,6 +26,18 @@ export interface FakeGitLabOptions {
   groups?: string[];
   /** Publishes the site with GitLab Pages. Off by default. */
   pages?: { uniqueDomain?: boolean };
+  /** Other GitLab accounts that exist, which can be added to the project. Every token's user exists and is a member. */
+  accounts?: string[];
+}
+
+/** A member of the site's project. */
+export interface FakeMember {
+  id: number;
+  username: string;
+  name?: string;
+  accessLevel: number;
+  /** A member through a group rather than the project itself. */
+  inherited?: boolean;
 }
 
 /** A custom domain added to the site's GitLab Pages. */
@@ -73,6 +85,133 @@ export function fakeGitLab(options: FakeGitLabOptions) {
   const tokens = new Map<string, FakeGitLabUser>(
     Object.entries(options.tokens ?? { "test-token": { username: "editor", name: "Test Editor" } }),
   );
+  let nextUserId = 1;
+  /** Every GitLab account, by username, with its id. */
+  const accounts = new Map<string, number>();
+  for (const name of [
+    ...[...tokens.values(), ...(options.oauth ? [options.oauth.user] : [])].map((user) => user.username),
+    ...(options.accounts ?? []),
+  ]) {
+    if (!accounts.has(name)) accounts.set(name, nextUserId++);
+  }
+  const members = new Map<number, FakeMember>();
+  for (const user of [...tokens.values(), ...(options.oauth ? [options.oauth.user] : [])]) {
+    const id = accounts.get(user.username) ?? 0;
+    members.set(id, { id, username: user.username, name: user.name, accessLevel: user.accessLevel ?? 40 });
+  }
+  const invitations = new Map<string, number>();
+  /** Protected branches and who may push to them: GitLab protects the default branch for Maintainers. */
+  const protectedBranches = new Map<string, { push: number; merge: number; forcePush: boolean }>([
+    [repo.defaultBranch, { push: 40, merge: 40, forcePush: false }],
+  ]);
+
+  /** The project's members and invitations, and its protected branches. */
+  async function handleMembers(request: Request, url: URL, rest: string, accessLevel: number) {
+    const forbidden = () => json({ message: "403 Forbidden" }, 403);
+    const list = (items: unknown[]) => {
+      const perPage = Number(url.searchParams.get("per_page") ?? 20);
+      const page = Number(url.searchParams.get("page") ?? 1);
+      return json(items.slice((page - 1) * perPage, page * perPage));
+    };
+    const shown = (member: FakeMember) => ({
+      id: member.id,
+      username: member.username,
+      name: member.name ?? member.username,
+      avatar_url: `https://avatars.example/${member.username}`,
+      access_level: member.accessLevel,
+    });
+    if (rest === "/members/all" && request.method === "GET") return list([...members.values()].map(shown));
+    if (rest === "/members" && request.method === "GET") {
+      return list([...members.values()].filter((member) => !member.inherited).map(shown));
+    }
+    if (rest === "/members" && request.method === "POST") {
+      if (accessLevel < 40) return forbidden();
+      const body = (await request.json()) as { user_id: number; access_level: number };
+      const username = [...accounts].find(([, id]) => id === body.user_id)?.[0];
+      if (!username) return json({ message: "404 User Not Found" }, 404);
+      if (members.has(body.user_id)) return json({ message: "Member already exists" }, 409);
+      members.set(body.user_id, { id: body.user_id, username, accessLevel: body.access_level });
+      return json(shown(members.get(body.user_id) as FakeMember), 201);
+    }
+    const member = rest.match(/^\/members\/(\d+)$/);
+    if (member) {
+      if (accessLevel < 40) return forbidden();
+      const found = members.get(Number(member[1]));
+      if (!found || found.inherited) return json({ message: "404 Member Not Found" }, 404);
+      if (request.method === "DELETE") {
+        members.delete(found.id);
+        return new Response(null, { status: 204 });
+      }
+      if (request.method === "PUT") {
+        found.accessLevel = ((await request.json()) as { access_level: number }).access_level;
+        return json(shown(found));
+      }
+    }
+    if (rest === "/invitations") {
+      if (accessLevel < 40) return forbidden();
+      if (request.method === "GET") {
+        return list([...invitations].map(([email, level]) => ({ invite_email: email, access_level: level })));
+      }
+      if (request.method === "POST") {
+        const body = (await request.json()) as { email: string; access_level: number };
+        if (invitations.has(body.email)) {
+          return json({ status: "error", message: { [body.email]: "Invite email has already been taken" } }, 201);
+        }
+        invitations.set(body.email, body.access_level);
+        return json({ status: "success" }, 201);
+      }
+    }
+    const invitation = rest.match(/^\/invitations\/([^/]+)$/);
+    if (invitation) {
+      if (accessLevel < 40) return forbidden();
+      const email = decodeURIComponent(invitation[1] ?? "");
+      if (!invitations.has(email)) return json({ message: "404 Not Found" }, 404);
+      if (request.method === "DELETE") {
+        invitations.delete(email);
+        return new Response(null, { status: 204 });
+      }
+      if (request.method === "PUT") {
+        invitations.set(email, ((await request.json()) as { access_level: number }).access_level);
+        return json({ invite_email: email });
+      }
+    }
+    const protection = rest.match(/^\/protected_branches\/([^/]+)$/);
+    if (protection) {
+      const name = decodeURIComponent(protection[1] ?? "");
+      const found = protectedBranches.get(name);
+      if (!found) return json({ message: "404 Not found" }, 404);
+      if (request.method === "GET") {
+        return json({
+          name,
+          push_access_levels: [{ access_level: found.push }],
+          merge_access_levels: [{ access_level: found.merge }],
+          allow_force_push: found.forcePush,
+        });
+      }
+      if (request.method === "DELETE") {
+        if (accessLevel < 40) return forbidden();
+        protectedBranches.delete(name);
+        return new Response(null, { status: 204 });
+      }
+    }
+    if (rest === "/protected_branches" && request.method === "POST") {
+      if (accessLevel < 40) return forbidden();
+      const body = (await request.json()) as {
+        name: string;
+        push_access_level?: number;
+        merge_access_level?: number;
+        allow_force_push?: boolean;
+      };
+      if (protectedBranches.has(body.name)) return json({ message: "Protected branch already exists" }, 409);
+      protectedBranches.set(body.name, {
+        push: body.push_access_level ?? 40,
+        merge: body.merge_access_level ?? 40,
+        forcePush: body.allow_force_push ?? false,
+      });
+      return json({ name: body.name }, 201);
+    }
+    return undefined;
+  }
   const codes = new Map<string, { challenge: string; redirectUri: string }>();
   const refreshTokens = new Map<string, FakeGitLabUser>();
   const pipelines = new Map<string, { checks: number }>();
@@ -228,8 +367,8 @@ export function fakeGitLab(options: FakeGitLabOptions) {
     return json({ message: "404 Not Found" }, 404);
   }
 
-  function commit(changes: FileChange[], message: string): string {
-    const sha = repo.commit(changes, message);
+  function commit(changes: FileChange[], message: string, author?: string): string {
+    const sha = repo.commit(changes, message, { author });
     if (options.deployAfterChecks !== undefined) pipelines.set(sha, { checks: 0 });
     return sha;
   }
@@ -303,13 +442,21 @@ export function fakeGitLab(options: FakeGitLabOptions) {
     const setup = await handleCreated(request, path, user);
     if (setup) return setup;
 
+    if (path === "/users") {
+      const name = url.searchParams.get("username") ?? "";
+      const id = [...accounts].find(([username]) => username.toLowerCase() === name.toLowerCase())?.[1];
+      return json(id === undefined ? [] : [{ id, username: name }]);
+    }
+
     const projectMatch = path.match(/^\/projects\/([^/]+)(\/.*)?$/);
     if (!projectMatch || decodeURIComponent(projectMatch[1] ?? "") !== options.project)
       return json({ message: "404 Project Not Found" }, 404);
     const rest = projectMatch[2] ?? "";
-    const accessLevel = user.accessLevel ?? 40;
+    const accessLevel = members.get(accounts.get(user.username) ?? 0)?.accessLevel ?? 0;
     const pagesResponse = await handlePages(request, rest, accessLevel);
     if (pagesResponse) return pagesResponse;
+    const membersResponse = await handleMembers(request, url, rest, accessLevel);
+    if (membersResponse) return membersResponse;
 
     if (rest === "") {
       return json({
@@ -349,6 +496,16 @@ export function fakeGitLab(options: FakeGitLabOptions) {
         : new Response(fakeFileBytes(content));
     }
 
+    const raw = rest.match(/^\/repository\/files\/([^/]+)\/raw$/);
+    if (raw) {
+      const ref = url.searchParams.get("ref") ?? repo.defaultBranch;
+      if (!repo.commitAt(repo.branches.get(ref) ?? ref)) return json({ message: "404 Commit Not Found" }, 404);
+      const content = repo.files(ref).get(decodeURIComponent(raw[1] ?? ""));
+      return content === undefined
+        ? json({ message: "404 File Not Found" }, 404)
+        : new Response(fakeFileBytes(content));
+    }
+
     const file = rest.match(/^\/repository\/files\/([^/]+)$/);
     if (file) {
       const filePath = decodeURIComponent(file[1] ?? "");
@@ -361,6 +518,10 @@ export function fakeGitLab(options: FakeGitLabOptions) {
 
     if (rest === "/repository/commits" && request.method === "POST") {
       if (accessLevel < 30) return json({ message: "403 Forbidden" }, 403);
+      const pushTo = (await request.clone().json()) as { branch: string };
+      if (accessLevel < (protectedBranches.get(pushTo.branch)?.push ?? 0)) {
+        return json({ message: "You are not allowed to push into this branch" }, 403);
+      }
       const body = (await request.json()) as {
         branch: string;
         commit_message: string;
@@ -396,8 +557,28 @@ export function fakeGitLab(options: FakeGitLabOptions) {
               : { path: action.file_path, content: action.content ?? "" },
         ),
         body.commit_message,
+        user.name ?? user.username,
       );
       return json({ id: sha, message: body.commit_message }, 201);
+    }
+
+    if (rest === "/repository/commits" && request.method === "GET") {
+      const ref = url.searchParams.get("ref_name") ?? repo.defaultBranch;
+      const file = url.searchParams.get("path");
+      if (!repo.commitAt(repo.branches.get(ref) ?? ref)) return json({ message: "404 Reference Not Found" }, 404);
+      const perPage = Number(url.searchParams.get("per_page") ?? 20);
+      const page = Number(url.searchParams.get("page") ?? 1);
+      const commits = file ? repo.history(file, ref) : [];
+      return json(
+        commits.slice((page - 1) * perPage, page * perPage).map((commit) => ({
+          id: commit.sha,
+          title: commit.message.split("\n")[0],
+          message: commit.message,
+          author_name: commit.author ?? "GitLab",
+          authored_date: commit.date,
+          committed_date: commit.date,
+        })),
+      );
     }
 
     if (rest === "/repository/compare") {
@@ -422,6 +603,10 @@ export function fakeGitLab(options: FakeGitLabOptions) {
   }
 
   return {
+    /** The project's members by user id, invitations by email, and protected branches, which tests can change. */
+    members,
+    invitations,
+    protectedBranches,
     repo,
     /** Projects created through the API, by full path. */
     created,

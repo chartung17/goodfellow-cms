@@ -12,6 +12,16 @@ order: 2
 
 Several people can edit the same site. If someone else published changes to other pages while you were editing, publishing still goes ahead. If they changed the same page or file, publishing stops and explains what happened, instead of overwriting their work; reload the page to see their version, then make your change again.
 
+## Version history
+
+Every publish is kept. In a page's editor, **Version history** lists each version of the page that's been published, newest first, with who published it and when. Choose a version to see a preview of it, then choose **Restore this version** to put it back. Restoring publishes that version again as a new change, so the version it replaced stays in the history, and you can restore that one too.
+
+The header, the footer and each item in a collection have a **Version history** button in their editors as well. A few things to know:
+
+- **Versions that can't be restored:** one that uses blocks the site doesn't have any more, until they're added again under **Blocks**, and an item whose values no longer fit its collection's fields, such as a choice that's since been removed. An item's values for fields removed since are left out.
+- **Moved pages:** a page moved to a new address starts a new history there.
+- **Where it works:** in the published site's admin panel, where you sign in with GitHub or GitLab. There's no history in a demo, or when the site runs on your own computer.
+
 ## Unpublished changes
 
 Leaving a screen with unpublished changes asks first, so nothing is lost by accident. Changes aren't saved anywhere until you publish, so publish before closing the tab.
