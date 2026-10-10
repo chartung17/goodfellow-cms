@@ -40,6 +40,7 @@ body:
         - Building or putting the site online
         - Connecting a domain
         - Version history
+        - Inviting or removing editors
         - Creating a site (the setup page or npm create goodfellow)
         - The AI assistant
         - Next.js sites

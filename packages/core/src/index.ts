@@ -144,6 +144,15 @@ export {
   recordsInPlace,
   registrarName,
 } from "./domains.js";
+export {
+  type EditorList,
+  type EditorRole,
+  EditorsError,
+  type EditorsProblem,
+  type OwnerAccess,
+  type SiteEditor,
+  type SiteEditors,
+} from "./editors.js";
 export { isExternalLink, type LinkTargetOptions, NEW_TAB, setLinkTargets } from "./external-links.js";
 export {
   credentialStorage,

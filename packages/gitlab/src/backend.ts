@@ -11,9 +11,11 @@ import {
   type HistoryOptions,
   type PagesDomains,
   SignInError,
+  type SiteEditors,
   type WriteOptions,
 } from "@goodfellow-cms/core";
 import { type ApiOptions, gitlabJson, gitlabRequest } from "./api.js";
+import { gitlabEditors } from "./editors.js";
 import { gitlabPages } from "./pages.js";
 
 const PAGE_SIZE = 100;
@@ -34,6 +36,7 @@ export interface GitLabBackendOptions {
 export class GitLabBackend implements GitBackend {
   readonly user: GitUser;
   readonly pages: PagesDomains;
+  readonly editors: SiteEditors;
   private readonly api: ApiOptions;
   private readonly project: string;
   private readonly branch: string;
@@ -49,6 +52,7 @@ export class GitLabBackend implements GitBackend {
     this.user = options.user;
     this.onSignOut = options.onSignOut;
     this.pages = gitlabPages(this.api, options.project);
+    this.editors = gitlabEditors(this.api, options.project, this.branch, this.user.login);
   }
 
   private repo(path: string): string {

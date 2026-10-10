@@ -137,3 +137,29 @@ test("connects a subdomain to a GitLab Pages site once GitLab has verified it", 
   expect(fake.pages?.primaryDomain).toBe("www.parish.example");
   expect(siteAddress(fake.repo.files().get("content/site.json"))).toBe("https://www.parish.example");
 });
+
+test("asks for an owner token when signing in can't change GitHub Pages settings", async ({ page }) => {
+  const fake = fakeGitHub({
+    repo: "parish/site",
+    files: files(),
+    pages: true,
+    tokens: {
+      "test-token": { login: "maria", admin: true, pages: false },
+      "owner-token": { login: "maria", admin: true, administration: true },
+    },
+  });
+  await routeToFake(page, "https://api.github.com", fake.handle);
+  await fakeDns(page, "parish.example", {});
+
+  await page.goto(`${GITHUB_SITE}/admin/#/settings/domain`);
+  await page.getByLabel("Access token").fill("test-token");
+  await page.getByRole("button", { name: "Sign in" }).click();
+  await page.getByLabel("Domain", { exact: true }).fill("parish.example");
+  await page.getByRole("button", { name: "Connect domain" }).click();
+  await page.getByLabel("Owner token").fill("owner-token");
+  await page.getByRole("button", { name: "Use this token" }).click();
+  await expect(page.getByText("This tab is using an owner token.")).toBeVisible();
+  await page.getByRole("button", { name: "Connect domain" }).click();
+  await expect(page.getByRole("heading", { name: "1. Add these records at your registrar" })).toBeVisible();
+  expect(fake.pages.current?.cname).toBe("parish.example");
+});

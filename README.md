@@ -138,6 +138,7 @@ The admin panel is at `/admin` on the live site, and while `goodfellow dev` is r
 - **Header & footer:** edit them in Puck, like pages.
 - **Blocks:** add blocks from [block registries](#blocks-from-block-registries) to the editor, and remove them. Blocks the site doesn't use can be removed; for one it does, the admin panel lists where it's used.
 - **Site settings:** the site's name, address, logo and icons; contact details; colors, fonts and corner rounding; menus; custom CSS; and code for every page, such as analytics. A preview of the home page shows changes as you type, and Undo and Redo work across every tab. Fonts are chosen from a searchable list of Google Fonts, each shown in its own typeface. Custom CSS and code are edited in a code editor that indents, closes brackets and suggests properties and tags.
+- **Editors:** under **Site settings → Editors**, owners invite people by username (or on GitLab, by email), make them editors or owners, and remove them. On GitHub, that needs an owner token, kept only for the browser tab, which the Domain screen uses too. On GitLab, owners can let editors publish to the main branch, which GitLab first leaves to Maintainers.
 - **Domain:** connect a domain of your own, such as `example.org`, under **Site settings → Domain**, for sites on GitHub Pages or GitLab Pages. The screen lists the records to add at the registrar, and checks until the domain works.
 - **Light and dark:** the admin panel follows the computer's light or dark setting, or an editor's choice in its top bar, remembered in their browser. The site's previews keep the site's own colors.
 - **Live styling:** CSS classes typed into a block, and custom CSS (including Tailwind's `@apply`), take effect in the editor immediately, before the site is rebuilt.
@@ -352,7 +353,7 @@ my-site/
 14. **Site setup without a developer** (done). The documentation site's [Create a site](https://chartung17.github.io/goodfellow-cms/new-site/) page creates a site from any starter, with the same choices as `create-goodfellow`, in the person's own GitHub or GitLab account, straight from their browser, and puts it online with GitHub Pages, GitLab Pages or Vercel. It asks what the site is for and recommends a host whose free plan allows it, such as GitLab Pages for a business, and warns that GitHub Pages doesn't work with private repositories on GitHub's free plan. On GitHub, people sign in with a token the page links to (step 20's sign-in worker will replace it); on GitLab, with GitLab or a token. The page writes the repository into the site's config, so nobody has to edit it.
 15. **Custom domains** (done). Connect a domain from the admin panel's **Site settings → Domain**. Goodfellow connects it on GitHub Pages or GitLab Pages, lists the records to add at the domain's registrar, with guides for popular registrars in the docs, and checks until the domain works: the records, as the world sees them, the host's HTTPS certificate, and the site at its new address. Then it sends everyone to the secure address. Sites on Vercel connect their domain in Vercel, as the screen explains.
 16. **Running a site without a developer.**
-    - Invite and remove editors from the admin panel.
+    - Invite and remove editors from the admin panel (done).
     - Version history, with a way to restore an earlier version of a page (done).
     - Automatic updates: a scheduled job updates Goodfellow, and blocks added from block registries, and publishes the update only if the site still builds. Block updates replace only files nobody has changed.
     - Plain-language explanations when a rebuild fails.
@@ -374,6 +375,7 @@ my-site/
     - **Rate limits** per editor, per site and overall, kept below Cloudflare's free plan's daily limit.
     - **Token sign-in stays:** when the admin panel can't use the worker, for example because its limit for the day has been reached or a production build is being viewed on `localhost`, editors sign in with a token as they do now.
     - **Protected history:** the site setup page (step 14) signs in through the worker too, and gives new repositories rules that stop anyone rewriting the main branch's history, where the GitHub plan allows it. GitLab protects it by default.
+    - **Owner tools:** a second Goodfellow GitHub App, with the Administration and Pages permissions, used only by owners on the Editors and Domain screens, replaces the owner token. The everyday sign-in's app never gets those permissions, so editors' tokens can't delete the repository or change its settings.
     - **Self-hosting:** site owners can run their own copy of the worker, with their own GitHub App.
 21. **Claude connector.** An MCP server, so editors can work on their sites from Claude: read pages, entries and settings, see the site's blocks, make changes, check them in screenshots, and publish them or submit them for review.
     - **Ways to use it:**

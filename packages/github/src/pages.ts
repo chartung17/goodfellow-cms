@@ -5,7 +5,6 @@ import {
   GitApiError,
   type PagesDomainStatus,
   type PagesDomains,
-  type TokenLink,
 } from "@goodfellow-cms/core";
 import { type ApiOptions, githubJson, githubRequest } from "./api.js";
 
@@ -36,18 +35,21 @@ export function githubPagesRecords(repo: string, domain: string, { apex, www }: 
   ];
 }
 
-/** GitHub Pages, for a site's repository: where it's published, and its custom domain. */
-export function githubPages(api: ApiOptions, repo: string, tokenLink: TokenLink): PagesDomains {
+/**
+ * GitHub Pages, for a site's repository: where it's published, and its custom
+ * domain. `api` gives the owner token when one is in use (see `ownerAccess`).
+ */
+export function githubPages(api: () => ApiOptions, repo: string): PagesDomains {
   const path = `/repos/${repo}/pages`;
 
   async function pages(): Promise<PagesResponse | undefined> {
-    const response = await githubRequest(api, path, { allow: [404] });
+    const response = await githubRequest(api(), path, { allow: [404] });
     return response.status === 404 ? undefined : ((await response.json()) as PagesResponse);
   }
 
   async function update(body: Record<string, unknown>): Promise<void> {
     try {
-      await githubRequest(api, path, { method: "PUT", body });
+      await githubRequest(api(), path, { method: "PUT", body });
     } catch (error) {
       if (error instanceof GitApiError && (error.status === 403 || error.status === 404)) {
         throw new DomainError("not-allowed", "This sign-in can't change the site's GitHub Pages settings.");
@@ -64,7 +66,6 @@ export function githubPages(api: ApiOptions, repo: string, tokenLink: TokenLink)
   }
 
   return {
-    tokenLink,
     async site() {
       const found = await pages();
       return found && { url: found.html_url, domain: found.cname ?? undefined };
@@ -77,7 +78,7 @@ export function githubPages(api: ApiOptions, repo: string, tokenLink: TokenLink)
       return githubPagesRecords(repo, domain, options);
     },
     async status(domain): Promise<PagesDomainStatus> {
-      const found = await githubJson<PagesResponse>(api, path);
+      const found = await githubJson<PagesResponse>(api(), path);
       const state = found.https_certificate?.state ?? "";
       return {
         // GitHub doesn't ask to verify a site's domain; owners can verify theirs in their account's settings.

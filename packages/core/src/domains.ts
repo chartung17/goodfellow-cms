@@ -5,8 +5,6 @@
  * which answers browsers (CORS) and sees what the rest of the world sees.
  */
 
-import type { TokenLink } from "./git.js";
-
 /** A DNS record the site's owner adds at the domain's registrar. */
 export interface DnsRecord {
   type: "A" | "AAAA" | "CNAME" | "TXT";
@@ -55,8 +53,6 @@ export interface ConnectDomainOptions {
  * connect their domain there.
  */
 export interface PagesDomains {
-  /** Where to create a token that can change Pages settings, for sign-ins that can't. */
-  readonly tokenLink?: TokenLink;
   /** Where Pages publishes the site, or `undefined` if Pages doesn't publish it. */
   site(): Promise<PagesSite | undefined>;
   /** Connects the domain to the site on the host, and returns the records to add at the registrar. */
@@ -73,7 +69,7 @@ export interface PagesDomains {
 
 /** Why a domain couldn't be connected, in a form the admin panel turns into plain words. */
 export type DomainProblem =
-  /** The sign-in can't change the host's Pages settings. */
+  /** The sign-in can't change the host's Pages settings (see the backend's `ownerAccess`). */
   | "not-allowed"
   /** Another site on the host already uses the domain. */
   | "taken"

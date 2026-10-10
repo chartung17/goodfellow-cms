@@ -12,10 +12,12 @@ import {
   isDemoStore,
   loadSiteContent,
   MEDIA_DIR,
+  type OwnerAccess,
   type PagesDomains,
   type RegistrySources,
   SignInError,
   type SiteContent,
+  type SiteEditors,
   writeChanges,
 } from "@goodfellow-cms/core";
 import { createPuckConfig } from "@goodfellow-cms/react";
@@ -81,6 +83,10 @@ interface AdminContextValue {
   pages?: PagesDomains;
   /** Earlier versions of the site's files, when the site is stored on a git host. */
   versions?: Pick<GitBackend, "history" | "readAt">;
+  /** Who edits the site, when the backend can say. */
+  editors?: SiteEditors;
+  /** A second token for changing editors and Pages settings, where signing in can't. */
+  ownerAccess?: OwnerAccess;
 }
 
 const AdminContext = createContext<AdminContextValue | null>(null);
@@ -139,6 +145,26 @@ export function AdminProvider({
   const demo = isDemoStore(store) ? store : undefined;
   const pages = isGitBackend(store) ? store.pages : undefined;
   const versions = isGitBackend(store) ? store : undefined;
+  const editors = isGitBackend(store) ? store.editors : undefined;
+  // The backend's owner access, with whether it's in use as state, so every screen showing it updates together.
+  const backendOwner = isGitBackend(store) ? store.ownerAccess : undefined;
+  const [ownerActive, setOwnerActive] = useState(backendOwner?.active ?? false);
+  const ownerAccess = useMemo<OwnerAccess | undefined>(
+    () =>
+      backendOwner && {
+        tokenLink: backendOwner.tokenLink,
+        active: ownerActive,
+        async applyToken(token) {
+          await backendOwner.applyToken(token);
+          setOwnerActive(true);
+        },
+        forget() {
+          backendOwner.forget();
+          setOwnerActive(false);
+        },
+      },
+    [backendOwner, ownerActive],
+  );
 
   // A demo visitor's uploads aren't on the live site, and their replacements of its files would show the
   // live site's version, so previews show what the visitor saved instead.
@@ -226,6 +252,8 @@ export function AdminProvider({
       demo,
       pages,
       versions,
+      editors,
+      ownerAccess,
     }),
     [
       config,
@@ -246,6 +274,8 @@ export function AdminProvider({
       demo,
       pages,
       versions,
+      editors,
+      ownerAccess,
     ],
   );
 

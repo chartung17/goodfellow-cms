@@ -21,6 +21,17 @@ export interface FakeGitHubUser {
   workflow?: boolean;
   /** Whether the token may change GitHub Pages settings. Defaults to true. */
   pages?: boolean;
+  /** Whether the user is an owner (admin) of the site's repository. Defaults to false. */
+  admin?: boolean;
+  /** Whether the token has GitHub's Administration permission, which changing collaborators needs. Defaults to false. */
+  administration?: boolean;
+}
+
+/** A repository invitation that hasn't been accepted yet. */
+export interface FakeInvitation {
+  id: number;
+  login: string;
+  permission: "admin" | "write";
 }
 
 /** The site's GitHub Pages settings, as `GET /repos/{repo}/pages` reports them. */
@@ -58,6 +69,8 @@ export interface FakeGitHubOptions {
   pages?: boolean;
   /** Domains another GitHub Pages site already uses. */
   takenDomains?: string[];
+  /** Other GitHub accounts that exist, which can be invited. Every token's user exists too. */
+  accounts?: string[];
 }
 
 /** A repository created through the fake's API, as the setup page creates them. */
@@ -95,6 +108,83 @@ export function fakeGitHub(options: FakeGitHubOptions) {
       : undefined,
   };
   const trees = new Map<string, Map<string, FakeFile>>();
+  /** The repository's collaborators and their permission. Every token's user is one. */
+  const collaborators = new Map<string, "admin" | "push" | "read">(
+    Object.values(tokens).map((user) => [user.login, user.admin ? "admin" : user.push === false ? "read" : "push"]),
+  );
+  const invitations: FakeInvitation[] = [];
+  const accounts = new Set([...Object.values(tokens).map((user) => user.login), ...(options.accounts ?? [])]);
+  let nextInvitation = 1;
+
+  /** Collaborators and invitations, which only owners' tokens with the Administration permission can change. */
+  async function handleCollaborators(request: Request, rest: string, user: FakeGitHubUser) {
+    const forbidden = () => json({ message: "Resource not accessible by personal access token" }, 403);
+    const canManage = user.admin === true && user.administration === true;
+    if (rest === "/collaborators" && request.method === "GET") {
+      return json(
+        [...collaborators].map(([login, permission]) => ({
+          login,
+          avatar_url: `https://avatars.example/${login}`,
+          permissions: { admin: permission === "admin", maintain: false, push: permission !== "read", pull: true },
+        })),
+      );
+    }
+    if (rest === "/invitations" && request.method === "GET") {
+      if (!canManage) return forbidden();
+      return json(
+        invitations.map((invitation) => ({
+          id: invitation.id,
+          invitee: { login: invitation.login, avatar_url: `https://avatars.example/${invitation.login}` },
+          permissions: invitation.permission,
+        })),
+      );
+    }
+    const collaborator = rest.match(/^\/collaborators\/([^/]+)$/);
+    if (collaborator) {
+      if (!canManage) return forbidden();
+      const login = decodeURIComponent(collaborator[1] ?? "");
+      if (request.method === "DELETE") {
+        collaborators.delete(login);
+        return new Response(null, { status: 204 });
+      }
+      if (request.method === "PUT") {
+        if (!accounts.has(login)) return json({ message: "Not Found" }, 404);
+        const { permission = "push" } = (await request.json()) as { permission?: "admin" | "push" };
+        if (collaborators.has(login)) {
+          collaborators.set(login, permission);
+          return new Response(null, { status: 204 });
+        }
+        const existing = invitations.find((invitation) => invitation.login === login);
+        const invitation = existing ?? { id: nextInvitation++, login, permission: "write" as const };
+        invitation.permission = permission === "admin" ? "admin" : "write";
+        if (!existing) invitations.push(invitation);
+        return json({ id: invitation.id, invitee: { login }, permissions: invitation.permission }, 201);
+      }
+    }
+    const invitation = rest.match(/^\/invitations\/(\d+)$/);
+    if (invitation) {
+      if (!canManage) return forbidden();
+      const index = invitations.findIndex((candidate) => candidate.id === Number(invitation[1]));
+      if (index === -1) return json({ message: "Not Found" }, 404);
+      if (request.method === "DELETE") {
+        invitations.splice(index, 1);
+        return new Response(null, { status: 204 });
+      }
+      if (request.method === "PATCH") {
+        const { permissions } = (await request.json()) as { permissions: "admin" | "write" };
+        (invitations[index] as FakeInvitation).permission = permissions;
+        return json({ id: invitations[index]?.id, permissions });
+      }
+    }
+    return undefined;
+  }
+
+  /** Simulates an invited person accepting the invitation. */
+  function accept(login: string): void {
+    const index = invitations.findIndex((invitation) => invitation.login === login);
+    const [invitation] = index === -1 ? [] : invitations.splice(index, 1);
+    if (invitation) collaborators.set(login, invitation.permission === "admin" ? "admin" : "push");
+  }
 
   /** Repository creation and the Git data API, for repositories created through the fake. */
   async function handleCreated(request: Request, path: string, login: string): Promise<Response | undefined> {
@@ -246,6 +336,12 @@ export function fakeGitHub(options: FakeGitHubOptions) {
     const setup = await handleCreated(request, path, user.login);
     if (setup) return setup;
 
+    const account = path.match(/^\/users\/([^/]+)$/);
+    if (account) {
+      const login = decodeURIComponent(account[1] ?? "");
+      return accounts.has(login) ? json({ login }) : json({ message: "Not Found" }, 404);
+    }
+
     if (path === "/graphql" && request.method === "POST") {
       const { variables } = (await request.json()) as {
         variables: {
@@ -329,9 +425,12 @@ export function fakeGitHub(options: FakeGitHubOptions) {
       return json({
         full_name: options.repo,
         default_branch: repo.defaultBranch,
-        permissions: { push: user.push !== false },
+        permissions: { push: user.push !== false, admin: user.admin === true },
       });
     }
+
+    const people = await handleCollaborators(request, rest, user);
+    if (people) return people;
 
     const ref = rest.match(/^\/git\/ref\/heads\/(.+)$/);
     if (ref) {
@@ -410,6 +509,10 @@ export function fakeGitHub(options: FakeGitHubOptions) {
     created,
     /** The site's GitHub Pages settings, which tests can change, such as to issue the certificate. */
     pages,
+    /** The repository's collaborators, by login, and invitations waiting to be accepted. */
+    collaborators,
+    invitations,
+    accept,
     deployments,
     /** Every request received, for checking what the backend sent. */
     requests,

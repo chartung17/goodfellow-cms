@@ -9,12 +9,15 @@ import {
   type GitBackend,
   type GitUser,
   type HistoryOptions,
+  type OwnerAccess,
   type PagesDomains,
   SignInError,
+  type SiteEditors,
   type TokenLink,
   type WriteOptions,
 } from "@goodfellow-cms/core";
 import { type ApiOptions, githubJson, githubRequest, repoPath } from "./api.js";
+import { githubEditors, githubOwnerAccess } from "./editors.js";
 import { githubPages } from "./pages.js";
 
 interface TreeResponse {
@@ -43,8 +46,8 @@ export interface GitHubBackendOptions {
   branch: string;
   user: GitUser;
   onSignOut: () => void;
-  /** Where to create a token that can change GitHub Pages settings, for connecting a domain. */
-  pagesTokenLink: TokenLink;
+  /** Where to create the owner token, which can change editors and GitHub Pages settings. */
+  ownerTokenLink: TokenLink;
 }
 
 /**
@@ -55,6 +58,8 @@ export interface GitHubBackendOptions {
 export class GitHubBackend implements GitBackend {
   readonly user: GitUser;
   readonly pages: PagesDomains;
+  readonly editors: SiteEditors;
+  readonly ownerAccess: OwnerAccess;
   private readonly api: ApiOptions;
   private readonly repo: string;
   private readonly branch: string;
@@ -69,7 +74,10 @@ export class GitHubBackend implements GitBackend {
     this.branch = options.branch;
     this.user = options.user;
     this.onSignOut = options.onSignOut;
-    this.pages = githubPages(this.api, this.repo, options.pagesTokenLink);
+    const owner = githubOwnerAccess(this.api, this.repo, options.ownerTokenLink);
+    this.ownerAccess = owner.access;
+    this.pages = githubPages(() => owner.api() ?? this.api, this.repo);
+    this.editors = githubEditors(this.api, owner.api, this.repo, this.user.login);
   }
 
   async revision(): Promise<string> {
@@ -248,6 +256,7 @@ export class GitHubBackend implements GitBackend {
   }
 
   signOut(): void {
+    this.ownerAccess.forget();
     this.onSignOut();
   }
 }

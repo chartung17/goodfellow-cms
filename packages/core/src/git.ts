@@ -1,5 +1,6 @@
 import type { ContentStore } from "./content/store.js";
 import type { PagesDomains } from "./domains.js";
+import type { OwnerAccess, SiteEditors } from "./editors.js";
 
 /** The person signed in to the admin panel. */
 export interface GitUser {
@@ -53,6 +54,10 @@ export interface GitBackend extends ContentStore {
   readAt(path: string, revision: string): Promise<string | undefined>;
   /** The git host's own Pages, for connecting a custom domain. Absent where the backend can't. */
   readonly pages?: PagesDomains;
+  /** Who can edit the site, and inviting and removing them. Absent where the backend can't. */
+  readonly editors?: SiteEditors;
+  /** A second token for changing editors and Pages settings, where signing in can't. */
+  readonly ownerAccess?: OwnerAccess;
   /** Forgets the saved sign-in. */
   signOut(): void;
 }
@@ -63,7 +68,7 @@ export interface GitBackend extends ContentStore {
  */
 export interface TokenLink {
   url: string;
-  label: "signIn.token.create" | "signIn.token.createBroad" | "domain.token.create";
+  label: "signIn.token.create" | "signIn.token.createBroad" | "owner.token.create";
   hint?: "signIn.token.createBroadHint";
 }
 
