@@ -61,7 +61,7 @@ export class FakeRepo {
 
   constructor(
     files: Record<string, FakeFile> = {},
-    readonly defaultBranch = "main",
+    public defaultBranch = "main",
   ) {
     const sha = this.addCommit(undefined, "Initial commit", new Map(Object.entries(files)));
     this.branches.set(defaultBranch, sha);
@@ -131,7 +131,8 @@ export class FakeRepo {
     return undefined;
   }
 
-  private addCommit(parent: string | undefined, message: string, files: Map<string, FakeFile>): string {
+  /** Makes a commit with these files, without moving any branch, as git hosts' APIs can. */
+  addCommit(parent: string | undefined, message: string, files: Map<string, FakeFile>): string {
     this.count += 1;
     const sha = this.count.toString(16).padStart(40, "0");
     for (const content of files.values()) this.blobSha(content);

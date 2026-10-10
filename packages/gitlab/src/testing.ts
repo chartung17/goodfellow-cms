@@ -22,6 +22,18 @@ export interface FakeGitLabOptions {
   oauth?: { clientId: string; user: FakeGitLabUser; expiresIn?: number };
   /** Simulates a GitLab Pages pipeline that succeeds after being checked this many times. Off by default. */
   deployAfterChecks?: number;
+  /** Groups the users belong to, which new projects can be created in. */
+  groups?: string[];
+}
+
+/** A project created through the fake's API, as the setup page creates them. */
+export interface FakeCreatedProject {
+  id: number;
+  path: string;
+  visibility: string;
+  description?: string;
+  pagesAccessLevel?: string;
+  repo: FakeRepo;
 }
 
 function json(body: unknown, status = 200): Response {
@@ -46,6 +58,73 @@ export function fakeGitLab(options: FakeGitLabOptions) {
   const pipelines = new Map<string, { checks: number }>();
   const requests: Request[] = [];
   let counter = 0;
+  const created = new Map<string, FakeCreatedProject>();
+  const groups = (options.groups ?? []).map((group, index) => ({ id: 100 + index, path: group }));
+
+  /** Creating projects, and committing to the projects created, as the setup page does. */
+  async function handleCreated(request: Request, path: string, user: FakeGitLabUser): Promise<Response | undefined> {
+    if (path === "/namespaces") {
+      return json([
+        { id: 1, kind: "user", full_path: user.username, name: user.name ?? user.username },
+        ...groups.map((group) => ({ id: group.id, kind: "group", full_path: group.path, name: group.path })),
+      ]);
+    }
+    if (path === "/projects" && request.method === "POST") {
+      const body = (await request.json()) as {
+        name: string;
+        path: string;
+        namespace_id?: number;
+        visibility: string;
+        description?: string;
+        pages_access_level?: string;
+      };
+      const namespace =
+        body.namespace_id === undefined || body.namespace_id === 1
+          ? user.username
+          : groups.find((group) => group.id === body.namespace_id)?.path;
+      if (!namespace) return json({ message: "404 Namespace Not Found" }, 404);
+      if (!/^[\w.-]+$/.test(body.path)) return json({ message: { path: ["is invalid"] } }, 400);
+      const fullPath = `${namespace}/${body.path}`;
+      if (created.has(fullPath) || fullPath === options.project) {
+        return json({ message: { name: ["has already been taken"] } }, 400);
+      }
+      counter += 1;
+      const project: FakeCreatedProject = {
+        id: 1000 + counter,
+        path: fullPath,
+        visibility: body.visibility,
+        description: body.description,
+        pagesAccessLevel: body.pages_access_level,
+        repo: new FakeRepo({}),
+      };
+      created.set(fullPath, project);
+      return json({ id: project.id, path_with_namespace: fullPath, web_url: `${webUrl}/${fullPath}` }, 201);
+    }
+    const match = path.match(/^\/projects\/([^/]+)(\/.*)?$/);
+    const key = decodeURIComponent(match?.[1] ?? "");
+    const project = created.get(key) ?? [...created.values()].find((candidate) => String(candidate.id) === key);
+    if (!match || !project) return undefined;
+    const rest = match[2] ?? "";
+    if (rest === "") return json({ id: project.id, path_with_namespace: project.path, default_branch: "main" });
+    if (rest === "/repository/commits" && request.method === "POST") {
+      const body = (await request.json()) as {
+        branch: string;
+        commit_message: string;
+        actions: { action: string; file_path: string; content?: string; encoding?: string }[];
+      };
+      const sha = project.repo.commit(
+        body.actions.map((action) =>
+          action.encoding === "base64"
+            ? { path: action.file_path, bytes: decodeBase64(action.content ?? "") }
+            : { path: action.file_path, content: action.content ?? "" },
+        ),
+        body.commit_message,
+        { branch: body.branch },
+      );
+      return json({ id: sha, message: body.commit_message }, 201);
+    }
+    return json({ message: "404 Not Found" }, 404);
+  }
 
   function commit(changes: FileChange[], message: string): string {
     const sha = repo.commit(changes, message);
@@ -118,6 +197,9 @@ export function fakeGitLab(options: FakeGitLabOptions) {
 
     if (path === "/user")
       return json({ username: user.username, name: user.name, avatar_url: `https://avatars.example/${user.username}` });
+
+    const setup = await handleCreated(request, path, user);
+    if (setup) return setup;
 
     const projectMatch = path.match(/^\/projects\/([^/]+)(\/.*)?$/);
     if (!projectMatch || decodeURIComponent(projectMatch[1] ?? "") !== options.project)
@@ -237,6 +319,8 @@ export function fakeGitLab(options: FakeGitLabOptions) {
 
   return {
     repo,
+    /** Projects created through the API, by full path. */
+    created,
     requests,
     commit,
     authorize,

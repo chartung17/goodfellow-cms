@@ -192,6 +192,17 @@ export {
 } from "./registry.js";
 export { SEARCH_ATTRIBUTE, SEARCH_INDEX_DIR } from "./search.js";
 export {
+  type CreatedSiteRepository,
+  type NewSiteRepository,
+  type SetupAccount,
+  SetupError,
+  type SetupHost,
+  type SetupOwner,
+  type SetupProblem,
+  type SetupStep,
+  type SetupWarning,
+} from "./setup-host.js";
+export {
   type Backend,
   BLOCK_CHOICES,
   type BlockChoice,

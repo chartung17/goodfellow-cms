@@ -4,13 +4,21 @@
  * `fetch`, or route browser requests to `fake.handle` in end-to-end tests.
  */
 import { decodeBase64, encodeBase64Bytes, type FileChange } from "@goodfellow-cms/core";
-import { FakeConflictError, FakeRepo, fakeFileBytes } from "@goodfellow-cms/core/testing";
+import {
+  FakeConflictError,
+  type FakeFile,
+  FakeRepo,
+  fakeFileBytes,
+  fakeFileFromBytes,
+} from "@goodfellow-cms/core/testing";
 
 export interface FakeGitHubUser {
   login: string;
   name?: string;
   /** Whether the user may publish. Defaults to true. */
   push?: boolean;
+  /** Whether the token may write `.github/workflows/`. Defaults to true. */
+  workflow?: boolean;
 }
 
 export interface FakeDeploymentStatus {
@@ -29,6 +37,22 @@ export interface FakeGitHubOptions {
    * reports success after being checked this many times. Off by default.
    */
   deployAfterChecks?: number;
+  /** Organizations the users belong to, which new repositories can be created in. */
+  orgs?: string[];
+  /** The default branch of repositories created through the API, as an account's settings choose. Defaults to `main`. */
+  newRepoBranch?: string;
+  /** Whether private repositories can have GitHub Pages and rules, as on paid plans. Off by default, as on the free plan. */
+  paidPlan?: boolean;
+}
+
+/** A repository created through the fake's API, as the setup page creates them. */
+export interface FakeCreatedRepo {
+  fullName: string;
+  private: boolean;
+  description?: string;
+  repo: FakeRepo;
+  pages?: { build_type: string };
+  rulesets: unknown[];
 }
 
 interface Deployment {
@@ -48,6 +72,134 @@ export function fakeGitHub(options: FakeGitHubOptions) {
   const deployments: Deployment[] = [];
   const requests: Request[] = [];
   let nextDeployment = 1;
+  const created = new Map<string, FakeCreatedRepo>();
+  const trees = new Map<string, Map<string, FakeFile>>();
+
+  /** Repository creation and the Git data API, for repositories created through the fake. */
+  async function handleCreated(request: Request, path: string, login: string): Promise<Response | undefined> {
+    if (path === "/user/orgs") return json((options.orgs ?? []).map((org) => ({ login: org })));
+    const create = path === "/user/repos" ? login : path.match(/^\/orgs\/([^/]+)\/repos$/)?.[1];
+    if (create !== undefined && request.method === "POST") {
+      if (path !== "/user/repos" && !options.orgs?.includes(create)) return json({ message: "Not Found" }, 404);
+      const body = (await request.json()) as { name: string; private?: boolean; description?: string };
+      if (!/^[\w.-]+$/.test(body.name)) return json({ message: "Repository creation failed." }, 422);
+      const fullName = `${create}/${body.name}`;
+      if (created.has(fullName) || fullName === options.repo) {
+        return json(
+          { message: "Repository creation failed.", errors: [{ message: "name already exists on this account" }] },
+          422,
+        );
+      }
+      const repo = new FakeRepo({ "README.md": `# ${body.name}\n` }, options.newRepoBranch ?? "main");
+      created.set(fullName, {
+        fullName,
+        private: body.private === true,
+        description: body.description,
+        repo,
+        rulesets: [],
+      });
+      return json(
+        { full_name: fullName, html_url: `https://github.com/${fullName}`, default_branch: repo.defaultBranch },
+        201,
+      );
+    }
+
+    const match = path.match(/^\/repos\/([^/]+\/[^/]+)(\/.*)?$/);
+    const site = created.get(decodeURIComponent(match?.[1] ?? ""));
+    if (!match || !site) return undefined;
+    const { repo } = site;
+    const rest = match[2] ?? "";
+    const method = request.method;
+
+    if (rest === "" && method === "GET") {
+      return json({ full_name: site.fullName, default_branch: repo.defaultBranch, permissions: { push: true } });
+    }
+    if (rest === "" && method === "PATCH") {
+      const body = (await request.json()) as { default_branch?: string };
+      if (body.default_branch) {
+        if (!repo.branches.has(body.default_branch)) return json({ message: "Not Found" }, 422);
+        repo.defaultBranch = body.default_branch;
+      }
+      return json({ full_name: site.fullName, default_branch: repo.defaultBranch });
+    }
+    const ref = rest.match(/^\/git\/refs?\/heads\/(.+)$/);
+    if (ref && method === "GET") {
+      const sha = repo.branches.get(decodeURIComponent(ref[1] ?? ""));
+      return sha ? json({ object: { sha } }) : json({ message: "Not Found" }, 404);
+    }
+    if (ref && method === "DELETE") {
+      repo.branches.delete(decodeURIComponent(ref[1] ?? ""));
+      return new Response(null, { status: 204 });
+    }
+    if (ref && method === "PATCH") {
+      const body = (await request.json()) as { sha: string; force?: boolean };
+      const branch = decodeURIComponent(ref[1] ?? "");
+      const commit = repo.commitAt(body.sha);
+      if (!commit || !repo.branches.has(branch)) return json({ message: "Reference does not exist" }, 422);
+      if (!body.force && commit.parent !== repo.branches.get(branch)) {
+        return json({ message: "Update is not a fast forward" }, 422);
+      }
+      if (site.rulesets.length > 0 && commit.parent !== repo.branches.get(branch)) {
+        return json({ message: "Cannot force-push to this branch" }, 422);
+      }
+      repo.branches.set(branch, body.sha);
+      deploy(body.sha);
+      return json({ object: { sha: body.sha } });
+    }
+    if (rest === "/git/refs" && method === "POST") {
+      const body = (await request.json()) as { ref: string; sha: string };
+      repo.branches.set(body.ref.replace(/^refs\/heads\//, ""), body.sha);
+      return json({ ref: body.ref, object: { sha: body.sha } }, 201);
+    }
+    if (rest === "/git/blobs" && method === "POST") {
+      const body = (await request.json()) as { content: string; encoding: string };
+      return json(
+        {
+          sha: repo.blobSha(body.encoding === "base64" ? fakeFileFromBytes(decodeBase64(body.content)) : body.content),
+        },
+        201,
+      );
+    }
+    if (rest === "/git/trees" && method === "POST") {
+      const body = (await request.json()) as { tree: { path: string; content?: string; sha?: string }[] };
+      const files = new Map<string, FakeFile>();
+      for (const entry of body.tree) {
+        if (entry.path.startsWith(".github/workflows/") && user(request)?.workflow === false) {
+          return json({ message: "Resource not accessible by personal access token" }, 404);
+        }
+        const content = entry.content ?? repo.blobs.get(entry.sha ?? "");
+        if (content === undefined) return json({ message: `No blob ${entry.sha}` }, 422);
+        files.set(entry.path, content);
+      }
+      const sha = repo.blobSha(`tree:${[...files.keys()].join(",")}:${trees.size}`);
+      trees.set(sha, files);
+      return json({ sha }, 201);
+    }
+    if (rest === "/git/commits" && method === "POST") {
+      const body = (await request.json()) as { message: string; tree: string; parents: string[] };
+      const files = trees.get(body.tree);
+      if (!files) return json({ message: "Tree not found" }, 422);
+      return json({ sha: repo.addCommit(body.parents[0], body.message, new Map(files)) }, 201);
+    }
+    if (rest === "/pages" && method === "POST") {
+      if (site.private && !options.paidPlan) {
+        return json({ message: "Your current plan does not support GitHub Pages for this repository." }, 422);
+      }
+      site.pages = (await request.json()) as { build_type: string };
+      const [owner, name] = site.fullName.split("/");
+      return json({ html_url: `https://${owner}.github.io/${name}/`, build_type: site.pages.build_type }, 201);
+    }
+    if (rest === "/rulesets" && method === "POST") {
+      if (site.private && !options.paidPlan) return json({ message: "Upgrade to GitHub Pro" }, 403);
+      site.rulesets.push(await request.json());
+      return json({ id: site.rulesets.length }, 201);
+    }
+    return json({ message: "Not Found" }, 404);
+  }
+
+  function user(request: Request): FakeGitHubUser | undefined {
+    return tokens[request.headers.get("authorization")?.replace(/^Bearer /, "") ?? ""];
+  }
 
   function deploy(sha: string): void {
     if (options.deployAfterChecks === undefined) return;
@@ -69,6 +221,9 @@ export function fakeGitHub(options: FakeGitHubOptions) {
 
     if (path === "/user")
       return json({ login: user.login, name: user.name ?? null, avatar_url: `https://avatars.example/${user.login}` });
+
+    const setup = await handleCreated(request, path, user.login);
+    if (setup) return setup;
 
     if (path === "/graphql" && request.method === "POST") {
       const { variables } = (await request.json()) as {
@@ -183,6 +338,8 @@ export function fakeGitHub(options: FakeGitHubOptions) {
 
   return {
     repo,
+    /** Repositories created through the API, by `owner/name`. */
+    created,
     deployments,
     /** Every request received, for checking what the backend sent. */
     requests,
