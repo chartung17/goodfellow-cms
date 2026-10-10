@@ -19,6 +19,17 @@ export interface FakeGitHubUser {
   push?: boolean;
   /** Whether the token may write `.github/workflows/`. Defaults to true. */
   workflow?: boolean;
+  /** Whether the token may change GitHub Pages settings. Defaults to true. */
+  pages?: boolean;
+}
+
+/** The site's GitHub Pages settings, as `GET /repos/{repo}/pages` reports them. */
+export interface FakePages {
+  html_url: string;
+  cname: string | null;
+  https_enforced: boolean;
+  /** The certificate's state, such as `new` while it's being issued and `approved` once it's ready. */
+  certificate?: string;
 }
 
 export interface FakeDeploymentStatus {
@@ -43,6 +54,10 @@ export interface FakeGitHubOptions {
   newRepoBranch?: string;
   /** Whether private repositories can have GitHub Pages and rules, as on paid plans. Off by default, as on the free plan. */
   paidPlan?: boolean;
+  /** Publishes the site with GitHub Pages, at `https://<owner>.github.io/<name>/`. Off by default. */
+  pages?: boolean;
+  /** Domains another GitHub Pages site already uses. */
+  takenDomains?: string[];
 }
 
 /** A repository created through the fake's API, as the setup page creates them. */
@@ -73,6 +88,12 @@ export function fakeGitHub(options: FakeGitHubOptions) {
   const requests: Request[] = [];
   let nextDeployment = 1;
   const created = new Map<string, FakeCreatedRepo>();
+  const [owner = "", name = ""] = options.repo.split("/");
+  const pages: { current?: FakePages } = {
+    current: options.pages
+      ? { html_url: `https://${owner.toLowerCase()}.github.io/${name}/`, cname: null, https_enforced: false }
+      : undefined,
+  };
   const trees = new Map<string, Map<string, FakeFile>>();
 
   /** Repository creation and the Git data API, for repositories created through the fake. */
@@ -273,6 +294,36 @@ export function fakeGitHub(options: FakeGitHubOptions) {
     if (!match || decodeURIComponent(match[1] ?? "") !== options.repo) return json({ message: "Not Found" }, 404);
     const rest = match[2] ?? "";
 
+    if (rest === "/pages" && request.method === "GET") {
+      const site = pages.current;
+      if (!site) return json({ message: "Not Found" }, 404);
+      return json({
+        html_url: site.cname ? `https://${site.cname}/` : site.html_url,
+        cname: site.cname,
+        https_enforced: site.https_enforced,
+        https_certificate: site.cname ? { state: site.certificate ?? "new", domains: [site.cname] } : null,
+      });
+    }
+    if (rest === "/pages" && request.method === "PUT") {
+      const site = pages.current;
+      if (!site) return json({ message: "Not Found" }, 404);
+      if (user.pages === false) return json({ message: "Resource not accessible by personal access token" }, 403);
+      const body = (await request.json()) as { cname?: string | null; https_enforced?: boolean };
+      if (body.cname && options.takenDomains?.includes(body.cname)) {
+        return json({ message: `The CNAME \`${body.cname}\` is already taken.` }, 422);
+      }
+      if (body.https_enforced && !["approved", "issued"].includes(site.certificate ?? "")) {
+        return json({ message: "The certificate does not exist yet" }, 422);
+      }
+      if (body.cname !== undefined) {
+        site.cname = body.cname;
+        site.certificate = body.cname ? "new" : undefined;
+        if (!body.cname) site.https_enforced = false;
+      }
+      if (body.https_enforced !== undefined) site.https_enforced = body.https_enforced;
+      return new Response(null, { status: 204 });
+    }
+
     if (rest === "") {
       return json({
         full_name: options.repo,
@@ -340,6 +391,8 @@ export function fakeGitHub(options: FakeGitHubOptions) {
     repo,
     /** Repositories created through the API, by `owner/name`. */
     created,
+    /** The site's GitHub Pages settings, which tests can change, such as to issue the certificate. */
+    pages,
     deployments,
     /** Every request received, for checking what the backend sent. */
     requests,

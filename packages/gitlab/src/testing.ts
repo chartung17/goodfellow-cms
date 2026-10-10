@@ -24,6 +24,26 @@ export interface FakeGitLabOptions {
   deployAfterChecks?: number;
   /** Groups the users belong to, which new projects can be created in. */
   groups?: string[];
+  /** Publishes the site with GitLab Pages. Off by default. */
+  pages?: { uniqueDomain?: boolean };
+}
+
+/** A custom domain added to the site's GitLab Pages. */
+export interface FakePagesDomain {
+  verified: boolean;
+  verificationCode: string;
+  /** Whether Let's Encrypt has issued the certificate. */
+  certificate: boolean;
+}
+
+/** The site's GitLab Pages settings, which tests can change. */
+export interface FakeGitLabPages {
+  uniqueDomain: boolean;
+  forceHttps: boolean;
+  primaryDomain: string | null;
+  domains: Map<string, FakePagesDomain>;
+  /** Domains whose TXT record GitLab would find, so verifying them works. */
+  dnsReady: Set<string>;
 }
 
 /** A project created through the fake's API, as the setup page creates them. */
@@ -59,6 +79,88 @@ export function fakeGitLab(options: FakeGitLabOptions) {
   const requests: Request[] = [];
   let counter = 0;
   const created = new Map<string, FakeCreatedProject>();
+  const pages: FakeGitLabPages | undefined = options.pages
+    ? {
+        uniqueDomain: options.pages.uniqueDomain ?? true,
+        forceHttps: true,
+        primaryDomain: null,
+        domains: new Map(),
+        dnsReady: new Set(),
+      }
+    : undefined;
+
+  function pagesUrl(): string {
+    const [namespace = "", ...rest] = options.project.split("/");
+    return pages?.uniqueDomain
+      ? `https://${rest.join("-")}-1a2b3c.gitlab.io`
+      : `https://${namespace}.gitlab.io/${rest.join("/")}`;
+  }
+
+  /** GitLab Pages' settings and custom domains, for the site's own project. */
+  async function handlePages(request: Request, rest: string, accessLevel: number): Promise<Response | undefined> {
+    if (!rest.startsWith("/pages")) return undefined;
+    if (!pages) return json({ message: "404 Not Found" }, 404);
+    if (accessLevel < 40) return json({ message: "403 Forbidden" }, 403);
+    const method = request.method;
+    const domainJson = (name: string, domain: FakePagesDomain) => ({
+      domain: name,
+      url: `https://${name}`,
+      verified: domain.verified,
+      verification_code: domain.verificationCode,
+      auto_ssl_enabled: true,
+      certificate: domain.certificate ? { subject: `/CN=${name}`, expired: false } : null,
+    });
+    if (rest === "/pages" && method === "GET") {
+      return json({
+        url: pagesUrl(),
+        is_unique_domain_enabled: pages.uniqueDomain,
+        force_https: pages.forceHttps,
+        primary_domain: pages.primaryDomain,
+      });
+    }
+    if (rest === "/pages" && method === "PATCH") {
+      const body = (await request.json()) as {
+        pages_unique_domain_enabled?: boolean;
+        pages_https_only?: boolean;
+        pages_primary_domain?: string;
+      };
+      if (body.pages_primary_domain !== undefined && !pages.domains.has(body.pages_primary_domain)) {
+        return json({ message: "Primary domain must be one of the project's domains" }, 400);
+      }
+      if (body.pages_unique_domain_enabled !== undefined) pages.uniqueDomain = body.pages_unique_domain_enabled;
+      if (body.pages_https_only !== undefined) pages.forceHttps = body.pages_https_only;
+      if (body.pages_primary_domain !== undefined) pages.primaryDomain = body.pages_primary_domain;
+      return json({ url: pagesUrl(), is_unique_domain_enabled: pages.uniqueDomain, force_https: pages.forceHttps });
+    }
+    if (rest === "/pages/domains" && method === "GET") {
+      return json([...pages.domains].map(([name, domain]) => domainJson(name, domain)));
+    }
+    if (rest === "/pages/domains" && method === "POST") {
+      const body = (await request.json()) as { domain: string };
+      if (pages.domains.has(body.domain)) return json({ message: { domain: ["has already been taken"] } }, 400);
+      if (!/^[a-z0-9.-]+\.[a-z]+$/.test(body.domain)) return json({ message: { domain: ["is invalid"] } }, 400);
+      counter += 1;
+      const domain = { verified: false, verificationCode: `code-${counter}`, certificate: false };
+      pages.domains.set(body.domain, domain);
+      return json(domainJson(body.domain, domain), 201);
+    }
+    const one = rest.match(/^\/pages\/domains\/([^/]+)(\/verify)?$/);
+    const name = decodeURIComponent(one?.[1] ?? "");
+    const domain = pages.domains.get(name);
+    if (!one || !domain) return json({ message: "404 Not Found" }, 404);
+    if (one[2] && method === "PUT") {
+      if (!pages.dnsReady.has(name)) return json({ message: "Failed to verify domain ownership" }, 400);
+      domain.verified = true;
+      return json(domainJson(name, domain));
+    }
+    if (method === "GET") return json(domainJson(name, domain));
+    if (method === "DELETE") {
+      pages.domains.delete(name);
+      if (pages.primaryDomain === name) pages.primaryDomain = null;
+      return new Response(null, { status: 204 });
+    }
+    return json({ message: "404 Not Found" }, 404);
+  }
   const groups = (options.groups ?? []).map((group, index) => ({ id: 100 + index, path: group }));
 
   /** Creating projects, and committing to the projects created, as the setup page does. */
@@ -206,6 +308,8 @@ export function fakeGitLab(options: FakeGitLabOptions) {
       return json({ message: "404 Project Not Found" }, 404);
     const rest = projectMatch[2] ?? "";
     const accessLevel = user.accessLevel ?? 40;
+    const pagesResponse = await handlePages(request, rest, accessLevel);
+    if (pagesResponse) return pagesResponse;
 
     if (rest === "") {
       return json({
@@ -321,6 +425,8 @@ export function fakeGitLab(options: FakeGitLabOptions) {
     repo,
     /** Projects created through the API, by full path. */
     created,
+    /** The site's GitLab Pages, if it has them, which tests can change. */
+    pages,
     requests,
     commit,
     authorize,

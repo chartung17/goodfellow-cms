@@ -3,6 +3,7 @@ import { type ApiOptions, githubJson, repoPath } from "./api.js";
 import { GitHubBackend } from "./backend.js";
 
 export { GitHubBackend } from "./backend.js";
+export { githubPagesRecords } from "./pages.js";
 export { type GitHubSetupOptions, githubSetup, githubSetupTokenLinks } from "./setup.js";
 
 export interface GitHubOptions {
@@ -35,9 +36,14 @@ export function githubTokenLinks(repo: string, webUrl = "https://github.com") {
     deployments: "read",
   });
   const classic = new URLSearchParams({ scopes: "repo", description: `Goodfellow admin for ${repo}` });
+  // Connecting a domain also changes GitHub Pages settings, which site owners' tokens need the Pages permission for.
+  const withPages = new URLSearchParams(fineGrained);
+  withPages.set("pages", "write");
+  withPages.set("description", `Edit ${repo} in its admin panel, and connect its domain`);
   return {
     fineGrained: `${webUrl}/settings/personal-access-tokens/new?${fineGrained}`,
     classic: `${webUrl}/settings/tokens/new?${classic}`,
+    withPages: `${webUrl}/settings/personal-access-tokens/new?${withPages}`,
   };
 }
 
@@ -74,6 +80,7 @@ export function github(options: GitHubOptions): GitHost {
       branch: options.branch ?? repo.default_branch,
       user: { login: user.login, name: user.name ?? undefined, avatarUrl: user.avatar_url },
       onSignOut: () => storage.clear(),
+      pagesTokenLink: { url: links.withPages, label: "domain.token.create" },
     });
   }
 
