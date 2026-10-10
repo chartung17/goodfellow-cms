@@ -12,6 +12,8 @@ export default defineConfig({
   format: "esm",
   dts: true,
   platform: "neutral",
+  // One file per module, so a Client Component that imports `SiteLink` gets only that, not Puck and the page renderer.
+  unbundle: true,
   inputOptions: {
     // "use client" modules are their own entries, so their directive is kept; Next.js's tests depend on it.
     onLog(level, log, handler) {
