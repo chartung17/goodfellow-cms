@@ -26,6 +26,6 @@ Both `pnpm dev` and `pnpm build` first run `scripts/starters.mjs`, which packs t
 
 ## Online
 
-The site is at <https://chartung17.github.io/goodfellow-cms/>, published with GitHub Pages by `.github/workflows/docs.yml`. It describes the latest release: the release workflow deploys it after publishing a new version to npm, from that version's commit, so changes to these pages go online with the next release. To publish a fix sooner, run **Deploy docs** in the repository's Actions tab with `master` as the version. See [RELEASING.md](../RELEASING.md).
+The site is at <https://goodfellow-cms.github.io/goodfellow-cms/>, published with GitHub Pages by `.github/workflows/docs.yml`. It describes the latest release: the release workflow deploys it after publishing a new version to npm, from that version's commit, so changes to these pages go online with the next release. To publish a fix sooner, run **Deploy docs** in the repository's Actions tab with `master` as the version. See [RELEASING.md](../RELEASING.md).
 
 It has no admin panel online, since the backends can't yet edit a site in a subfolder of a repository; edit it on your computer as above.

@@ -79,7 +79,7 @@
                     "props": {
                       "id": "Button-demo",
                       "className": "",
-                      "href": "https://chartung17.github.io/goodfellow-demo/admin/",
+                      "href": "https://goodfellow-cms.github.io/goodfellow-demo/admin/",
                       "label": "Try the demo",
                       "newTab": false,
                       "size": "lg",

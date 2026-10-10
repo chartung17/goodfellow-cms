@@ -23,7 +23,7 @@ import { type StringKey, useStrings } from "./strings.js";
 import { Button, ErrorMessage } from "./ui.js";
 
 /** Where each release's changes are described. */
-const RELEASES_URL = "https://github.com/chartung17/goodfellow-cms/releases";
+const RELEASES_URL = "https://github.com/goodfellow-cms/goodfellow-cms/releases";
 /** How often the screen checks on an update while one is running. */
 const CHECK_INTERVAL = 15_000;
 /** How many versions of `package.json` to look through for the release before this one. */

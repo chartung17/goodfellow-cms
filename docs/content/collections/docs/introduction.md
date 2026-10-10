@@ -8,7 +8,7 @@ order: 1
 
 Goodfellow is a website builder for people who aren't developers. Editors build pages from blocks in a visual editor, built on [Puck](https://puckeditor.com), at `/admin` on their own site. There's no server, database or monthly hosting bill: every page is a file in the site's own GitHub or GitLab repository, and a free static host puts the site online.
 
-> Goodfellow is in early development. Everything these pages describe works today, and the [roadmap](https://github.com/chartung17/goodfellow-cms#roadmap) shows what's next. If something doesn't work, or you'd like it to do something it doesn't, [open an issue](https://github.com/chartung17/goodfellow-cms/issues/new/choose).
+> Goodfellow is in early development. Everything these pages describe works today, and the [roadmap](https://github.com/goodfellow-cms/goodfellow-cms#roadmap) shows what's next. If something doesn't work, or you'd like it to do something it doesn't, [open an issue](https://github.com/goodfellow-cms/goodfellow-cms/issues/new/choose).
 
 ## How it works
 

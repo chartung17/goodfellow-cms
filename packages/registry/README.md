@@ -75,7 +75,7 @@ The admin panel can't install npm packages, so every site includes the same set 
 
 ### Writing the blocks
 
-Registry blocks follow the same rules as any Goodfellow block (see [AGENTS.md](https://github.com/chartung17/goodfellow-cms/blob/master/AGENTS.md#blocks)):
+Registry blocks follow the same rules as any Goodfellow block (see [AGENTS.md](https://github.com/goodfellow-cms/goodfellow-cms/blob/master/AGENTS.md#blocks)):
 
 - Every block has a `className` prop (`className: classNameField`), applied to its outermost element and combined with `cx()` from `@goodfellow-cms/react`, last.
 - Use the theme's classes (`bg-primary`, `text-muted-foreground`, `rounded-lg`), which shadcn's components use too, so blocks follow the site's colors and fonts.
