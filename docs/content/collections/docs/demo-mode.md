@@ -6,7 +6,7 @@ section: owners
 order: 3
 ---
 
-To let anyone try the admin panel without signing in, for example from a product page or in a training session, set `demo: true` in `goodfellow.config.tsx`. [Goodfellow's own demo](https://chartung17.github.io/goodfellow-demo/admin/) is one, made from the parish example.
+To let anyone try the admin panel without signing in, for example from a product page or in a training session, set `demo: true` in `goodfellow.config.tsx`. [Goodfellow's own demo](https://goodfellow-cms.github.io/goodfellow-demo/admin/) is one, made from the parish example.
 
 ```tsx
 export default defineConfig({ blocks, demo: true });

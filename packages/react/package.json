@@ -9,12 +9,12 @@
     "puck",
     "react"
   ],
-  "homepage": "https://chartung17.github.io/goodfellow-cms/docs/write-blocks",
-  "bugs": "https://github.com/chartung17/goodfellow-cms/issues",
+  "homepage": "https://goodfellow-cms.github.io/goodfellow-cms/docs/write-blocks",
+  "bugs": "https://github.com/goodfellow-cms/goodfellow-cms/issues",
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/chartung17/goodfellow-cms.git",
+    "url": "git+https://github.com/goodfellow-cms/goodfellow-cms.git",
     "directory": "packages/react"
   },
   "type": "module",

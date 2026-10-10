@@ -1,7 +1,7 @@
 {
   "$schema": "https://ui.shadcn.com/schema/registry.json",
   "name": "goodfellow",
-  "homepage": "https://github.com/chartung17/goodfellow-cms",
+  "homepage": "https://github.com/goodfellow-cms/goodfellow-cms",
   "items": [
     {
       "name": "shadcn-hero",

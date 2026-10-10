@@ -42,7 +42,7 @@ npm create goodfellow@latest my-site -- --template parish --github your-name/you
 
 Run it with `--help` for every option.
 
-> To try changes that haven't been released yet, use the sites in [the repository](https://github.com/chartung17/goodfellow-cms) instead: install [pnpm](https://pnpm.io), run `pnpm install` and `pnpm build` at the root, then `pnpm dev` in `templates/starter`.
+> To try changes that haven't been released yet, use the sites in [the repository](https://github.com/goodfellow-cms/goodfellow-cms) instead: install [pnpm](https://pnpm.io), run `pnpm install` and `pnpm build` at the root, then `pnpm dev` in `templates/starter`.
 
 ## Try it on your computer
 

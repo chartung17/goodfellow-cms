@@ -5,7 +5,7 @@ body:
   - type: markdown
     attributes:
       value: |
-        Thanks for reporting a problem. **Never paste a token or an AI key here**, even an expired one, and leave out anything private from your site. For a security problem, don't open an issue: see the [security policy](https://github.com/chartung17/goodfellow-cms/security/policy).
+        Thanks for reporting a problem. **Never paste a token or an AI key here**, even an expired one, and leave out anything private from your site. For a security problem, don't open an issue: see the [security policy](https://github.com/goodfellow-cms/goodfellow-cms/security/policy).
   - type: textarea
     id: what-happened
     attributes:

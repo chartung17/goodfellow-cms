@@ -4,7 +4,7 @@ Goodfellow's admin panel runs with editors' GitHub or GitLab tokens and AI keys,
 
 ## Reporting a problem
 
-Please don't open a public issue. Report it privately instead, with GitHub's [private vulnerability reporting](https://github.com/chartung17/goodfellow-cms/security/advisories/new): say what the problem is, how to reproduce it, and what someone could do with it. Never include a real token or key.
+Please don't open a public issue. Report it privately instead, with GitHub's [private vulnerability reporting](https://github.com/goodfellow-cms/goodfellow-cms/security/advisories/new): say what the problem is, how to reproduce it, and what someone could do with it. Never include a real token or key.
 
 The maintainer will reply in the report. Once a fix is released, the advisory is published with credit to you, unless you'd rather not be named.
 

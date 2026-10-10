@@ -1,6 +1,6 @@
 # My site
 
-A website built with [Goodfellow](https://github.com/chartung17/goodfellow-cms) and [Next.js](https://nextjs.org). Pages are files in `content/`, edited in the admin panel at `/admin`, and built into static files that a free host serves.
+A website built with [Goodfellow](https://github.com/goodfellow-cms/goodfellow-cms) and [Next.js](https://nextjs.org). Pages are files in `content/`, edited in the admin panel at `/admin`, and built into static files that a free host serves.
 
 ## Working on the site
 
@@ -27,14 +27,14 @@ The News page and its stories are an example of a collection: a group of similar
 | `app/(site)/[[...path]]/page.tsx` | Every page in `content/`, rendered as Server Components. Links between pages use `next/link`, and images `next/image`. |
 | `app/not-found.tsx` | The site's "Page not found" page, `content/pages/404.json` |
 | `app/admin/page.tsx` | The admin panel |
-| `app/admin/demo-content.json/route.ts` | For a [demo](https://github.com/chartung17/goodfellow-cms#demo-mode) (`demo: true` in the config), the copy of the content its admin panel starts from |
+| `app/admin/demo-content.json/route.ts` | For a [demo](https://goodfellow-cms.github.io/goodfellow-cms/docs/demo-mode) (`demo: true` in the config), the copy of the content its admin panel starts from |
 | `app/site.css` | The site's styles: Tailwind, the theme, and the custom CSS from the admin panel |
 | `app/layout.tsx`, `app/sitemap.ts`, `app/robots.ts` | The page around everything, and files for search engines |
 | `next.config.ts` | `withGoodfellow()` builds static files, serves the site from a subfolder when the host needs it, and runs the admin panel's local backend in `next dev` |
 
 Your own Next.js pages can go beside these, in `app/`, and import from the project root as `@/`, such as `@/lib/site`.
 
-More blocks, such as an FAQ, tabs and a pricing table, can be added on the admin panel's **Blocks** screen, which publishes their code into `blocks/installed/` and the shadcn components they use into `components/ui/`. See [Blocks from block registries](https://github.com/chartung17/goodfellow-cms#blocks-from-block-registries).
+More blocks, such as an FAQ, tabs and a pricing table, can be added on the admin panel's **Blocks** screen, which publishes their code into `blocks/installed/` and the shadcn components they use into `components/ui/`. See [Add blocks](https://goodfellow-cms.github.io/goodfellow-cms/docs/add-blocks).
 
 Blocks are React components in `blocks/`, added to the editor in `goodfellow.config.tsx`. For links and images, use `SiteLink` and `SiteImage` from `@goodfellow-cms/react` rather than `<a>` and `<img>`, so they follow the site's address and use `next/link` and `next/image`. Read the site's settings, menus and collections with `useSite()`.
 
@@ -77,7 +77,7 @@ Also set the site's address under **Site settings → General → Site address**
 
 ### 3. Choose a host
 
-Each host's free plan has its own rules about business use. If the site is for a business, sells anything, shows ads, or is built or looked after by someone who's paid for it, check those rules first. As of October 2026, GitHub Pages and Vercel's free plan don't allow most of these, and GitLab Pages has no rule against them that we know of. See [Commercial sites](https://github.com/chartung17/goodfellow-cms#requirements-and-limits) in Goodfellow's README.
+Each host's free plan has its own rules about business use. If the site is for a business, sells anything, shows ads, or is built or looked after by someone who's paid for it, check those rules first. As of October 2026, GitHub Pages and Vercel's free plan don't allow most of these, and GitLab Pages has no rule against them that we know of. See [Hosts and business sites](https://goodfellow-cms.github.io/goodfellow-cms/docs/hosts) in Goodfellow's documentation.
 
 **GitHub Pages** (free for public repositories; not for online businesses or shops)
 
@@ -120,7 +120,7 @@ Upload images and files on the admin panel's **Media** screen, or with the **Cho
 
 ## Writing with AI
 
-The admin panel's **AI** tab can draft pages, rewrite blocks and fill in news stories. Each editor picks an AI service there. Claude and some others need the editor's own API key and charge for use; there are free options, including copying the request into a chat app such as Claude.ai. To offer only some services, or to turn the assistant off, see `ai` in [Goodfellow's README](https://github.com/chartung17/goodfellow-cms#ai-services).
+The admin panel's **AI** tab can draft pages, rewrite blocks and fill in news stories. Each editor picks an AI service there. Claude and some others need the editor's own API key and charge for use; there are free options, including copying the request into a chat app such as Claude.ai. To offer only some services, or to turn the assistant off, see `ai` in [Configuration](https://goodfellow-cms.github.io/goodfellow-cms/docs/configuration).
 
 ## Publishing
 

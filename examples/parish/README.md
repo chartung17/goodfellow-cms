@@ -1,6 +1,6 @@
 # St. Joseph Parish (example)
 
-An example parish website built with [Goodfellow](https://github.com/chartung17/goodfellow-cms). **St. Joseph Parish is made up**: its name, address, phone number, staff, history, Mass times and events are invented, and the pictures are simple drawings. Replace them all with your own before putting the site online.
+An example parish website built with [Goodfellow](https://github.com/goodfellow-cms/goodfellow-cms). **St. Joseph Parish is made up**: its name, address, phone number, staff, history, Mass times and events are invented, and the pictures are simple drawings. Replace them all with your own before putting the site online.
 
 Start a site from this example with `npm create goodfellow@latest my-parish -- --template parish`.
 
@@ -28,13 +28,13 @@ On your own computer, the admin panel saves straight to the files in `content/`.
   - **Bulletins:** each one links to a PDF uploaded on the **Media** screen.
   - **Staff**, listed on the About us page. They have no pages of their own, and the **Order** field sets who comes first.
 - **Contact details** (address, phone and email) are set once in **Site settings → General**, and shown in the footer and on the contact page by the **Contact details** block.
-- **More blocks**, such as an FAQ and tabs, can be added on the admin panel's **Blocks** screen. See [Blocks from block registries](https://github.com/chartung17/goodfellow-cms#blocks-from-block-registries).
+- **More blocks**, such as an FAQ and tabs, can be added on the admin panel's **Blocks** screen. See [Add blocks](https://goodfellow-cms.github.io/goodfellow-cms/docs/add-blocks).
 - **The parish's own blocks**, in `blocks/`, show how a developer adds blocks to a site. They're listed under **Parish** in the editor:
   - **Mass times:** a list of days and times, each with an optional note.
   - **Scripture quote:** a short passage with its reference. The example uses the Douay-Rheims Bible (Challoner revision), a Catholic translation in the public domain; most modern translations need permission to quote.
   - **Notice:** an announcement that stands out from the text around it.
 
-  Each block is a React component plus the fields the editor shows for it. They're added to the editor in `goodfellow.config.tsx`. Never rename a block's key or its fields once pages use them, since content files refer to them by name. Parts of a block that respond to visitors, such as a button that shows more, go in a file starting with `"use client"`, and only pages that use them load JavaScript: see [Interactive blocks](https://github.com/chartung17/goodfellow-cms#interactive-blocks).
+  Each block is a React component plus the fields the editor shows for it. They're added to the editor in `goodfellow.config.tsx`. Never rename a block's key or its fields once pages use them, since content files refer to them by name. Parts of a block that respond to visitors, such as a button that shows more, go in a file starting with `"use client"`, and only pages that use them load JavaScript: see [Interactive blocks](https://goodfellow-cms.github.io/goodfellow-cms/docs/interactive-blocks).
 
 ## Making it yours
 
@@ -78,7 +78,7 @@ Also set the site's address under **Site settings → General → Site address**
 
 ### 3. Choose a host
 
-Each host's free plan has its own rules about business use. If the site is for a business, sells anything, shows ads, or is built or looked after by someone who's paid for it, check those rules first. As of October 2026, GitHub Pages and Vercel's free plan don't allow most of these, and GitLab Pages has no rule against them that we know of. See [Commercial sites](https://github.com/chartung17/goodfellow-cms#requirements-and-limits) in Goodfellow's README.
+Each host's free plan has its own rules about business use. If the site is for a business, sells anything, shows ads, or is built or looked after by someone who's paid for it, check those rules first. As of October 2026, GitHub Pages and Vercel's free plan don't allow most of these, and GitLab Pages has no rule against them that we know of. See [Hosts and business sites](https://goodfellow-cms.github.io/goodfellow-cms/docs/hosts) in Goodfellow's documentation.
 
 **GitHub Pages** (free for public repositories; not for online businesses or shops)
 
@@ -121,7 +121,7 @@ Upload images and files, such as the weekly bulletin, on the admin panel's **Med
 
 ## Writing with AI
 
-The admin panel's **AI** tab can draft pages, rewrite blocks and fill in events and news stories. Each editor picks an AI service there. Claude and some others need the editor's own API key and charge for use; there are free options, including copying the request into a chat app such as Claude.ai. To offer only some services, or to turn the assistant off, see `ai` in [Goodfellow's README](https://github.com/chartung17/goodfellow-cms#ai-services).
+The admin panel's **AI** tab can draft pages, rewrite blocks and fill in events and news stories. Each editor picks an AI service there. Claude and some others need the editor's own API key and charge for use; there are free options, including copying the request into a chat app such as Claude.ai. To offer only some services, or to turn the assistant off, see `ai` in [Configuration](https://goodfellow-cms.github.io/goodfellow-cms/docs/configuration).
 
 ## Publishing
 

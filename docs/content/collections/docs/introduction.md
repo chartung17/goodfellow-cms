@@ -8,7 +8,7 @@ order: 1
 
 Goodfellow is a website builder for people who aren't developers. Editors build pages from blocks in a visual editor, built on [Puck](https://puckeditor.com), at `/admin` on their own site. There's no server, database or monthly hosting bill: every page is a file in the site's own GitHub or GitLab repository, and a free static host puts the site online.
 
-> Goodfellow is in early development. Everything these pages describe works today, and the [roadmap](https://github.com/chartung17/goodfellow-cms#roadmap) shows what's next. If something doesn't work, or you'd like it to do something it doesn't, [open an issue](https://github.com/chartung17/goodfellow-cms/issues/new/choose).
+> Goodfellow is in early development. Everything these pages describe works today, and the [roadmap](https://github.com/goodfellow-cms/goodfellow-cms#roadmap) shows what's next. If something doesn't work, or you'd like it to do something it doesn't, [open an issue](https://github.com/goodfellow-cms/goodfellow-cms/issues/new/choose).
 
 ## How it works
 
@@ -28,6 +28,10 @@ Because the admin panel talks to GitHub or GitLab directly, nothing else needs t
 - **A media library** for images and files.
 - **An AI assistant** that writes into the page, with each editor's own AI service or a free one.
 - **More blocks** from block registries, such as an FAQ or a pricing table, added without a developer.
+- **CSS classes and custom CSS** on any block, shown in the editor straight away, before the site is rebuilt.
+- **Running the site** without a developer: inviting editors, version history, a custom domain, plain-language explanations when a rebuild fails, and Goodfellow's fixes installed each night.
+- **Blocks of your own**, for developers: any React component can be a block, and parts that respond to visitors run in the browser, with or without Next.js. Pages without them load no JavaScript.
+- **Free hosting** on GitHub Pages, GitLab Pages or Vercel, with the setup for each included and a nightly rebuild for date-based content.
 
 ## Where to start
 
