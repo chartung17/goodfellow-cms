@@ -1,4 +1,12 @@
-import { ContentError, type ContentStore, type GitHost, type GoodfellowConfig } from "@goodfellow-cms/core";
+import {
+  COLLECTIONS_DIR,
+  ContentError,
+  type ContentStore,
+  FOOTER_FILE,
+  type GitHost,
+  type GoodfellowConfig,
+  HEADER_FILE,
+} from "@goodfellow-cms/core";
 import { useMemo, useState } from "react";
 import { createRoot } from "react-dom/client";
 import { AdminProvider, type PreviewOptions, useAdmin, useSiteContent } from "./admin-context.js";
@@ -20,6 +28,7 @@ import { defaultStrings, type Strings, StringsProvider, useStrings } from "./str
 import { setThemeChoice, type ThemeChoice, useApplyThemeChoice, useThemeChoice } from "./theme.js";
 import { Button, Dialog, ErrorMessage } from "./ui.js";
 import { AppLink } from "./use-link.js";
+import { VersionsScreen } from "./versions-screen.js";
 
 export interface AdminProps {
   /** The site's `goodfellow.config.tsx`. */
@@ -92,6 +101,7 @@ function Screen() {
   if (section === "pages" && sub === "edit") return <PageEditorScreen path={params.get("path") ?? "/"} />;
   if (section === "layout") return <LayoutEditorScreen part={sub === "footer" ? "footer" : "header"} />;
   if (section === "settings" && sub === "domain") return <DomainScreen />;
+  if (section === "versions") return <VersionsScreen file={params.get("file") ?? ""} />;
   if (section === "settings") {
     const tab = SETTINGS_TABS.includes(sub as SettingsTab) ? (sub as SettingsTab) : "general";
     return <SettingsScreen tab={tab} />;
@@ -186,18 +196,27 @@ function ThemeMenu() {
   );
 }
 
+/** The part of the admin panel a file's Version history belongs to. */
+function versionsSection(file: string): "pages" | "collections" | "layout" {
+  if (file.startsWith(`${COLLECTIONS_DIR}/`)) return "collections";
+  return file === HEADER_FILE || file === FOOTER_FILE ? "layout" : "pages";
+}
+
 function Shell() {
   const t = useStrings();
   const { state, siteUrl } = useAdmin();
-  const [section] = useRoute().segments;
+  const { segments, params } = useRoute();
+  const [section] = segments;
   const current =
-    section === "layout" ||
-    section === "settings" ||
-    section === "collections" ||
-    section === "media" ||
-    section === "blocks"
-      ? section
-      : "pages";
+    section === "versions"
+      ? versionsSection(params.get("file") ?? "")
+      : section === "layout" ||
+          section === "settings" ||
+          section === "collections" ||
+          section === "media" ||
+          section === "blocks"
+        ? section
+        : "pages";
 
   return (
     <div className="gfa-app">

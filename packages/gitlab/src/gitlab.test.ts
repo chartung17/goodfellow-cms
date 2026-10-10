@@ -219,3 +219,38 @@ describe("publishing", () => {
     });
   });
 });
+
+describe("version history", () => {
+  it("lists a file's published versions, newest first, and reads each one", async () => {
+    const { fake, host } = setup();
+    const backend = await host.signInWithToken("test-token", false);
+    const about = (title: string) => `{"version":1,"data":{"root":{"props":{"title":"${title}"}},"content":[]}}`;
+    fake.repo.write("content/pages/about.json", about("About us"), "Update About", "Maria");
+    fake.repo.write("content/site.json", '{"version":1,"title":"St. Joseph Parish"}', "Update site settings");
+    await writeChanges(backend, [{ path: "content/pages/about.json", content: about("Who we are") }], {
+      message: "Update Who we are",
+      expectedRevision: await backend.revision(),
+    });
+
+    const versions = await backend.history("content/pages/about.json");
+    expect(versions.map((version) => [version.message, version.author])).toEqual([
+      ["Update Who we are", "Test Editor"],
+      ["Update About", "Maria"],
+      ["Initial commit", "GitLab"],
+    ]);
+    expect(versions[0]?.date).toMatch(/^\d{4}-\d\d-\d\dT/);
+    expect(await backend.readAt("content/pages/about.json", versions[1]?.revision ?? "")).toBe(about("About us"));
+    expect(await backend.readAt("content/pages/new.json", versions[1]?.revision ?? "")).toBeUndefined();
+    expect(await backend.history("content/pages/about.json", { perPage: 2, page: 2 })).toHaveLength(1);
+  });
+
+  it("lists versions up to the revision it's reading", async () => {
+    const { fake, host } = setup();
+    const backend = await host.signInWithToken("test-token", false);
+    await backend.revision();
+    fake.repo.write("content/pages/about.json", "{}", "Someone else's change");
+    expect((await backend.history("content/pages/about.json")).map((version) => version.message)).toEqual([
+      "Initial commit",
+    ]);
+  });
+});

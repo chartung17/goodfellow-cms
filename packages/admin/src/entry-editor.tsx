@@ -31,6 +31,7 @@ import { MediaChooser } from "./media-library.js";
 import { PuckEditor, SiteFrame } from "./puck-editor.js";
 import { useStrings } from "./strings.js";
 import { AppLink } from "./use-link.js";
+import { VersionsLink } from "./versions-screen.js";
 
 const usePuck = createUsePuck();
 const entryPlugins = [legacySideBarPlugin()];
@@ -303,6 +304,7 @@ function EntryEditor({ collection, entry }: { collection: Collection; entry: Ent
       ui={siteConfig.ai === false ? { leftSideBarVisible: false } : entryUi}
       plugins={siteConfig.ai === false ? entryPlugins : undefined}
       rightSideBar={ENTRY_SIDEBAR}
+      actions={<VersionsLink file={entry.file} />}
       validate={(next) => {
         const values: Record<string, unknown> = next.root.props ?? {};
         const missing = fields.filter((field) => field.required && isEmptyValue(values[field.name]));

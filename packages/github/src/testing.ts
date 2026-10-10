@@ -227,8 +227,8 @@ export function fakeGitHub(options: FakeGitHubOptions) {
     deployments.unshift({ id: nextDeployment++, sha, statuses: [{ state: "in_progress" }], checks: 0 });
   }
 
-  function commit(changes: FileChange[], message: string, expectedHead?: string): string {
-    const sha = repo.commit(changes, message, { expectedHead });
+  function commit(changes: FileChange[], message: string, expectedHead?: string, author?: string): string {
+    const sha = repo.commit(changes, message, { expectedHead, author });
     deploy(sha);
     return sha;
   }
@@ -277,6 +277,7 @@ export function fakeGitHub(options: FakeGitHubOptions) {
           ],
           input.message.headline,
           input.expectedHeadOid,
+          user.name ?? user.login,
         );
         return json({ data: { createCommitOnBranch: { commit: { oid } } } });
       } catch (error) {
@@ -357,6 +358,22 @@ export function fakeGitHub(options: FakeGitHubOptions) {
       return request.headers.get("accept")?.includes("raw")
         ? new Response(fakeFileBytes(content))
         : json({ content: encodeBase64Bytes(fakeFileBytes(content)), encoding: "base64" });
+    }
+
+    if (rest === "/commits") {
+      const ref = url.searchParams.get("sha") ?? repo.defaultBranch;
+      const file = url.searchParams.get("path");
+      if (!repo.commitAt(repo.branches.get(ref) ?? ref)) return json({ message: "No commit found for SHA" }, 422);
+      const perPage = Number(url.searchParams.get("per_page") ?? 30);
+      const page = Number(url.searchParams.get("page") ?? 1);
+      const commits = file ? repo.history(file, ref) : [];
+      return json(
+        commits.slice((page - 1) * perPage, page * perPage).map((commit) => ({
+          sha: commit.sha,
+          commit: { message: commit.message, author: { name: commit.author ?? "GitHub", date: commit.date } },
+          author: null,
+        })),
+      );
     }
 
     const compare = rest.match(/^\/compare\/([0-9a-f]{40})\.\.\.([0-9a-f]{40})$/);

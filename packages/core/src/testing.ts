@@ -12,8 +12,15 @@ export interface FakeCommit {
   sha: string;
   parent?: string;
   message: string;
+  /** Who made it, if anyone said. */
+  author?: string;
+  /** When it was made, as an ISO 8601 date. */
+  date: string;
   files: ReadonlyMap<string, FakeFile>;
 }
+
+/** Commits are an hour apart from here, so tests get the same dates every time. */
+const FIRST_COMMIT = Date.UTC(2026, 0, 5, 9);
 
 /** A file's content as a string to hash or compare: bytes become one character per byte. */
 function fileKey(file: FakeFile | undefined): string | undefined {
@@ -92,7 +99,11 @@ export class FakeRepo {
   }
 
   /** Commits changes to a branch. Throws `FakeConflictError` if `expectedHead` is given and the branch has moved. */
-  commit(changes: FileChange[], message: string, options: { branch?: string; expectedHead?: string } = {}): string {
+  commit(
+    changes: FileChange[],
+    message: string,
+    options: { branch?: string; expectedHead?: string; author?: string } = {},
+  ): string {
     const branch = options.branch ?? this.defaultBranch;
     const parent = this.head(branch);
     if (options.expectedHead && options.expectedHead !== parent) throw new FakeConflictError(`${branch} has moved`);
@@ -101,14 +112,26 @@ export class FakeRepo {
       if ("delete" in change) files.delete(change.path);
       else files.set(change.path, "bytes" in change ? fakeFileFromBytes(change.bytes) : change.content);
     }
-    const sha = this.addCommit(parent, message, files);
+    const sha = this.addCommit(parent, message, files, options.author);
     this.branches.set(branch, sha);
     return sha;
   }
 
   /** Simulates someone else saving: commits straight to the branch. */
-  write(path: string, content: string, message = `Edit ${path}`): string {
-    return this.commit([{ path, content }], message);
+  write(path: string, content: string, message = `Edit ${path}`, author?: string): string {
+    return this.commit([{ path, content }], message, { author });
+  }
+
+  /** The commits at or before `ref` that changed `path`, newest first, as git hosts list a file's history. */
+  history(path: string, ref: string = this.defaultBranch): FakeCommit[] {
+    const found: FakeCommit[] = [];
+    let commit = this.commits.get(this.branches.get(ref) ?? ref);
+    while (commit) {
+      const parent = commit.parent ? this.commits.get(commit.parent) : undefined;
+      if (fileKey(commit.files.get(path)) !== fileKey(parent?.files.get(path))) found.push(commit);
+      commit = parent;
+    }
+    return found;
   }
 
   changedPaths(from: string, to: string): string[] {
@@ -132,11 +155,12 @@ export class FakeRepo {
   }
 
   /** Makes a commit with these files, without moving any branch, as git hosts' APIs can. */
-  addCommit(parent: string | undefined, message: string, files: Map<string, FakeFile>): string {
+  addCommit(parent: string | undefined, message: string, files: Map<string, FakeFile>, author?: string): string {
+    const date = new Date(FIRST_COMMIT + this.count * 3_600_000).toISOString();
     this.count += 1;
     const sha = this.count.toString(16).padStart(40, "0");
     for (const content of files.values()) this.blobSha(content);
-    this.commits.set(sha, { sha, parent, message, files });
+    this.commits.set(sha, { sha, parent, message, author, date, files });
     return sha;
   }
 }

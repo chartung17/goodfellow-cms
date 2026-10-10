@@ -144,6 +144,7 @@ The admin panel is at `/admin` on the live site, and while `goodfellow dev` is r
 - **Signing in:** on the live site, editors sign in with GitHub or GitLab. GitHub uses an access token, created from a link that fills in the right permissions. GitLab offers one-click sign-in once the site's OAuth application is registered, with an access token as the alternative. Editors choose whether to stay signed in on the device.
 - **Publishing:** each Publish saves every changed file in one commit to the site's main branch. If someone else published changes to other files in the meantime, publishing still goes ahead; if they changed the same files, it stops instead of overwriting their work.
 - **Live status:** after publishing, the top bar shows when the live site has been rebuilt, or that the rebuild failed, with a link to the details. This works with GitHub Pages, GitLab Pages and Vercel.
+- **Version history:** every page, the header and footer, and each item in a collection have a **Version history**: each published version, who published it and when, with a preview. Restoring a version publishes it again, so the version it replaced stays in the history. Versions that use blocks the site no longer has, or values that no longer fit their fields, can't be restored.
 - **Unpublished changes:** leaving a screen with unpublished changes asks first.
 - **Media:** upload images and files, by choosing them or dropping them onto the **Media** screen, and replace or delete them there. Deleting a file first lists everything that uses it. Wherever an image goes (an Image block, a section's background, the logo, a collection's image field) there's a **Choose image** button, which picks from the library or uploads a new one.
   - Large photos are made no bigger than 2400 pixels on their longest side, and JPEGs are re-saved, which removes details hidden in them such as where a photo was taken. SVG images have anything that could run code removed.
@@ -352,7 +353,7 @@ my-site/
 15. **Custom domains** (done). Connect a domain from the admin panel's **Site settings → Domain**. Goodfellow connects it on GitHub Pages or GitLab Pages, lists the records to add at the domain's registrar, with guides for popular registrars in the docs, and checks until the domain works: the records, as the world sees them, the host's HTTPS certificate, and the site at its new address. Then it sends everyone to the secure address. Sites on Vercel connect their domain in Vercel, as the screen explains.
 16. **Running a site without a developer.**
     - Invite and remove editors from the admin panel.
-    - Version history, with a way to restore an earlier version of a page.
+    - Version history, with a way to restore an earlier version of a page (done).
     - Automatic updates: a scheduled job updates Goodfellow, and blocks added from block registries, and publishes the update only if the site still builds. Block updates replace only files nobody has changed.
     - Plain-language explanations when a rebuild fails.
 17. **Calendars.** An Events collection and a Calendar block, worked out when the site builds, so visitors only get HTML.

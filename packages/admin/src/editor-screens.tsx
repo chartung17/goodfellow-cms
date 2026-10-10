@@ -5,6 +5,7 @@ import { layoutFileChange, pageFileChange, pageTitle } from "./changes.js";
 import { PuckEditor } from "./puck-editor.js";
 import { useStrings } from "./strings.js";
 import { AppLink } from "./use-link.js";
+import { VersionsLink } from "./versions-screen.js";
 
 export function PageEditorScreen({ path }: { path: string }) {
   const t = useStrings();
@@ -27,6 +28,7 @@ export function PageEditorScreen({ path }: { path: string }) {
       path={page.path}
       title={pageTitle(page)}
       data={page.content.data as Data}
+      actions={<VersionsLink file={page.file} />}
       toChanges={(data) => {
         const title =
           typeof data.root.props?.title === "string" && data.root.props.title.trim()
@@ -63,6 +65,7 @@ export function LayoutEditorScreen({ part }: { part: "header" | "footer" }) {
         path="/"
         title={t(part === "header" ? "layout.header" : "layout.footer")}
         data={content[part].data as Data}
+        actions={<VersionsLink file={file} />}
         toChanges={(data) => ({
           changes: [layoutFileChange(file, data)],
           message: t(part === "header" ? "layout.headerMessage" : "layout.footerMessage"),

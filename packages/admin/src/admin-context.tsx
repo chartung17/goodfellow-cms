@@ -71,12 +71,16 @@ interface AdminContextValue {
   publish(changes: FileChange[], message: string): Promise<PublishResult>;
   /** Reads one of the site's files at the loaded revision, or `undefined` if it doesn't exist. */
   readFile(path: string): Promise<string | undefined>;
+  /** Lists the site's files under a folder at the loaded revision. */
+  listFiles(dir: string): Promise<string[]>;
   /** The block registries the Blocks screen offers blocks from: Goodfellow's, and those the config lists. */
   registries: RegistrySources;
   /** In a demo, the store keeping the visitor's changes in their browser. */
   demo?: DemoStore;
   /** The git host's own Pages, for connecting a domain, when the backend can. */
   pages?: PagesDomains;
+  /** Earlier versions of the site's files, when the site is stored on a git host. */
+  versions?: Pick<GitBackend, "history" | "readAt">;
 }
 
 const AdminContext = createContext<AdminContextValue | null>(null);
@@ -131,8 +135,10 @@ export function AdminProvider({
     [registry, config.registries],
   );
   const readFile = useCallback((path: string) => store.read(path), [store]);
+  const listFiles = useCallback((dir: string) => store.list(dir), [store]);
   const demo = isDemoStore(store) ? store : undefined;
   const pages = isGitBackend(store) ? store.pages : undefined;
+  const versions = isGitBackend(store) ? store : undefined;
 
   // A demo visitor's uploads aren't on the live site, and their replacements of its files would show the
   // live site's version, so previews show what the visitor saved instead.
@@ -215,9 +221,11 @@ export function AdminProvider({
       reload,
       publish,
       readFile,
+      listFiles,
       registries,
       demo,
       pages,
+      versions,
     }),
     [
       config,
@@ -233,9 +241,11 @@ export function AdminProvider({
       reload,
       publish,
       readFile,
+      listFiles,
       registries,
       demo,
       pages,
+      versions,
     ],
   );
 

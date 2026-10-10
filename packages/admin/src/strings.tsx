@@ -113,6 +113,36 @@ export const defaultStrings = {
   "editPage.notFound": "This page doesn't exist. It may have been moved or deleted.",
   "editPage.backToPages": "Back to pages",
 
+  "versions.button": "Version history",
+  "versions.title": "Version history: {title}",
+  "versions.back": "Back to editing",
+  "versions.intro":
+    "Every version that's been published, newest first. Choose one to see it, then restore it to put it back. Something that was moved to a new address starts a new history there.",
+  "versions.notFound": "There's no history to show here. It may have been moved or deleted.",
+  "versions.local": "Version history is in the published site's admin panel, where you sign in with GitHub or GitLab.",
+  "versions.demo": "Version history isn't kept in a demo.",
+  "versions.loading": "Loading versions…",
+  "versions.loadingVersion": "Loading this version…",
+  "versions.error": "The versions couldn't be loaded. Check your connection and try again.",
+  "versions.empty": "Nothing has been published here yet.",
+  "versions.current": "Current version",
+  "versions.by": "{date}, by {author}",
+  "versions.more": "Show older versions",
+  "versions.preview": "The version from {date}",
+  "versions.noPreview": "This item has no page of its own, so there's nothing to preview.",
+  "versions.restore": "Restore this version",
+  "versions.restoreTitle": "Restore the version from {date}?",
+  "versions.restoreBody":
+    "{title} goes back to how it was then, and that's published straight away. The current version stays in the history, so you can restore it later.",
+  "versions.restoring": "Restoring…",
+  "versions.restoreMessage": 'Restore "{title}" to the version from {date}',
+  "versions.restored": "Restored the version from {date}.",
+  "versions.readError": "This version couldn't be loaded. Check your connection and try again.",
+  "versions.unfit":
+    "This version can't be restored, because it doesn't fit the site as it is now, for example because the choices for one of its fields have changed.",
+  "versions.unknownBlocks":
+    "This version can't be restored, because it uses blocks the site doesn't have any more: {blocks}.",
+
   "layout.header": "Header",
   "layout.footer": "Footer",
   "layout.headerMessage": "Update the header",

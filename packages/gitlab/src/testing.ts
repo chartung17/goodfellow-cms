@@ -228,8 +228,8 @@ export function fakeGitLab(options: FakeGitLabOptions) {
     return json({ message: "404 Not Found" }, 404);
   }
 
-  function commit(changes: FileChange[], message: string): string {
-    const sha = repo.commit(changes, message);
+  function commit(changes: FileChange[], message: string, author?: string): string {
+    const sha = repo.commit(changes, message, { author });
     if (options.deployAfterChecks !== undefined) pipelines.set(sha, { checks: 0 });
     return sha;
   }
@@ -349,6 +349,16 @@ export function fakeGitLab(options: FakeGitLabOptions) {
         : new Response(fakeFileBytes(content));
     }
 
+    const raw = rest.match(/^\/repository\/files\/([^/]+)\/raw$/);
+    if (raw) {
+      const ref = url.searchParams.get("ref") ?? repo.defaultBranch;
+      if (!repo.commitAt(repo.branches.get(ref) ?? ref)) return json({ message: "404 Commit Not Found" }, 404);
+      const content = repo.files(ref).get(decodeURIComponent(raw[1] ?? ""));
+      return content === undefined
+        ? json({ message: "404 File Not Found" }, 404)
+        : new Response(fakeFileBytes(content));
+    }
+
     const file = rest.match(/^\/repository\/files\/([^/]+)$/);
     if (file) {
       const filePath = decodeURIComponent(file[1] ?? "");
@@ -396,8 +406,28 @@ export function fakeGitLab(options: FakeGitLabOptions) {
               : { path: action.file_path, content: action.content ?? "" },
         ),
         body.commit_message,
+        user.name ?? user.username,
       );
       return json({ id: sha, message: body.commit_message }, 201);
+    }
+
+    if (rest === "/repository/commits" && request.method === "GET") {
+      const ref = url.searchParams.get("ref_name") ?? repo.defaultBranch;
+      const file = url.searchParams.get("path");
+      if (!repo.commitAt(repo.branches.get(ref) ?? ref)) return json({ message: "404 Reference Not Found" }, 404);
+      const perPage = Number(url.searchParams.get("per_page") ?? 20);
+      const page = Number(url.searchParams.get("page") ?? 1);
+      const commits = file ? repo.history(file, ref) : [];
+      return json(
+        commits.slice((page - 1) * perPage, page * perPage).map((commit) => ({
+          id: commit.sha,
+          title: commit.message.split("\n")[0],
+          message: commit.message,
+          author_name: commit.author ?? "GitLab",
+          authored_date: commit.date,
+          committed_date: commit.date,
+        })),
+      );
     }
 
     if (rest === "/repository/compare") {

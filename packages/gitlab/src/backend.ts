@@ -4,9 +4,11 @@ import {
   EDITABLE_FOLDERS,
   encodeBase64Bytes,
   type FileChange,
+  type FileVersion,
   GitApiError,
   type GitBackend,
   type GitUser,
+  type HistoryOptions,
   type PagesDomains,
   SignInError,
   type WriteOptions,
@@ -181,6 +183,33 @@ export class GitLabBackend implements GitBackend {
       if (fileConflict || (await this.revision()) !== expectedRevision) throw new ConflictError();
       throw error;
     }
+  }
+
+  async history(path: string, { page = 1, perPage = 20 }: HistoryOptions = {}): Promise<FileVersion[]> {
+    const query = new URLSearchParams({
+      ref_name: this.pinned ?? (await this.revision()),
+      path,
+      per_page: String(perPage),
+      page: String(page),
+    });
+    const commits = await gitlabJson<
+      Array<{ id: string; title: string; author_name?: string; authored_date?: string; committed_date?: string }>
+    >(this.api, this.repo(`/commits?${query}`));
+    return commits.map((commit) => ({
+      revision: commit.id,
+      date: commit.authored_date ?? commit.committed_date ?? "",
+      author: commit.author_name || undefined,
+      message: commit.title,
+    }));
+  }
+
+  async readAt(path: string, revision: string): Promise<string | undefined> {
+    const response = await gitlabRequest(
+      this.api,
+      this.repo(`/files/${encodeURIComponent(path)}/raw?${new URLSearchParams({ ref: revision })}`),
+      { allow: [404] },
+    );
+    return response.ok ? response.text() : undefined;
   }
 
   async changedPaths(from: string, to: string): Promise<string[]> {
