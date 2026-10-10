@@ -42,12 +42,14 @@ export function githubTokenLinks(repo: string, webUrl = "https://github.com") {
   // Administration, which can also delete the repository. So owners make a second token, used for one tab only.
   const owner = new URLSearchParams({
     name: "Goodfellow owner",
-    description: `Manage the editors and domain of ${repo}`,
+    description: `Manage the editors, domain and updates of ${repo}`,
     target_name: repoOwner,
     // GitHub's shortest: the admin panel forgets the token when the tab closes anyway.
     expires_in: "1",
     administration: "write",
     pages: "write",
+    // Running the site's update now, from the Updates screen.
+    actions: "write",
   });
   return {
     fineGrained: `${webUrl}/settings/personal-access-tokens/new?${fineGrained}`,

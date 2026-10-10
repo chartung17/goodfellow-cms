@@ -1,6 +1,7 @@
 import { resolve } from "node:path";
 import { parseArgs } from "node:util";
-import { ContentError } from "@goodfellow-cms/core";
+import { ContentError, formatUpdateResult } from "@goodfellow-cms/core";
+import { update } from "@goodfellow-cms/core/node";
 import { writeSearchIndex } from "@goodfellow-cms/core/search-index";
 import { build } from "./build.js";
 import { dev } from "./dev.js";
@@ -15,12 +16,15 @@ Commands:
   build     Build the static site into dist/
   preview   Serve the built site the way a static host would
   index     Index a built site's pages for its search block (build does this itself)
+  update    Update Goodfellow, and blocks from its registry, if the site still builds
 
 Options:
   --root <dir>    The site's folder (default: current folder)
   --out <dir>     Build output folder (default: dist)
   --base <path>   Serve the site from a subfolder, such as /my-repo/ (also GOODFELLOW_BASE)
   --port <port>   Port for dev or preview
+  --to <release>  For update: fixes (the default), latest, or a release such as 0.5.0
+  --publish       For update: publish the update to the site's main branch once it builds
   -h, --help      Show this help
 `;
 
@@ -32,6 +36,8 @@ async function main(): Promise<void> {
       out: { type: "string" },
       base: { type: "string" },
       port: { type: "string" },
+      to: { type: "string" },
+      publish: { type: "boolean" },
       help: { type: "boolean", short: "h" },
     },
   });
@@ -74,6 +80,13 @@ async function main(): Promise<void> {
           ? `No page in ${dir} has a search block, so there's nothing to index`
           : `Indexed ${indexed} pages for search`,
       );
+      return;
+    }
+    case "update": {
+      const result = await update({ root: values.root, to: values.to, publish: values.publish });
+      // For the admin panel, which reads it in the host's log.
+      console.log(formatUpdateResult(result));
+      if (result.state === "failed") process.exitCode = 1;
       return;
     }
     case "preview":

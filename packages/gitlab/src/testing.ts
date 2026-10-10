@@ -215,6 +215,31 @@ export function fakeGitLab(options: FakeGitLabOptions) {
   const codes = new Map<string, { challenge: string; redirectUri: string }>();
   const refreshTokens = new Map<string, FakeGitLabUser>();
   const pipelines = new Map<string, { checks: number }>();
+  /** The project's settings for updates: whether job tokens may push, and its pipeline schedules. */
+  const updateSettings = {
+    jobTokenPush: false,
+    schedules: [] as Array<{ id: number; ref: string; cron: string; active: boolean }>,
+  };
+  /** Pipelines the update ran in: scheduled, or started through the API, with the pages job's log. */
+  const updateRuns: Array<{
+    id: number;
+    source: string;
+    status: string;
+    variables?: Array<{ key: string; value: string }>;
+    trace: string;
+  }> = [];
+  /** Simulates a scheduled (or API) pipeline whose pages job logged `trace`. */
+  function addUpdateRun(run: {
+    source?: string;
+    status?: string;
+    trace?: string;
+    variables?: Array<{ key: string; value: string }>;
+  }) {
+    const added = { id: 1000 + updateRuns.length, source: "schedule", status: "success", trace: "", ...run };
+    updateRuns.push(added);
+    return added;
+  }
+
   /** Failed jobs, by commit, which tests add with `failBuild()`. */
   const failures = new Map<string, { job: string; failureReason: string; trace: string }>();
 
@@ -475,10 +500,11 @@ export function fakeGitLab(options: FakeGitLabOptions) {
     const membersResponse = await handleMembers(request, url, rest, accessLevel);
     if (membersResponse) return membersResponse;
 
-    if (rest === "") {
+    if (rest === "" && request.method !== "PUT") {
       return json({
         default_branch: repo.defaultBranch,
         permissions: { project_access: { access_level: accessLevel }, group_access: null },
+        ci_push_repository_for_job_token_allowed: updateSettings.jobTokenPush,
       });
     }
 
@@ -619,6 +645,57 @@ export function fakeGitLab(options: FakeGitLabOptions) {
       ]);
     }
 
+    if (rest === "/pipelines" && url.searchParams.has("ref")) {
+      return json(
+        [...updateRuns].reverse().map((run) => ({
+          id: run.id,
+          source: run.source,
+          status: run.status,
+          created_at: "2026-01-05T04:17:00Z",
+          web_url: `${webUrl}/${options.project}/-/pipelines/${run.id}`,
+        })),
+      );
+    }
+    if (rest === "/pipeline" && request.method === "POST") {
+      if (accessLevel < 30) return json({ message: "403 Forbidden" }, 403);
+      const body = (await request.json()) as { ref: string; variables?: Array<{ key: string; value: string }> };
+      const run = addUpdateRun({ source: "api", status: "created", variables: body.variables });
+      return json({ id: run.id, status: run.status }, 201);
+    }
+    if (rest === "/pipeline_schedules") {
+      if (accessLevel < 30) return json({ message: "403 Forbidden" }, 403);
+      if (request.method === "POST") {
+        const body = (await request.json()) as { ref: string; cron: string; active?: boolean };
+        const schedule = {
+          id: updateSettings.schedules.length + 1,
+          ref: body.ref,
+          cron: body.cron,
+          active: body.active ?? true,
+        };
+        updateSettings.schedules.push(schedule);
+        return json(schedule, 201);
+      }
+      return json(updateSettings.schedules);
+    }
+    if (rest === "" && request.method === "PUT") {
+      if (accessLevel < 40) return json({ message: "403 Forbidden" }, 403);
+      const body = (await request.json()) as { ci_push_repository_for_job_token_allowed?: boolean };
+      if (body.ci_push_repository_for_job_token_allowed !== undefined) {
+        updateSettings.jobTokenPush = body.ci_push_repository_for_job_token_allowed;
+      }
+      return json({ ci_push_repository_for_job_token_allowed: updateSettings.jobTokenPush });
+    }
+    const updateJobs = rest.match(/^\/pipelines\/(\d{4,})\/jobs$/);
+    if (updateJobs) {
+      const run = updateRuns.find((candidate) => candidate.id === Number(updateJobs[1]));
+      return run ? json([{ id: run.id, name: "pages", status: run.status }]) : json({ message: "404 Not Found" }, 404);
+    }
+    const updateTrace = rest.match(/^\/jobs\/(\d{4,})\/trace$/);
+    if (updateTrace) {
+      const run = updateRuns.find((candidate) => candidate.id === Number(updateTrace[1]));
+      return run ? new Response(run.trace) : json({ message: "404 Not Found" }, 404);
+    }
+
     if (rest === "/pipelines") {
       const sha = url.searchParams.get("sha");
       return json(
@@ -657,6 +734,10 @@ export function fakeGitLab(options: FakeGitLabOptions) {
     invitations,
     protectedBranches,
     failBuild,
+    /** The project's update settings, and the pipelines the update ran in, which tests add with `addUpdateRun()`. */
+    updateSettings,
+    updateRuns,
+    addUpdateRun,
     repo,
     /** Projects created through the API, by full path. */
     created,

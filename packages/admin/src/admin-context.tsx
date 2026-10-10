@@ -18,6 +18,7 @@ import {
   SignInError,
   type SiteContent,
   type SiteEditors,
+  type SiteUpdates,
   writeChanges,
 } from "@goodfellow-cms/core";
 import { createPuckConfig } from "@goodfellow-cms/react";
@@ -89,6 +90,8 @@ interface AdminContextValue {
   editors?: SiteEditors;
   /** A second token for changing editors and Pages settings, where signing in can't. */
   ownerAccess?: OwnerAccess;
+  /** The site's nightly update job, when the backend can run it. */
+  updates?: SiteUpdates;
 }
 
 const AdminContext = createContext<AdminContextValue | null>(null);
@@ -152,6 +155,7 @@ export function AdminProvider({
     [store],
   );
   const editors = isGitBackend(store) ? store.editors : undefined;
+  const updates = isGitBackend(store) ? store.updates : undefined;
   // The backend's owner access, with whether it's in use as state, so every screen showing it updates together.
   const backendOwner = isGitBackend(store) ? store.ownerAccess : undefined;
   const [ownerActive, setOwnerActive] = useState(backendOwner?.active ?? false);
@@ -261,6 +265,7 @@ export function AdminProvider({
       changedPaths,
       editors,
       ownerAccess,
+      updates,
     }),
     [
       config,
@@ -284,6 +289,7 @@ export function AdminProvider({
       changedPaths,
       editors,
       ownerAccess,
+      updates,
     ],
   );
 

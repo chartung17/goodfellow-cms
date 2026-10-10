@@ -3,3 +3,4 @@ export { fileSystemSource } from "./node-fs-source.js";
 export { InvalidPathError, localFileStore } from "./node-local-files.js";
 export { readMediaSizes } from "./node-media.js";
 export { localRegistryDir } from "./node-registry.js";
+export { type RunCommand, type UpdateOptions, update } from "./node-update.js";

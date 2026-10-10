@@ -14,6 +14,7 @@ import {
   planBlockChanges,
   planInstall,
   planRemove,
+  planUpdate,
   RegistryError,
   type RegistryProblem,
   SHADCN_REGISTRY,
@@ -296,6 +297,89 @@ describe("planRemove", () => {
     expect(blockUses(used, "shadcn-tabs")).toEqual([{ kind: "footer" }]);
     expect(
       await problem(planRemove({ name: "nothing", record: faq.record, readFile: site.readFile, content: used })),
+    ).toEqual({ code: "not-installed", name: "nothing" });
+  });
+});
+
+describe("planUpdate", () => {
+  /** The registry with a new version of the FAQ block: its block changed, its list went and a new file came. */
+  const updated: FetchJson = async (url) => {
+    if (url !== "https://registry.example/r/shadcn-faq.json") return fetchJson(url);
+    return {
+      ...(items[url] as object),
+      files: [
+        { path: "blocks/shadcn-faq/block.tsx", type: "registry:block", content: "export default { v: 2 };\n" },
+        { path: "blocks/shadcn-faq/questions.tsx", type: "registry:component", content: "questions\n" },
+      ],
+      meta: { goodfellow: { category: "Sections", version: "1.1.0" } },
+    };
+  };
+
+  async function installed(changes: Record<string, string> = {}) {
+    const site = siteFiles();
+    const faq = await install(site, "@goodfellow/shadcn-faq");
+    site.apply(faq.changes);
+    for (const [path, text] of Object.entries(changes)) site.files.set(path, text);
+    return { site, record: faq.record };
+  }
+
+  it("replaces, adds and removes the block's files to match the new version", async () => {
+    const { site, record } = await installed();
+    const plan = await planUpdate({
+      name: "shadcn-faq",
+      registries,
+      fetchJson: updated,
+      readFile: site.readFile,
+      record,
+    });
+    expect(plan).toMatchObject({ kept: [], from: "1.0.0", to: "1.1.0" });
+    site.apply(plan.changes);
+    expect(site.files.get("blocks/installed/shadcn-faq/block.tsx")).toBe("export default { v: 2 };\n");
+    expect(site.files.get("blocks/installed/shadcn-faq/questions.tsx")).toBe("questions\n");
+    expect(site.files.has("blocks/installed/shadcn-faq/faq-list.tsx")).toBe(false);
+    expect(plan.record.blocks["shadcn-faq"]?.version).toBe("1.1.0");
+    expect(Object.keys(plan.record.blocks["shadcn-faq"]?.files ?? {})).toContain(
+      "blocks/installed/shadcn-faq/questions.tsx",
+    );
+  });
+
+  it("keeps files someone changed, and still knows they were changed", async () => {
+    const changed = "export default { mine: true };\n";
+    const { site, record } = await installed({
+      "blocks/installed/shadcn-faq/block.tsx": changed,
+      "blocks/installed/shadcn-faq/faq-list.tsx": "my list\n",
+    });
+    const plan = await planUpdate({
+      name: "shadcn-faq",
+      registries,
+      fetchJson: updated,
+      readFile: site.readFile,
+      record,
+    });
+    expect(plan.kept).toEqual(["blocks/installed/shadcn-faq/block.tsx", "blocks/installed/shadcn-faq/faq-list.tsx"]);
+    site.apply(plan.changes);
+    expect(site.files.get("blocks/installed/shadcn-faq/block.tsx")).toBe(changed);
+    expect(site.files.get("blocks/installed/shadcn-faq/faq-list.tsx")).toBe("my list\n");
+    // Updating again later still sees the change, so it's never overwritten.
+    const again = await planUpdate({
+      name: "shadcn-faq",
+      registries,
+      fetchJson: updated,
+      readFile: site.readFile,
+      record: plan.record,
+    });
+    expect(again.kept).toContain("blocks/installed/shadcn-faq/block.tsx");
+  });
+
+  it("changes nothing for a block that's already up to date", async () => {
+    const { site, record } = await installed();
+    const plan = await planUpdate({ name: "shadcn-faq", registries, fetchJson, readFile: site.readFile, record });
+    const changed = plan.changes.filter(
+      (change) => "content" in change && site.files.get(change.path) !== change.content,
+    );
+    expect(changed).toEqual([]);
+    expect(
+      await problem(planUpdate({ name: "nothing", registries, fetchJson, readFile: site.readFile, record })),
     ).toEqual({ code: "not-installed", name: "nothing" });
   });
 });

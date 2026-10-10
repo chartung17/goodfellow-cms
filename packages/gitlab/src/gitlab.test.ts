@@ -296,3 +296,49 @@ describe("failed rebuilds", () => {
     expect((await published({ job: "pages:deploy" })).problem?.step).toBe("deploy");
   });
 });
+
+describe("updates", () => {
+  async function site(ci = "pages:\n  script:\n    - npx goodfellow update --publish\n", token = "test-token") {
+    const fake = fakeGitLab({
+      project: "parish/site",
+      files: { ...FILES, ".gitlab-ci.yml": ci },
+      tokens: { "test-token": { username: "maria" }, developer: { username: "joseph", accessLevel: 30 } },
+    });
+    const backend = await gitlab({ project: "parish/site", fetch: fake.fetch }).signInWithToken(token, false);
+    if (!backend.updates) throw new Error("No updates");
+    return { fake, updates: backend.updates };
+  }
+
+  it("lets job tokens publish and adds a nightly schedule", async () => {
+    const { fake, updates } = await site();
+    expect(await updates.setup()).toBe("needs-setup");
+    await updates.enable?.();
+    expect(fake.updateSettings).toMatchObject({ jobTokenPush: true, schedules: [{ ref: "main", cron: "17 4 * * *" }] });
+    expect(await updates.setup()).toBe("ready");
+    await updates.enable?.();
+    expect(fake.updateSettings.schedules).toHaveLength(1);
+    expect(await (await site("pages:\n  script: [npx goodfellow build]\n")).updates.setup()).toBe("missing");
+    await expect((await site(undefined, "developer")).updates.enable?.()).rejects.toMatchObject({
+      problem: "not-allowed",
+    });
+  });
+
+  it("runs the update with the release asked for, and reads what it did from the log", async () => {
+    const { fake, updates } = await site();
+    await updates.start("0.5.0");
+    expect(fake.updateRuns[0]?.variables).toEqual([
+      { key: "GOODFELLOW_UPDATE", variable_type: "env_var", value: "0.5.0" },
+    ]);
+    expect(await updates.lastRun()).toMatchObject({ state: "running" });
+
+    fake.addUpdateRun({
+      trace:
+        'Updating…\ngoodfellow-update {"state":"updated","from":"0.4.1","to":"0.4.3","kept":[]}\n$ npx goodfellow build',
+    });
+    expect(await updates.lastRun()).toMatchObject({
+      state: "updated",
+      result: { from: "0.4.1", to: "0.4.3" },
+      detailsUrl: "https://gitlab.com/parish/site/-/pipelines/1001",
+    });
+  });
+});

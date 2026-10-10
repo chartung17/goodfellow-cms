@@ -1,19 +1,35 @@
 #!/usr/bin/env node
 // After `next build`: `goodfellow-next finish out` fixes the export's prefetch files on Windows
 // and writes the search index for sites with a search block. `index` only writes the index.
+// `goodfellow-next update` updates Goodfellow, as `goodfellow update` does for other sites.
+import { parseArgs } from "node:util";
+import { formatUpdateResult } from "@goodfellow-cms/core";
+import { update } from "@goodfellow-cms/core/node";
 import { writeSearchIndex } from "@goodfellow-cms/core/search-index";
 import { fixSegmentFiles } from "@goodfellow-cms/next/export";
 
 const [command, dir = "out"] = process.argv.slice(2);
+if (command === "update") {
+  const { values } = parseArgs({
+    args: process.argv.slice(3),
+    options: { to: { type: "string" }, publish: { type: "boolean" } },
+  });
+  const result = await update({ to: values.to, publish: values.publish });
+  // For the admin panel, which reads it in the host's log.
+  console.log(formatUpdateResult(result));
+  process.exit(result.state === "failed" ? 1 : 0);
+}
 if (command !== "finish" && command !== "index") {
   console.error(
     [
       "Usage: goodfellow-next finish [folder]",
       "       goodfellow-next index [folder]",
+      "       goodfellow-next update [--to fixes|latest|<release>] [--publish]",
       "",
       "finish  Gets the exported site in folder (default: out) ready to publish: puts the files",
       "        Next.js uses to load pages ahead where browsers look for them, and indexes it for search.",
       "index   Only indexes the exported site for its search block.",
+      "update  Updates Goodfellow, and blocks from its registry, if the site still builds.",
     ].join("\n"),
   );
   process.exit(1);

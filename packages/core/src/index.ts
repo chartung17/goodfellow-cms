@@ -216,6 +216,7 @@ export {
   planBlockChanges,
   planInstall,
   planRemove,
+  planUpdate,
   REGISTRY_PACKAGES,
   RegistryError,
   type RegistryItem,
@@ -225,6 +226,8 @@ export {
   registryIndexSchema,
   registryItemSchema,
   SHADCN_REGISTRY,
+  type UpdateOptions,
+  type UpdatePlan,
 } from "./registry.js";
 export { SEARCH_ATTRIBUTE, SEARCH_INDEX_DIR } from "./search.js";
 export {
@@ -263,3 +266,22 @@ export {
 } from "./site-setup.js";
 export { DEFAULT_RADIUS, DEFAULT_THEME_COLORS, escapeStyleText, googleFontsUrl, themeToCss } from "./theme.js";
 export { trimChars } from "./trim.js";
+export {
+  type AvailableUpdates,
+  availableUpdates,
+  chooseUpdate,
+  findUpdateResult,
+  formatUpdateResult,
+  NPM_REGISTRY,
+  releaseVersion,
+  releaseVersions,
+  type SiteUpdates,
+  siteVersion,
+  UPDATE_RESULT_MARKER,
+  type UpdateResult,
+  type UpdateRun,
+  UpdatesError,
+  type UpdatesProblem,
+  type UpdatesSetup,
+  VERSION_PACKAGE,
+} from "./updates.js";

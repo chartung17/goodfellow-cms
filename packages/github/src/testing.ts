@@ -27,12 +27,19 @@ export interface FakeGitHubUser {
   administration?: boolean;
   /** Whether the token may read GitHub Actions. Defaults to true. */
   actions?: boolean;
+  /** Whether the token may run workflows, as owner tokens can. Defaults to the `administration` setting. */
+  actionsWrite?: boolean;
 }
 
 /** A GitHub Actions workflow run, with its jobs and their steps. */
 export interface FakeRun {
   id: number;
   sha: string;
+  /** What started it: `push` (the default), `schedule` or `workflow_dispatch`. */
+  event?: string;
+  /** For `workflow_dispatch`, the inputs it was given. */
+  inputs?: Record<string, string>;
+  createdAt?: string;
   status: "queued" | "in_progress" | "completed";
   conclusion: "success" | "failure" | "startup_failure" | "cancelled" | null;
   jobs: Array<{ name: string; conclusion: string | null; steps: Array<{ name: string; conclusion: string | null }> }>;
@@ -512,6 +519,39 @@ export function fakeGitHub(options: FakeGitHubOptions) {
           author: null,
         })),
       );
+    }
+
+    if (rest === "/actions/workflows/deploy.yml/dispatches" && request.method === "POST") {
+      if (!(user.actionsWrite ?? user.administration)) {
+        return json({ message: "Resource not accessible by personal access token" }, 403);
+      }
+      const body = (await request.json()) as { ref: string; inputs?: Record<string, string> };
+      runs.push({
+        id: runs.length + 1,
+        sha: repo.head(body.ref),
+        event: "workflow_dispatch",
+        inputs: body.inputs,
+        status: "queued",
+        conclusion: null,
+        jobs: [],
+      });
+      return new Response(null, { status: 204 });
+    }
+
+    if (rest === "/actions/workflows/deploy.yml/runs") {
+      if (user.actions === false) return json({ message: "Resource not accessible by personal access token" }, 403);
+      return json({
+        total_count: runs.length,
+        workflow_runs: [...runs].reverse().map((run) => ({
+          id: run.id,
+          event: run.event ?? "push",
+          head_sha: run.sha,
+          status: run.status,
+          conclusion: run.conclusion,
+          created_at: run.createdAt ?? "2026-01-05T04:17:00Z",
+          html_url: `https://github.com/${options.repo}/actions/runs/${run.id}`,
+        })),
+      });
     }
 
     if (rest === "/actions/runs" || rest.startsWith("/actions/runs/")) {

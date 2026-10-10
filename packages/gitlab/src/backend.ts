@@ -15,11 +15,13 @@ import {
   type PagesDomains,
   SignInError,
   type SiteEditors,
+  type SiteUpdates,
   type WriteOptions,
 } from "@goodfellow-cms/core";
 import { type ApiOptions, gitlabJson, gitlabRequest } from "./api.js";
 import { gitlabEditors } from "./editors.js";
 import { gitlabPages } from "./pages.js";
+import { gitlabUpdates } from "./updates.js";
 
 const PAGE_SIZE = 100;
 
@@ -43,6 +45,7 @@ export class GitLabBackend implements GitBackend {
   readonly user: GitUser;
   readonly pages: PagesDomains;
   readonly editors: SiteEditors;
+  readonly updates: SiteUpdates;
   private readonly api: ApiOptions;
   private readonly project: string;
   private readonly branch: string;
@@ -59,6 +62,10 @@ export class GitLabBackend implements GitBackend {
     this.onSignOut = options.onSignOut;
     this.pages = gitlabPages(this.api, options.project);
     this.editors = gitlabEditors(this.api, options.project, this.branch, this.user.login);
+    // Its setup files are outside the folders the backend lists, so they're read directly.
+    this.updates = gitlabUpdates(this.api, options.project, this.branch, async (path) =>
+      this.readAt(path, this.pinned ?? (await this.revision())),
+    );
   }
 
   private repo(path: string): string {

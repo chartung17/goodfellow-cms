@@ -15,12 +15,14 @@ import {
   type PagesDomains,
   SignInError,
   type SiteEditors,
+  type SiteUpdates,
   type TokenLink,
   type WriteOptions,
 } from "@goodfellow-cms/core";
 import { type ApiOptions, githubJson, githubRequest, repoPath } from "./api.js";
 import { githubEditors, githubOwnerAccess } from "./editors.js";
 import { githubPages } from "./pages.js";
+import { githubUpdates } from "./updates.js";
 
 interface TreeResponse {
   tree: Array<{ path: string; type: string; sha: string }>;
@@ -77,6 +79,7 @@ export class GitHubBackend implements GitBackend {
   readonly pages: PagesDomains;
   readonly editors: SiteEditors;
   readonly ownerAccess: OwnerAccess;
+  readonly updates: SiteUpdates;
   private readonly api: ApiOptions;
   private readonly repo: string;
   private readonly branch: string;
@@ -95,6 +98,7 @@ export class GitHubBackend implements GitBackend {
     this.ownerAccess = owner.access;
     this.pages = githubPages(() => owner.api() ?? this.api, this.repo);
     this.editors = githubEditors(this.api, owner.api, this.repo, this.user.login);
+    this.updates = githubUpdates(this.api, owner.api, this.repo, this.branch, this);
   }
 
   async revision(): Promise<string> {

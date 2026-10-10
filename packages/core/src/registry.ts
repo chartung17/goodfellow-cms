@@ -348,22 +348,69 @@ export interface Plan {
  * replace existing ones.
  */
 export async function planInstall(options: InstallOptions): Promise<Plan & { item: RegistryItem }> {
-  const { registries, fetchJson, readFile, record } = options;
-  const rootUrl = itemUrl(options.ref, registries);
+  const { readFile, record } = options;
+  const { root, meta, entry, files } = await blockFiles(options.ref, options);
+  if (record.blocks[root.name]) throw new RegistryError({ code: "already-installed", name: root.name });
+  if (options.blocks.includes(root.name)) throw new RegistryError({ code: "name-taken", name: root.name });
+
+  const changes: FileChange[] = [];
+  const written: Record<string, string> = {};
+  for (const [path, { content, isBlock }] of files) {
+    const existing = await readFile(path);
+    if (existing === undefined) {
+      changes.push({ path, content });
+      written[path] = await hashText(content);
+    } else if (existing === content) {
+      written[path] = await hashText(content);
+    } else if (isBlock) {
+      throw new RegistryError({ code: "file-exists", path });
+    }
+    // Otherwise the site's own version of shared code stays, and removing the block leaves it.
+  }
+
+  const next: InstalledRecord = {
+    version: 1,
+    blocks: { ...record.blocks, [root.name]: installedBlock(options.ref, root, meta, entry, written) },
+  };
+  return { changes: [...changes, ...recordChanges(next)], record: next, item: root };
+}
+
+function installedBlock(
+  source: string,
+  root: RegistryItem,
+  meta: BlockMeta,
+  entry: string,
+  files: Record<string, string>,
+): InstalledBlock {
+  return {
+    source,
+    title: root.title ?? root.name,
+    category: meta.category,
+    ...(meta.version && { version: meta.version }),
+    entry,
+    files,
+  };
+}
+
+/**
+ * A block's registry item and the files it and every item it depends on would
+ * write, by path in the site. Refused if it needs packages the site doesn't have.
+ */
+async function blockFiles(ref: string, options: Pick<InstallOptions, "registries" | "fetchJson" | "packages">) {
+  const { registries, fetchJson } = options;
+  const rootUrl = itemUrl(ref, registries);
   const root = await fetchItem(rootUrl, fetchJson);
   const meta = root.meta?.goodfellow;
   const entryFiles = root.files.filter((file) => file.type === "registry:block");
-  if (!meta || entryFiles.length !== 1) throw new RegistryError({ code: "not-a-block", ref: options.ref });
-  if (record.blocks[root.name]) throw new RegistryError({ code: "already-installed", name: root.name });
-  if (options.blocks.includes(root.name)) throw new RegistryError({ code: "name-taken", name: root.name });
+  if (!meta || entryFiles.length !== 1) throw new RegistryError({ code: "not-a-block", ref });
 
   // Every item the block needs, each once.
   const items: Array<{ item: RegistryItem; isBlock: boolean }> = [{ item: root, isBlock: true }];
   const seen = new Set([rootUrl]);
   const queue = [...root.registryDependencies];
   while (queue.length > 0) {
-    const ref = queue.shift() as string;
-    const url = itemUrl(ref, registries);
+    const dependency = queue.shift() as string;
+    const url = itemUrl(dependency, registries);
     if (seen.has(url)) continue;
     seen.add(url);
     const item = await fetchItem(url, fetchJson);
@@ -393,38 +440,76 @@ export async function planInstall(options: InstallOptions): Promise<Plan & { ite
       files.set(path, { content: file.content, isBlock });
     }
   }
+  const entry = targetPath(root, entryFiles[0] as RegistryItem["files"][number], true);
+  return { root, meta, entry, files };
+}
+
+export interface UpdateOptions extends Omit<InstallOptions, "ref" | "blocks"> {
+  /** The installed block's name. */
+  name: string;
+}
+
+export interface UpdatePlan extends Plan {
+  /** Files someone changed since they were installed, which keep their changes rather than the new version. */
+  kept: string[];
+  /** The block's version before and after, as its registry says. */
+  from?: string;
+  to?: string;
+}
+
+/**
+ * Works out the files that update an installed block to what its registry has
+ * now. Only files nobody has changed since they were installed are replaced or
+ * removed; files someone changed are kept as they are, and listed in `kept`.
+ */
+export async function planUpdate(options: UpdateOptions): Promise<UpdatePlan> {
+  const { name, record, readFile } = options;
+  const block = record.blocks[name];
+  if (!block) throw new RegistryError({ code: "not-installed", name });
+  const { root, meta, entry, files } = await blockFiles(block.source, options);
+
+  const unchanged = async (path: string, existing: string | undefined) =>
+    existing !== undefined && block.files[path] !== undefined && (await hashText(existing)) === block.files[path];
 
   const changes: FileChange[] = [];
   const written: Record<string, string> = {};
-  for (const [path, { content, isBlock }] of files) {
+  const kept: string[] = [];
+  for (const [path, { content }] of files) {
     const existing = await readFile(path);
-    if (existing === undefined) {
+    if (existing === content) {
+      written[path] = await hashText(content);
+    } else if (existing === undefined || (await unchanged(path, existing))) {
       changes.push({ path, content });
       written[path] = await hashText(content);
-    } else if (existing === content) {
-      written[path] = await hashText(content);
-    } else if (isBlock) {
-      throw new RegistryError({ code: "file-exists", path });
+    } else if (block.files[path] !== undefined) {
+      // Someone changed it: their version stays, and so does the hash it was installed with.
+      kept.push(path);
+      written[path] = block.files[path];
     }
-    // Otherwise the site's own version of shared code stays, and removing the block leaves it.
+    // Otherwise it's the site's own shared code, or another block's, which stays as it is.
   }
 
-  const entry = targetPath(root, entryFiles[0] as RegistryItem["files"][number], true);
+  // Files the new version no longer has go, unless someone changed them or another block uses them.
+  const { [name]: _old, ...others } = record.blocks;
+  const stillNeeded = new Set(Object.values(others).flatMap((other) => Object.keys(other.files)));
+  for (const path of Object.keys(block.files)) {
+    if (files.has(path) || stillNeeded.has(path)) continue;
+    const existing = await readFile(path);
+    if (await unchanged(path, existing)) changes.push({ path, delete: true });
+    else if (existing !== undefined) kept.push(path);
+  }
+
   const next: InstalledRecord = {
     version: 1,
-    blocks: {
-      ...record.blocks,
-      [root.name]: {
-        source: options.ref,
-        title: root.title ?? root.name,
-        category: meta.category,
-        ...(meta.version && { version: meta.version }),
-        entry,
-        files: written,
-      },
-    },
+    blocks: { ...record.blocks, [name]: installedBlock(block.source, root, meta, entry, written) },
   };
-  return { changes: [...changes, ...recordChanges(next)], record: next, item: root };
+  return {
+    changes: [...changes, ...recordChanges(next)],
+    record: next,
+    kept: kept.sort(),
+    ...(block.version && { from: block.version }),
+    ...(meta.version && { to: meta.version }),
+  };
 }
 
 /** Somewhere content uses a block. */

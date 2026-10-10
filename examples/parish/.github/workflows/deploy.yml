@@ -1,7 +1,9 @@
 # Builds the site and publishes it with GitHub Pages whenever the main branch
 # changes (including every Publish in the admin panel), and once a night so
-# date-based content stays current. In the repository's Settings → Pages, set
-# "Source" to "GitHub Actions". See README.md.
+# date-based content stays current. Each night it first installs Goodfellow's
+# newest fixes, and publishes them only if the site still builds with them.
+# In the repository's Settings → Pages, set "Source" to "GitHub Actions".
+# See README.md.
 name: Deploy to GitHub Pages
 
 on:
@@ -10,6 +12,11 @@ on:
   schedule:
     - cron: "17 4 * * *"
   workflow_dispatch:
+    inputs:
+      update:
+        description: "Update Goodfellow first: fixes, latest, or a release such as 0.5.0. Leave empty to only build."
+        required: false
+        default: ""
 
 permissions:
   contents: read
@@ -21,10 +28,36 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
+  update:
+    # Each night, and when the admin panel's Updates screen asks.
+    if: github.event_name == 'schedule' || (github.event_name == 'workflow_dispatch' && inputs.update != '')
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    outputs:
+      sha: ${{ steps.update.outputs.sha }}
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - id: update
+        env:
+          TO: ${{ inputs.update || 'fixes' }}
+        run: npx goodfellow update --publish --to "$TO"
+
   build:
+    needs: update
+    # Also when there was no update to run, or it didn't work: the site is built either way.
+    if: ${{ !cancelled() }}
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v5
+        with:
+          # The update's commit, when it published one.
+          ref: ${{ needs.update.outputs.sha || github.sha }}
       - uses: actions/setup-node@v5
         with:
           node-version: 22
@@ -40,6 +73,7 @@ jobs:
 
   deploy:
     needs: build
+    if: ${{ !cancelled() && needs.build.result == 'success' }}
     runs-on: ubuntu-latest
     environment:
       name: github-pages
