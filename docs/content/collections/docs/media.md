@@ -14,7 +14,7 @@ Choose files, or drop them onto the Media screen. Wherever an image goes, such a
 
 - Large photos are made no bigger than 2400 pixels on their longest side, and JPEGs are re-saved, which removes details hidden in them such as where a photo was taken.
 - SVG images have anything that could run code removed.
-- Images, PDFs, office documents, MP3 audio and MP4 video can be uploaded, up to 25 MB each. Web pages, scripts and other files that could run code can't.
+- Images, PDFs, office documents, MP3 audio, MP4 and WebM video, and captions for videos (WebVTT `.vtt` files) can be uploaded, up to 25 MB each. Web pages, scripts and other files that could run code can't. Uploads stay in the site's repository for good, even after they're replaced, so longer videos are better on YouTube or Vimeo, which the [Video](/docs/built-in-blocks#video) block shows too.
 - New uploads show in the editor straight away, even before the live site has been rebuilt with them.
 
 ## Replace and delete

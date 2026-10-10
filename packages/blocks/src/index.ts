@@ -9,6 +9,7 @@ import { Flex, Grid, Section, Space } from "./layout.js";
 import { CollectionLoop } from "./loop.js";
 import { Menu, SiteBrand } from "./navigation.js";
 import { Search } from "./search.js";
+import { Video } from "./video.js";
 
 export {
   AddToCalendar,
@@ -76,6 +77,7 @@ export {
 export { CollectionLoop, type CollectionLoopProps } from "./loop.js";
 export { Menu, type MenuProps, SiteBrand, type SiteBrandProps } from "./navigation.js";
 export { Search, type SearchProps } from "./search.js";
+export { Video, type VideoProps } from "./video.js";
 
 /**
  * Every built-in block, keyed by the name stored in content files. Never rename
@@ -90,6 +92,7 @@ export const blocks = {
   Text,
   Button,
   Image,
+  Video,
   Code,
   ContactDetails,
   Menu,
@@ -108,7 +111,7 @@ export const blocks = {
 /** Groups for the editor's block list. */
 export const categories = {
   layout: { title: "Layout", components: ["Section", "Grid", "Flex", "Space"] },
-  content: { title: "Content", components: ["Heading", "Text", "Button", "Image", "Code", "ContactDetails"] },
+  content: { title: "Content", components: ["Heading", "Text", "Button", "Image", "Video", "Code", "ContactDetails"] },
   navigation: { title: "Navigation", components: ["Menu", "SiteBrand", "Search", "CollectionNav"] },
   collections: {
     title: "Collections",

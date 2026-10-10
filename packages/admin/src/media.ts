@@ -45,6 +45,8 @@ const KINDS: Record<string, MediaKind> = {
   m4a: "audio",
   mp4: "video",
   webm: "video",
+  // Captions and subtitles for videos.
+  vtt: "document",
 };
 
 export const ALLOWED_EXTENSIONS = Object.keys(KINDS);

@@ -17,4 +17,15 @@ declare class URL {
   readonly href: string;
   readonly origin: string;
   readonly hostname: string;
+  readonly protocol: string;
+  readonly pathname: string;
+  readonly hash: string;
+  readonly searchParams: URLSearchParams;
+}
+
+declare class URLSearchParams {
+  constructor(init?: Record<string, string>);
+  get(name: string): string | null;
+  set(name: string, value: string): void;
+  toString(): string;
 }
