@@ -1,0 +1,83 @@
+name: Bug report
+description: Something in Goodfellow doesn't work as it should.
+labels: [bug]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for reporting a problem. **Never paste a token or an AI key here**, even an expired one, and leave out anything private from your site. For a security problem, don't open an issue: see the [security policy](https://github.com/chartung17/goodfellow-cms/security/policy).
+  - type: textarea
+    id: what-happened
+    attributes:
+      label: What happened?
+      description: What went wrong, and any error message, word for word. A screenshot helps too.
+    validations:
+      required: true
+  - type: textarea
+    id: steps
+    attributes:
+      label: How can we make it happen?
+      description: The steps that lead to the problem, starting from a new site if you can.
+      placeholder: |
+        1. Open the admin panel and go to Pages
+        2. …
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: What did you expect to happen?
+    validations:
+      required: true
+  - type: dropdown
+    id: area
+    attributes:
+      label: Where is the problem?
+      options:
+        - The admin panel
+        - The site's pages or blocks
+        - Publishing, or signing in to GitHub or GitLab
+        - Building or putting the site online
+        - Creating a site (the setup page or npm create goodfellow)
+        - The AI assistant
+        - Next.js sites
+        - The documentation
+        - Something else
+    validations:
+      required: true
+  - type: input
+    id: version
+    attributes:
+      label: Goodfellow version
+      description: The version of `@goodfellow-cms/admin` in the site's `package.json`, if you know it.
+      placeholder: "0.1.0"
+  - type: dropdown
+    id: git-host
+    attributes:
+      label: Where the site is stored
+      options:
+        - GitHub
+        - GitLab
+        - Only on my computer
+        - I don't know
+  - type: dropdown
+    id: host
+    attributes:
+      label: Where the site is online
+      options:
+        - GitHub Pages
+        - GitLab Pages
+        - Vercel
+        - Somewhere else
+        - It isn't online yet
+  - type: input
+    id: browser
+    attributes:
+      label: Browser and computer
+      description: Such as Chrome on Windows, or Safari on an iPhone. For problems on your own computer, the Node.js version (`node --version`) too.
+  - type: textarea
+    id: details
+    attributes:
+      label: Anything else
+      description: Technical details, such as the text under "Details" in an error, or the browser console's messages. Check them for tokens and keys before pasting.
+      render: text

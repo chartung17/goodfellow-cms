@@ -1,0 +1,41 @@
+name: Feature request
+description: Suggest something Goodfellow could do, or do better.
+labels: [enhancement]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Check the [roadmap](https://github.com/chartung17/goodfellow-cms#roadmap) and the [open issues](https://github.com/chartung17/goodfellow-cms/issues) first: it may be planned already. If so, a comment there about how you'd use it helps.
+  - type: textarea
+    id: problem
+    attributes:
+      label: What would you like to do?
+      description: What you're trying to do, and what gets in the way today. Describing the need, rather than a solution, leaves room for the best one.
+    validations:
+      required: true
+  - type: textarea
+    id: idea
+    attributes:
+      label: How could Goodfellow help?
+      description: How you imagine it working, if you have an idea.
+  - type: dropdown
+    id: who
+    attributes:
+      label: Who is it for?
+      multiple: true
+      options:
+        - Editors, who change pages in the admin panel
+        - Site owners, who set up a site and its editors
+        - Developers, who write blocks or work on sites' code
+        - Visitors to sites
+    validations:
+      required: true
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: What do you do instead today?
+      description: Workarounds, or other tools that do this well.
+  - type: markdown
+    attributes:
+      value: |
+        Goodfellow sites are static files with no server, so features that need one, such as logins for visitors or saving form answers, may have to use another service. See the [architecture rules](https://github.com/chartung17/goodfellow-cms/blob/master/AGENTS.md#architecture-rules).
