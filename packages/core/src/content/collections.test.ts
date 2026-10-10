@@ -1,5 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
+  choiceSlug,
+  choicesOf,
   type Entry,
   entryFieldProblems,
   formatFieldValue,
@@ -17,6 +19,15 @@ const fields: CollectionField[] = [
   { name: "views", label: "Views", type: "number" },
   { name: "kind", label: "Kind", type: "select", options: [{ value: "homily", label: "Homily" }] },
   { name: "body", label: "Text", type: "richtext" },
+  {
+    name: "topics",
+    label: "Topics",
+    type: "tags",
+    options: [
+      { value: "music", label: "Music" },
+      { value: "youth", label: "Youth ministry" },
+    ],
+  },
 ];
 
 const entry = (slug: string, values: Record<string, unknown>): Entry => ({
@@ -70,8 +81,8 @@ describe("collection files", () => {
       path: "/videos",
     });
     expect(result.error?.issues.map((issue) => issue.path.join("."))).toEqual([
-      "fields.5.name",
-      "fields.6.options",
+      "fields.6.name",
+      "fields.7.options",
       "path",
       "sort.field",
     ]);
@@ -108,6 +119,46 @@ describe("entry values", () => {
     expect(isEmptyValue("")).toBe(true);
     expect(isEmptyValue(0)).toBe(false);
     expect(richTextToPlainText("<p>a</p><ul><li>b</li></ul>")).toBe("a b");
+  });
+});
+
+describe("tags", () => {
+  const topics = fields[5];
+
+  it("hold any number of the field's choices", () => {
+    expect(entryFieldProblems(fields, { topics: ["music", "youth"] })).toEqual([]);
+    expect(entryFieldProblems(fields, { topics: [] })).toEqual([]);
+    expect(entryFieldProblems(fields, { topics: ["sport"] })).toEqual(["topics must be a list of: music, youth"]);
+    expect(entryFieldProblems(fields, { topics: "music" })).toEqual(["topics must be a list of: music, youth"]);
+    expect(formatFieldValue(topics, ["youth", "music"])).toBe("Youth ministry, Music");
+    expect(isEmptyValue([])).toBe(true);
+    expect(isEmptyValue(["music"])).toBe(false);
+  });
+
+  it("are listed like a choice field's choice", () => {
+    expect(choicesOf(topics, ["music", 5])).toEqual(["music"]);
+    expect(choicesOf(fields[3], "homily")).toEqual(["homily"]);
+    expect(choicesOf(fields[3], "")).toEqual([]);
+  });
+
+  it("go into addresses without spaces or accents", () => {
+    expect(choiceSlug("Youth ministry")).toBe("youth-ministry");
+    expect(choiceSlug("Café & Crêpes")).toBe("cafe-crepes");
+    expect(choiceSlug("音楽")).toBeUndefined();
+  });
+
+  it("need choices in the collection's settings", () => {
+    const settings = (options?: unknown[]) => ({
+      version: 1,
+      name: "News",
+      entryName: "Article",
+      fields: [
+        { name: "title", label: "Title", type: "text" },
+        { name: "topics", label: "Topics", type: "tags", ...(options && { options }) },
+      ],
+    });
+    expect(collectionFileSchema.safeParse(settings()).success).toBe(false);
+    expect(collectionFileSchema.safeParse(settings([{ value: "music", label: "Music" }])).success).toBe(true);
   });
 });
 

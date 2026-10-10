@@ -24,11 +24,15 @@ export async function waitForCode(page: Page, urls = ["/"], timeout = 30_000): P
   }
 }
 
-/** Every test starts from the starter template's content. */
+/** Every test starts from the starter template's content, including tests that only send requests. */
 export const test = base.extend({
   page: async ({ page }, use) => {
     if (resetContent()) await waitForCode(page);
     await use(page);
+  },
+  request: async ({ request }, use) => {
+    resetContent();
+    await use(request);
   },
 });
 

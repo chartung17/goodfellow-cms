@@ -17,17 +17,18 @@ import {
   isEventLike,
   markdownText,
   monthOf,
-  monthPagePath,
+  monthsAround,
   occurrences,
   readCalendar,
   repeatRule,
   richTextToPlainText,
   type SiteSettings,
-  splitMonthPath,
   todayIn,
+  variantPath,
   WEEKDAYS,
   weekdayName,
   weekdayOf,
+  withPages,
   zonedInstant,
 } from "@goodfellow-cms/core";
 import { classNameField, cx, SiteLink, templateOnly, useSite } from "@goodfellow-cms/react";
@@ -316,10 +317,10 @@ function MonthView({
 }: {
   month: string;
   items: CalendarItem[];
-  props: CalendarProps;
+  props: CalendarProps & { id?: string };
   today: string;
 }) {
-  const { settings, path, month: pageMonth } = useSite();
+  const { settings, path, view } = useSite();
   const language = settings.language;
   const order = props.weekStart === "monday" ? WEEKDAYS : (["su", "mo", "tu", "we", "th", "fr", "sa"] as const);
   const dates = datesInMonth(month);
@@ -329,14 +330,14 @@ function MonthView({
   const blank = (key: string) => <li key={key} aria-hidden="true" className="hidden bg-muted sm:block" />;
 
   // Month pages are the calendar's page with the month after it; the page itself shows the current month.
-  const page = pageMonth ? (splitMonthPath(path)?.path ?? path) : path;
+  const page = view && view.block === props.id ? view.path : path;
   const { before, after } = calendarMonths(props as unknown as Record<string, unknown>);
   const current = monthOf(today);
   const previous = addMonths(month, -1);
   const next = addMonths(month, 1);
   const hasPage = (candidate: string) =>
     candidate >= addMonths(current, -before) && candidate <= addMonths(current, after);
-  const linkTo = (candidate: string) => (candidate === current ? page : monthPagePath(page, candidate));
+  const linkTo = (candidate: string) => (candidate === current ? page : variantPath(page, candidate));
 
   const byDate = new Map<string, CalendarItem[]>();
   for (const item of items) {
@@ -414,8 +415,9 @@ function MonthView({
   );
 }
 
-function CalendarView({ isEditing, ...props }: CalendarProps & { isEditing: boolean }) {
-  const { collections, settings, month: pageMonth } = useSite();
+function CalendarView({ isEditing, ...props }: CalendarProps & { id?: string; isEditing: boolean }) {
+  const { collections, settings, view } = useSite();
+  const pageMonth = view && view.block === props.id ? view.month : undefined;
   const collection = collections.find((candidate) => candidate.id === props.collection);
   const today = todayIn(settings.timeZone);
 
@@ -534,10 +536,9 @@ const calendarFields: Fields<CalendarProps> = {
 /**
  * Upcoming events, as a list or a month at a time, from a calendar collection,
  * another calendar's `.ics` address, or both. A month at a time gives the page
- * a page for each month, which builds write. Its name in a site's blocks must
- * be `CALENDAR_BLOCK` ("Calendar"), which builds look for to add those pages.
+ * a page for each month around today's (see `withPages`), which builds write.
  */
-export const Calendar: ComponentConfig<CalendarProps> = {
+const calendar: ComponentConfig<CalendarProps> = {
   label: "Calendar",
   fields: calendarFields,
   defaultProps: {
@@ -591,6 +592,16 @@ export const Calendar: ComponentConfig<CalendarProps> = {
   },
   render: ({ puck, ...props }) => <CalendarView {...props} isEditing={puck.isEditing} />,
 };
+
+export const Calendar = withPages(calendar, (props: CalendarProps, { content, today }) => {
+  if (props.view !== "month") return [];
+  const { before, after } = calendarMonths(props as unknown as Record<string, unknown>);
+  return monthsAround(today, before, after).map((month) => ({
+    suffix: month,
+    month,
+    title: formatMonth(month, content.settings.language),
+  }));
+});
 
 export interface AddToCalendarProps {
   addLabel: string;

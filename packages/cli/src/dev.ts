@@ -5,6 +5,7 @@ import { join, resolve, sep } from "node:path";
 import {
   CONTENT_DIR,
   ContentError,
+  type GoodfellowConfig,
   loadSiteContent,
   MEDIA_DIR,
   normalizePagePath,
@@ -51,14 +52,18 @@ function errorPage(title: string, lines: string[]): string {
 </body></html>`;
 }
 
-function findPage(content: SiteContent, pathname: string): { page: Page; status: number } | undefined {
+function findPage(
+  content: SiteContent,
+  blocks: GoodfellowConfig["blocks"],
+  pathname: string,
+): { page: Page; status: number } | undefined {
   let path: string;
   try {
     path = normalizePagePath(decodeURIComponent(pathname));
   } catch {
     path = "";
   }
-  const pages = sitePages(content, todayIn(content.settings.timeZone));
+  const pages = sitePages(content, todayIn(content.settings.timeZone), blocks);
   const page = pages.find((candidate) => candidate.path === path);
   if (page) return { page, status: 200 };
   const notFound = pages.find((candidate) => candidate.path === "/404");
@@ -195,13 +200,13 @@ function devPlugin(root: string, styles: () => StylesEntries): Plugin {
 
           try {
             const content = await loadSiteContent(fileSystemSource(root));
-            const match = findPage(content, url.pathname);
+            const { config, renderPage } = await loadServerEntry(server);
+            const match = findPage(content, config.blocks, url.pathname);
             if (!match) {
               res.statusCode = 404;
               res.end(errorPage("Page not found", [`No page is stored for ${url.pathname}.`]));
               return;
             }
-            const { renderPage } = await loadServerEntry(server);
             const html = await renderPage(content, match.page, {
               stylesheets: [`${devUrl(root, styles().site)}?direct`],
               islands: { script: ISLANDS_DEV_URL },

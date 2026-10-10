@@ -107,7 +107,7 @@ function fromDraft(settings: CollectionFile, draft: Draft): CollectionFile {
     type: field.type,
     ...(field.required && { required: true }),
     ...(field.hint.trim() && { hint: field.hint.trim() }),
-    ...(field.type === "select" && {
+    ...(hasChoices(field.type) && {
       options: field.options
         .filter((option) => option.label.trim())
         .map((option) => ({ value: option.value ?? "", label: option.label.trim() })),
@@ -152,7 +152,13 @@ const typeLabels: Record<FieldType, StringKey> = {
   link: "fields.type.link",
   image: "fields.type.image",
   select: "fields.type.select",
+  tags: "fields.type.tags",
 };
+
+/** Field types whose values are choices the collection's settings list. */
+function hasChoices(type: FieldType): boolean {
+  return type === "select" || type === "tags";
+}
 
 function move<T>(list: T[], index: number, by: -1 | 1): T[] {
   const target = index + by;
@@ -236,7 +242,7 @@ function FieldEditor({
         </div>
       </div>
       <TextField label={t("fields.hint")} value={field.hint} onChange={(hint) => onChange({ ...field, hint })} />
-      {field.type === "select" && (
+      {hasChoices(field.type) && (
         <fieldset className="gfa-choices">
           <legend className="gfa-label">{t("fields.options")}</legend>
           {field.options.map((option, optionIndex) => (
@@ -476,7 +482,7 @@ export function CollectionSettingsScreen({ collection }: { collection: Collectio
     if (!next.entryName) result.entryName = t("field.required");
     next.fields.forEach((field, index) => {
       if (!field.label) result[`fields.${index}.label`] = t("field.required");
-      if (field.type === "select" && !field.options?.length)
+      if (hasChoices(field.type) && !field.options?.length)
         result[`fields.${index}.options`] = t("fields.optionsRequired");
     });
     if (next.path !== undefined) {

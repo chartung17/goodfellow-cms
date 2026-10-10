@@ -375,11 +375,22 @@ export function moveEntryChanges(
   return changes;
 }
 
-/** Whether a stored value still fits its collection's field: the field exists, and a choice is still offered. */
-function keepsValue(fields: Map<string, CollectionField>, name: string, value: unknown): boolean {
+/**
+ * A stored value as it fits its collection's field now, or `undefined` if it
+ * doesn't: the field must exist, and a choice must still be offered. Tags
+ * keep the ones that still are.
+ */
+function keptValue(fields: Map<string, CollectionField>, name: string, value: unknown): unknown {
   const field = fields.get(name);
-  if (!field) return false;
-  return field.type !== "select" || field.options?.some((option) => option.value === value) === true;
+  if (!field) return undefined;
+  const offered = (choice: unknown) => field.options?.some((option) => option.value === choice) === true;
+  if (field.type === "select") return offered(value) ? value : undefined;
+  if (field.type === "tags" && Array.isArray(value)) {
+    const tags = value.filter(offered);
+    if (tags.length === value.length) return value;
+    return tags.length > 0 ? tags : undefined;
+  }
+  return value;
 }
 
 /**
@@ -395,8 +406,13 @@ export function collectionSettingsChanges(collection: Collection, settings: Coll
   const reformat = before !== after;
   for (const entry of collection.entries) {
     const values = Object.entries(entry.content.fields);
-    const remaining = values.filter(([name, value]) => keepsValue(fields, name, value));
-    if (remaining.length === values.length && !reformat) continue;
+    const remaining = values.flatMap(([name, value]): Array<[string, unknown]> => {
+      const kept = keptValue(fields, name, value);
+      return kept === undefined ? [] : [[name, kept]];
+    });
+    const changed =
+      remaining.length !== values.length || remaining.some(([name, value]) => value !== entry.content.fields[name]);
+    if (!changed && !reformat) continue;
     const kept = Object.fromEntries(remaining);
     if (reformat) {
       // The body moves between Markdown and formatted text (HTML), and the file between .md and .json.

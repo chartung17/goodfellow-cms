@@ -6,6 +6,7 @@ import { ContactDetails } from "./contact.js";
 import { Button, Heading, Image, Text } from "./content.js";
 import { CollectionNav, EntryPager, OnThisPage } from "./docs.js";
 import { Flex, Grid, Section, Space } from "./layout.js";
+import { CollectionLoop } from "./loop.js";
 import { Menu, SiteBrand } from "./navigation.js";
 import { Search } from "./search.js";
 
@@ -66,6 +67,13 @@ export {
   Space,
   type SpaceProps,
 } from "./layout.js";
+export {
+  type ListingProps,
+  type Order,
+  type Show,
+  selectedEntries,
+} from "./listing.js";
+export { CollectionLoop, type CollectionLoopProps } from "./loop.js";
 export { Menu, type MenuProps, SiteBrand, type SiteBrandProps } from "./navigation.js";
 export { Search, type SearchProps } from "./search.js";
 
@@ -89,6 +97,7 @@ export const blocks = {
   Search,
   CollectionNav,
   CollectionList,
+  CollectionLoop,
   Calendar,
   EntryField,
   AddToCalendar,
@@ -103,6 +112,14 @@ export const categories = {
   navigation: { title: "Navigation", components: ["Menu", "SiteBrand", "Search", "CollectionNav"] },
   collections: {
     title: "Collections",
-    components: ["CollectionList", "Calendar", "EntryField", "AddToCalendar", "EntryPager", "OnThisPage"],
+    components: [
+      "CollectionList",
+      "CollectionLoop",
+      "Calendar",
+      "EntryField",
+      "AddToCalendar",
+      "EntryPager",
+      "OnThisPage",
+    ],
   },
 } satisfies Config["categories"];

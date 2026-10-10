@@ -119,17 +119,30 @@ describe("build", () => {
     const parishOut = await mkdtemp(join(tmpdir(), "goodfellow-parish-"));
     try {
       const result = await build({ root: parish, outDir: parishOut, base: "/" });
-      // Ten pages, plus five events, three news stories and two bulletins. Staff have no pages of their own.
-      // The calendar has a page for each month, from last month to a year ahead.
-      expect(result.pages).toHaveLength(20 + 14);
+      // Ten pages, plus five events, seven news stories and two bulletins. Staff have no pages of their own.
+      // The calendar has a page for each month, from last month to a year ahead, and the news a second page
+      // and one for each of its four topics.
+      expect(result.pages).toHaveLength(24 + 14 + 5);
       const home = await readFile(join(parishOut, "index.html"), "utf8");
       expect(home).toContain("<title>St. Joseph Parish, Anytown</title>");
       expect(home).toContain("Weekend Masses");
       expect(home).toContain('href="tel:5550100100"');
       const bulletin = await readFile(join(parishOut, "bulletins/2026-10-04/index.html"), "utf8");
       expect(bulletin).toContain('href="/media/bulletin-example.pdf"');
+      // The home page's news has a heading, and a link to the rest.
+      expect(home).toMatch(/Parish news<\/h2><a href="\/news"[^>]*>All news/);
       const about = await readFile(join(parishOut, "about/index.html"), "utf8");
+      // The staff are shown with Collection loop: each one's photo, name and role.
       expect(about.indexOf("Fr. Thomas Reed")).toBeLessThan(about.indexOf("Maria Chen"));
+      expect(about).toContain("Parish office manager");
+      expect(about).not.toContain("{title}");
+      const news = await readFile(join(parishOut, "news/page/2/index.html"), "utf8");
+      expect(news).toContain("<title>News: Page 2 | St. Joseph Parish</title>");
+      expect(news).toContain('rel="prev"');
+      expect(news).not.toContain("data-pagefind-body");
+      const youth = await readFile(join(parishOut, "news/topics/youth/index.html"), "utf8");
+      expect(youth).toContain("Teens spend a day serving the neighborhood");
+      expect(youth).not.toContain("Bell tower repairs are finished");
       const { todayIn } = await import("@goodfellow-cms/core");
       // This month in the parish's time zone, as the build has it.
       const month = todayIn("America/New_York").slice(0, 7);

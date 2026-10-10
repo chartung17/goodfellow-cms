@@ -1395,6 +1395,15 @@ body,
   max-width: 6rem;
 }
 
+.gfa-tags-field {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 16px;
+  margin: 0;
+  padding: 0;
+  border: 0;
+}
+
 .gfa-event-days {
   display: flex;
   flex-wrap: wrap;

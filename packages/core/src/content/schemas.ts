@@ -143,6 +143,7 @@ export const FIELD_TYPES = [
   "link",
   "image",
   "select",
+  "tags",
 ] as const;
 
 export type FieldType = (typeof FIELD_TYPES)[number];
@@ -165,7 +166,7 @@ const collectionField = z.object({
   required: z.boolean().optional(),
   /** Help shown under the field when editing an entry. */
   hint: z.string().optional(),
-  /** The choices for a `select` field. */
+  /** The choices for a `select` field, or the tags a `tags` field offers. */
   options: z.array(fieldOption).optional(),
 });
 
@@ -211,7 +212,7 @@ export const collectionFileSchema = z
         ctx.addIssue({ code: "custom", path: ["fields", index, "name"], message: `is used by more than one field` });
       }
       names.add(field.name);
-      if (field.type === "select" && !field.options?.length) {
+      if ((field.type === "select" || field.type === "tags") && !field.options?.length) {
         ctx.addIssue({ code: "custom", path: ["fields", index, "options"], message: "must list at least one choice" });
       }
     });

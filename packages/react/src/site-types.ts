@@ -1,4 +1,4 @@
-import type { Collection, Entry, ImageSize, Menus, SiteSettings } from "@goodfellow-cms/core";
+import type { Collection, Entry, ImageSize, Menus, PageView, SiteSettings } from "@goodfellow-cms/core";
 import type { Metadata } from "@puckeditor/core";
 import type { AnchorHTMLAttributes, ComponentType, ImgHTMLAttributes } from "react";
 
@@ -34,8 +34,12 @@ export interface SiteContextValue {
   collection?: Collection;
   /** The entry being rendered, on an entry's page. */
   entry?: Entry;
-  /** On a calendar's month page, the month it shows, as `YYYY-MM`. */
-  month?: string;
+  /**
+   * On a page a block added (see `withPages`), such as a calendar's month or a
+   * list's second page, and on the page it added it to: which block, and what
+   * the page shows of it.
+   */
+  view?: PageView;
   /**
    * The path the site is served from, such as `/my-site/`, when the renderer
    * leaves adding it to blocks: `<SiteLink>` and `<SiteImage>` add it, and
@@ -58,6 +62,6 @@ export function siteMetadata(site: SiteContextValue): Metadata {
     collections: site.collections,
     collection: site.collection,
     entry: site.entry,
-    month: site.month,
+    view: site.view,
   };
 }

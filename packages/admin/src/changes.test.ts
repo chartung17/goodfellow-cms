@@ -208,6 +208,39 @@ describe("collections", () => {
     expect(changes[2]).toMatchObject({ content: expect.not.stringContaining("talk") });
   });
 
+  it("removes a tag that's no longer offered from every entry's tags, and leaves other entries alone", () => {
+    const topics = {
+      name: "topics",
+      label: "Topics",
+      type: "tags" as const,
+      options: [
+        { value: "music", label: "Music" },
+        { value: "youth", label: "Youth" },
+      ],
+    };
+    const tagged: Collection = {
+      ...videos,
+      settings: { ...settings, fields: [...settings.fields, topics] },
+      entries: [
+        entry("easter", { title: "Easter", topics: ["music", "youth"] }),
+        entry("advent", { title: "Advent", topics: ["youth"] }),
+        entry("lent", { title: "Lent", topics: ["music"] }),
+      ],
+    };
+    const next = {
+      ...tagged.settings,
+      fields: [...settings.fields, { ...topics, options: [{ value: "music", label: "Music" }] }],
+    } as CollectionFile;
+    const changes = collectionSettingsChanges(tagged, next);
+    expect(changes.map((change) => change.path)).toEqual([
+      "content/collections/videos/_collection.json",
+      "content/collections/videos/easter.json",
+      "content/collections/videos/advent.json",
+    ]);
+    expect(changes[1]).toMatchObject({ content: expect.stringContaining('"topics": [\n      "music"\n    ]') });
+    expect(changes[2]).toMatchObject({ content: expect.not.stringContaining("topics") });
+  });
+
   describe("stored as Markdown", () => {
     const docsSettings = collectionFileSchema.parse({
       version: 1,

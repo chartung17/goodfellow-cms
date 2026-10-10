@@ -328,6 +328,7 @@ export const defaultStrings = {
   "fields.type.link": "Link",
   "fields.type.image": "Image (URL)",
   "fields.type.select": "Choice from a list",
+  "fields.type.tags": "Tags (any number of choices from a list)",
 
   "demo.banner":
     "This is a demo. Try anything you like: your changes show here in the admin panel and are saved in this browser only. The site itself never changes.",

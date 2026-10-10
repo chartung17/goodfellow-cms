@@ -27,8 +27,9 @@ Under **Settings**, choose the collection's fields:
 | Link | A web address, a page's address, or an uploaded file |
 | Image | An image from the media library |
 | Choice from a list | One of a set of choices, such as a category |
+| Tags | Any number of a set of choices, such as a story's topics |
 
-Every collection has a **Title** field. Fields can be required, have a hint for editors, and be reordered. Removing a field removes its values from every item in the same publish, and so does removing a choice.
+Every collection has a **Title** field. Fields can be required, have a hint for editors, and be reordered. Removing a field removes its values from every item in the same publish, and so does removing a choice or a tag.
 
 Settings also choose the order items are listed in, such as newest first, and whether items are events that calendars show.
 
@@ -40,7 +41,7 @@ Settings also choose the order items are listed in, such as newest first, and wh
 
 The collection's **Items** tab lists them. Adding one (**Add Event**, say) asks for a title and a name for its address; the editor then shows the item's fields beside a preview of its page.
 
-To show items on other pages, add a **Collection list** block, which can show them as a list or cards, newest first or upcoming only, and as many as you choose.
+To show items on other pages, add a **Collection list** block, which shows them as a list or cards, newest first or upcoming only, as many as you choose, and on pages of their own, or a **Collection loop** block, which shows blocks you design for each item. See [Showing collections](/docs/showing-collections).
 
 ## Storing items as Markdown
 

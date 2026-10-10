@@ -71,13 +71,13 @@ function pathOf(segments: string[] | undefined): string {
   }
 }
 
-/** Every page the site's export has: its pages, entries' pages and calendars' month pages. */
-function exportedPages(content: SiteContent): Page[] {
-  return sitePages(content, todayIn(content.settings.timeZone));
+/** Every page the site's export has: its pages, entries' pages and the pages blocks add, such as a calendar's months. */
+function exportedPages(content: SiteContent, blocks: GoodfellowConfig["blocks"]): Page[] {
+  return sitePages(content, todayIn(content.settings.timeZone), blocks);
 }
 
-function findPage(content: SiteContent, path: string): Page | undefined {
-  return exportedPages(content).find((page) => page.path === path);
+function findPage(content: SiteContent, blocks: GoodfellowConfig["blocks"], path: string): Page | undefined {
+  return exportedPages(content, blocks).find((page) => page.path === path);
 }
 
 function toAbsolute(siteUrl: string | undefined, url: string | undefined): string | undefined {
@@ -146,14 +146,14 @@ export function goodfellowPages(config: GoodfellowConfig, options: GoodfellowPag
   return {
     /** Every page's address, so Next.js builds them all. Any other address is "not found". */
     async generateStaticParams(): Promise<Array<{ path: string[] }>> {
-      return exportedPages(await site())
+      return exportedPages(await site(), config.blocks)
         .filter((page) => page.path !== "/404")
         .map((page) => ({ path: page.path === "/" ? [] : page.path.slice(1).split("/") }));
     },
 
     async generateMetadata({ params }: PageProps): Promise<Metadata> {
       const content = await site();
-      const page = findPage(content, pathOf((await params).path));
+      const page = findPage(content, config.blocks, pathOf((await params).path));
       return page ? pageMetadata(content, applyPageEntry(configs, content, page), basePath()) : {};
     },
 
@@ -181,7 +181,7 @@ export function goodfellowPages(config: GoodfellowConfig, options: GoodfellowPag
     /** The page at the route's address, inside `Layout`'s header and footer. */
     async Page({ params }: PageProps) {
       const content = await site();
-      const page = findPage(content, pathOf((await params).path));
+      const page = findPage(content, config.blocks, pathOf((await params).path));
       if (!page || page.path === "/404") notFound();
       const prepared = await preparePage(configs, content, page, await renderOptions());
       return <PageContent site={prepared.site} pageConfig={prepared.pageConfig} page={prepared.data} />;
@@ -193,7 +193,7 @@ export function goodfellowPages(config: GoodfellowConfig, options: GoodfellowPag
      */
     async NotFound() {
       const content = await site();
-      const page = findPage(content, "/404");
+      const page = findPage(content, config.blocks, "/404");
       if (!page) return <h1>Page not found</h1>;
       const prepared = await preparePage(configs, content, page, await renderOptions());
       return (
@@ -220,7 +220,7 @@ export function goodfellowPages(config: GoodfellowConfig, options: GoodfellowPag
       const content = await site();
       const url = content.settings.url;
       if (!url) return [];
-      return exportedPages(content)
+      return exportedPages(content, config.blocks)
         .filter((page) => page.path !== "/404")
         .map((page) => ({ url: absoluteUrl(url, page.path) }));
     },

@@ -1,5 +1,5 @@
 import {
-  CALENDAR_BLOCK,
+  blockPages,
   type Collection,
   collectionFileSchema,
   type Page,
@@ -87,7 +87,7 @@ function render(data: unknown[], path = "/calendar", month?: string) {
     path,
     file: "content/pages/calendar.json",
     content: { version: 1, data: { root: { props: {} }, content: data } },
-    ...(month && { month }),
+    ...(month && { view: { block: "c", path: "/calendar", month } }),
   } as Page;
   return renderPage(content, page).then((html) => html.slice(html.indexOf("<main"), html.indexOf("</main>")));
 }
@@ -100,8 +100,22 @@ beforeAll(() => {
 afterAll(() => vi.useRealTimers());
 
 describe("Calendar", () => {
-  it("is named as builds look for it", () => {
-    expect(Object.keys(blocks)).toContain(CALENDAR_BLOCK);
+  it("adds a page for each month when it shows a month at a time", () => {
+    const pages = blockPages(blocks.Calendar);
+    const page: Page = {
+      path: "/calendar",
+      file: "content/pages/calendar.json",
+      content: { version: 1, data: { root: {}, content: [] } },
+    };
+    const context = { content, page, today: "2026-10-10" };
+    expect(pages?.({ ...blocks.Calendar.defaultProps, view: "list" }, context)).toEqual([]);
+    expect(
+      pages?.({ ...blocks.Calendar.defaultProps, view: "month", monthsBefore: 1, monthsAfter: 1 }, context),
+    ).toEqual([
+      { suffix: "2026-09", month: "2026-09", title: "September 2026" },
+      { suffix: "2026-10", month: "2026-10", title: "October 2026" },
+      { suffix: "2026-11", month: "2026-11", title: "November 2026" },
+    ]);
   });
 
   it("lists upcoming events by day, with repeats, skipped dates and links", async () => {

@@ -21,6 +21,30 @@
       "name": "summary"
     },
     {
+      "type": "tags",
+      "hint": "News pages list stories by topic.",
+      "label": "Topics",
+      "name": "topics",
+      "options": [
+        {
+          "label": "Parish life",
+          "value": "parish-life"
+        },
+        {
+          "label": "Youth",
+          "value": "youth"
+        },
+        {
+          "label": "Outreach",
+          "value": "outreach"
+        },
+        {
+          "label": "Music",
+          "value": "music"
+        }
+      ]
+    },
+    {
       "type": "image",
       "label": "Picture",
       "name": "image"
