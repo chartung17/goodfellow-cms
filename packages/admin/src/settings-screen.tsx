@@ -27,7 +27,7 @@ import { useHistory } from "./history.js";
 import { MediaField } from "./media-library.js";
 import { MenusEditor } from "./menus-editor.js";
 import { PreviewFrame } from "./preview.js";
-import { useUnsavedChanges } from "./router.js";
+import { type SettingsSection, useUnsavedChanges } from "./router.js";
 import { type StringKey, useStrings } from "./strings.js";
 import { Button, ErrorMessage, Field, PublishedNotice, TextField } from "./ui.js";
 import { AppLink } from "./use-link.js";
@@ -127,7 +127,9 @@ function FormsSettings({
   const set = (change: Partial<FormSettings>) => onChange({ ...current, ...change });
   return (
     <>
-      <h2 className="gfa-section-title">{t("forms.title")}</h2>
+      <h2 id={sectionId("forms")} className="gfa-section-title" tabIndex={-1}>
+        {t("forms.title")}
+      </h2>
       <p className="gfa-hint">{t("forms.hint")}</p>
       <Field label={t("forms.service")}>
         {(props) => (
@@ -156,7 +158,7 @@ function FormsSettings({
             value={current.accessKey ?? ""}
             onChange={(accessKey) => set({ accessKey })}
           />
-          <a className="gfa-hint" href="https://web3forms.com/" target="_blank" rel="noreferrer">
+          <a className="gfa-hint" href="https://app.web3forms.com/onboarding/create" target="_blank" rel="noreferrer">
             {t("forms.accessKeyLink")}
           </a>
           <label className="gfa-checkbox">
@@ -280,7 +282,9 @@ function GeneralTab({
       <MediaField label={t("general.favicon")} {...text("favicon")} />
       <MediaField label={t("general.socialImage")} {...text("socialImage")} />
 
-      <h2 className="gfa-section-title">{t("general.contact")}</h2>
+      <h2 id={sectionId("contact")} className="gfa-section-title" tabIndex={-1}>
+        {t("general.contact")}
+      </h2>
       <p className="gfa-hint">{t("general.contactHint")}</p>
       <Field label={t("general.address")}>
         {(props) => (
@@ -476,7 +480,19 @@ export function SettingsTabs({ tab }: { tab: SettingsTab | "domain" | "editors" 
  * preview of the home page (without the code, which never runs in the admin
  * panel). Publishing saves every changed file in one go.
  */
-export function SettingsScreen({ tab }: { tab: SettingsTab }) {
+/** The id of a General tab section's heading, which links scroll to. */
+function sectionId(section: SettingsSection): string {
+  return `gfa-settings-${section}`;
+}
+
+export function SettingsScreen({ tab, section }: { tab: SettingsTab; section?: SettingsSection }) {
+  // A link to a section, such as from a block's note in the editor, scrolls down to it.
+  useEffect(() => {
+    if (tab !== "general" || !section) return;
+    const heading = document.getElementById(sectionId(section));
+    heading?.scrollIntoView({ block: "start" });
+    heading?.focus({ preventScroll: true });
+  }, [tab, section]);
   const t = useStrings();
   const { config, pageConfig, layoutConfig, publish, reload } = useAdmin();
   const { content } = useSiteContent();

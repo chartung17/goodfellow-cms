@@ -23,7 +23,7 @@ import { EditorsScreen } from "./editors-screen.js";
 import { EntryEditorScreen } from "./entry-editor.js";
 import { MediaScreen } from "./media-library.js";
 import { PagesScreen } from "./pages-screen.js";
-import { useRoute } from "./router.js";
+import { SETTINGS_SECTIONS, useRoute } from "./router.js";
 import { SETTINGS_TABS, SettingsScreen, type SettingsTab } from "./settings-screen.js";
 import { SignInGate } from "./sign-in.js";
 import { defaultStrings, type Strings, StringsProvider, useStrings } from "./strings.js";
@@ -109,7 +109,8 @@ function Screen() {
   if (section === "versions") return <VersionsScreen file={params.get("file") ?? ""} />;
   if (section === "settings") {
     const tab = SETTINGS_TABS.includes(sub as SettingsTab) ? (sub as SettingsTab) : "general";
-    return <SettingsScreen tab={tab} />;
+    const section = Object.values(SETTINGS_SECTIONS).find((name) => name === params.get("section"));
+    return <SettingsScreen tab={tab} section={section} />;
   }
   return <PagesScreen />;
 }

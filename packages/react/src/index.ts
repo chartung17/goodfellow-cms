@@ -44,4 +44,4 @@ export {
   withClassName,
 } from "./puck-config.js";
 export { type SiteContextValue, SiteProvider, useSite } from "./site-context.js";
-export type { SiteComponents, SiteImageProps, SiteLinkProps } from "./site-types.js";
+export type { AdminLinkProps, AdminPlace, SiteComponents, SiteImageProps, SiteLinkProps } from "./site-types.js";

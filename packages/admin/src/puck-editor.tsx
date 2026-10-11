@@ -7,7 +7,15 @@ import {
   serializeContent,
   todayIn,
 } from "@goodfellow-cms/core";
-import { cx, mediaFieldKind, type SiteContextValue, SiteProvider, siteMetadata } from "@goodfellow-cms/react";
+import {
+  type AdminLinkProps,
+  type AdminPlace,
+  cx,
+  mediaFieldKind,
+  type SiteContextValue,
+  SiteProvider,
+  siteMetadata,
+} from "@goodfellow-cms/react";
 import {
   type Config,
   type Data,
@@ -16,6 +24,7 @@ import {
   type Plugin,
   Puck,
   Render,
+  registerOverlayPortal,
   type UiState,
 } from "@puckeditor/core";
 import { type ReactNode, useCallback, useEffect, useMemo, useRef, useState } from "react";
@@ -24,7 +33,7 @@ import { aiPlugin } from "./ai-panel.js";
 import { storedData } from "./changes.js";
 import { MediaChooser } from "./media-library.js";
 import { usePreviewStyles } from "./preview.js";
-import { useUnsavedChanges } from "./router.js";
+import { navigate, SETTINGS_SECTIONS, useUnsavedChanges } from "./router.js";
 import { useStrings } from "./strings.js";
 import { Button, ErrorMessage, PublishedNotice } from "./ui.js";
 
@@ -122,6 +131,13 @@ function TextFieldWithMedia({
     </div>
   );
 }
+
+/** Where in the admin panel blocks' notes link to. */
+const ADMIN_PLACES: Record<AdminPlace, string> = {
+  settings: "#/settings/general",
+  "contact-settings": `#/settings/general?section=${SETTINGS_SECTIONS.contact}`,
+  "forms-settings": `#/settings/general?section=${SETTINGS_SECTIONS.forms}`,
+};
 
 export interface PuckEditorProps {
   kind: EditorKind;
@@ -256,6 +272,24 @@ export function PuckEditor({
     setView((current) => (current?.block === found?.block ? current : found));
   };
 
+  // Blocks' notes link to where they're fixed. Their links are in the canvas, so they take clicks through
+  // Puck's overlay, and leave the editor the usual way, asking first about unpublished changes.
+  const confirmLeave = t("unsaved.confirm");
+  const adminLink = useCallback(
+    (place: AdminPlace): AdminLinkProps => {
+      const href = ADMIN_PLACES[place];
+      return {
+        href,
+        ref: (element) => registerOverlayPortal(element, { disableDrag: true }),
+        onClick: (event) => {
+          event.preventDefault();
+          navigate(href, () => window.confirm(confirmLeave));
+        },
+      };
+    },
+    [confirmLeave],
+  );
+
   const site = useMemo<SiteContextValue>(
     () => ({
       settings: content.settings,
@@ -264,8 +298,9 @@ export function PuckEditor({
       collections: content.collections,
       collection,
       ...(view && { view }),
+      adminLink,
     }),
-    [content, path, collection, view],
+    [content, path, collection, view, adminLink],
   );
   const config = useMemo(
     () =>

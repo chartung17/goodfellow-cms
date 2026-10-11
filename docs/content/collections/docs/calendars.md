@@ -45,7 +45,7 @@ Every link and button the block shows has its own text in its settings, for site
 ## Adding to calendars and subscribing
 
 - **Add to calendar**, beside each event in a list and on each event's page, adds it to Google Calendar, Outlook.com, or Apple Calendar and other calendar apps, repeats included (Outlook.com's link adds only the first time).
-- **Subscribe** adds the whole collection to a visitor's calendar app, which then keeps up with it: new events, changes and cancellations show up on their own, as their app checks again, usually every few hours. Subscribing from Google Calendar or other apps needs the site's address, set under **Site settings → General**.
+- **Subscribe** adds the whole collection to a visitor's calendar app, which then keeps up with it: new events, changes and cancellations show up on their own, as their app checks again, usually every few hours. Subscribing from Google Calendar or other apps needs the site's address, set under **Site Settings → General**.
 
 Builds write the files calendar apps read: `/calendars/events.ics` for subscribing to a collection called `events`, and one for each event, such as `/calendars/events/fall-festival.ics`.
 
@@ -65,6 +65,6 @@ Changes then show up at once, rather than after the next build, and the calendar
 
 ## Time zone
 
-Events' times are the site's own, in its time zone, set under **Site settings → General → Time zone**. Calendar apps show visitors each time in their own time zone, so 7:00 PM in New York shows as 4:00 PM in Los Angeles. A weekly event stays at the same time when the clocks change.
+Events' times are the site's own, in its time zone, set under **Site Settings → General → Time zone**. Calendar apps show visitors each time in their own time zone, so 7:00 PM in New York shows as 4:00 PM in Los Angeles. A weekly event stays at the same time when the clocks change.
 
 Without a time zone, times are shown as they're written, and calendar apps treat them as the visitor's own.

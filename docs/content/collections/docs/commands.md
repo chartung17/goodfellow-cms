@@ -22,4 +22,4 @@ Options: `--root <dir>`, `--out <dir>`, `--port <port>`, and `--base <path>`.
 
 Some hosts serve a site from a subfolder, such as `/my-repo/` on GitHub Pages. The base path comes from `--base`, then the `GOODFELLOW_BASE` environment variable, then `base` in `goodfellow.config.tsx`. Every root-relative link and image in the built pages is adjusted to match, including links inside formatted and Markdown text.
 
-The site's address (Site settings → General) should be the full public address, subfolder included.
+The site's address (Site Settings → General) should be the full public address, subfolder included.

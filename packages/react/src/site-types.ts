@@ -23,6 +23,17 @@ export interface SiteComponents {
 }
 
 /** What every block can know about the site and the page being rendered. */
+/** A place in the admin panel that blocks' notes in the editor can link to: Site Settings, or a section of it. */
+export type AdminPlace = "settings" | "contact-settings" | "forms-settings";
+
+/** A link into the admin panel, for a block's note in the editor: spread it onto an `<a>`. */
+export interface AdminLinkProps {
+  href: string;
+  onClick: (event: { preventDefault(): void }) => void;
+  /** Lets the link take clicks through the editor's overlay on blocks. */
+  ref: (element: HTMLElement | null) => (() => void) | undefined;
+}
+
 export interface SiteContextValue {
   settings: SiteSettings;
   menus: Menus;
@@ -51,6 +62,8 @@ export interface SiteContextValue {
   components?: SiteComponents;
   /** The sizes of the site's images, by address (`/media/photo.jpg`), where they're known. */
   media?: Record<string, ImageSize>;
+  /** In the admin panel's editor only: links to its screens, so a block's note can say where to fix something. */
+  adminLink?: (place: AdminPlace) => AdminLinkProps;
 }
 
 /** The Puck metadata every block receives, mirroring `useSite()`. */

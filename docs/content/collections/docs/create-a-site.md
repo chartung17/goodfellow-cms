@@ -72,7 +72,7 @@ my-site/
 │   ├── layout/header.json   # the header and footer
 │   ├── pages/index.json     # one file per page, named after its address
 │   ├── collections/news/    # a collection: its settings and one file per item
-│   └── styles/custom.css    # custom CSS from Site settings
+│   └── styles/custom.css    # custom CSS from Site Settings
 ├── public/media/            # uploaded images and files
 ├── src/styles.css           # Tailwind and the site's theme
 └── .github/workflows/deploy.yml, .gitlab-ci.yml, vercel.json   # host setups

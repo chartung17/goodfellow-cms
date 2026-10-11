@@ -6,7 +6,7 @@ section: owners
 order: 5
 ---
 
-Goodfellow gets fixes and new releases. Sites made from a starter install fixes on their own each night, and only once they've checked that the site still builds with them. **Site settings → Updates** in the admin panel shows the site's release, what it can update to, and how the last update went.
+Goodfellow gets fixes and new releases. Sites made from a starter install fixes on their own each night, and only once they've checked that the site still builds with them. **Site Settings → Updates** in the admin panel shows the site's release, what it can update to, and how the last update went.
 
 ## How updates work
 

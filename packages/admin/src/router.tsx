@@ -63,6 +63,11 @@ export function navigate(to: string, confirmLeave: () => boolean): boolean {
   return true;
 }
 
+/** Sections of Site Settings' General tab that links can scroll to, as `#/settings/general?section=forms`. */
+export const SETTINGS_SECTIONS = { contact: "contact", forms: "forms" } as const;
+
+export type SettingsSection = (typeof SETTINGS_SECTIONS)[keyof typeof SETTINGS_SECTIONS];
+
 export function pageEditorHref(path: string): string {
   return `#/pages/edit?path=${encodeURIComponent(path)}`;
 }

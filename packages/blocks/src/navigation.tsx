@@ -13,7 +13,7 @@ function isCurrent(href: string, path: string): boolean {
 }
 
 /**
- * Shows one of the site's menus (edited in Site settings → Menus). Submenus open
+ * Shows one of the site's menus (edited in Site Settings → Menus). Submenus open
  * on hover or keyboard focus, without JavaScript. The current page's link, and
  * the section it's in, have `data-current`; renderers that share one header
  * between pages, such as a Next.js layout, set it in the browser
@@ -86,7 +86,7 @@ export interface SiteBrandProps {
   className: string;
 }
 
-/** The site's logo and/or title (from Site settings), linking to the home page. */
+/** The site's logo and/or title (from Site Settings), linking to the home page. */
 function SiteBrandView({ show, className }: SiteBrandProps) {
   const { settings } = useSite();
   const logo = show !== "title" ? settings.logo : undefined;
