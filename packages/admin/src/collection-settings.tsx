@@ -13,14 +13,14 @@ import {
   serializeContent,
   TITLE_FIELD,
 } from "@goodfellow-cms/core";
-import { useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { useAdmin, useSiteContent } from "./admin-context.js";
 import { collectionSettingsChanges, deleteCollectionChanges, slugify, uniqueName } from "./changes.js";
 import { CollectionLayout } from "./collection-screen.js";
 import { type Failure, PublishFailure } from "./publish-failure.js";
 import { navigate, useUnsavedChanges } from "./router.js";
 import { type StringKey, useStrings } from "./strings.js";
-import { Button, Dialog, ErrorMessage, Field, TextField } from "./ui.js";
+import { Button, Dialog, ErrorMessage, Field, PublishedNotice, TextField } from "./ui.js";
 
 /** A field being edited. New fields get their name when published, from their label. */
 interface DraftField {
@@ -502,6 +502,14 @@ export function CollectionSettingsScreen({ collection }: { collection: Collectio
 
   const valid = Object.keys(errors).length === 0;
   const dirty = serializeContent(next) !== serializeContent(collection.settings);
+  // "Published." goes after a few seconds, or as soon as anything changes.
+  const hidePublished = useCallback(
+    () => setStatus((current) => (current.type === "done" ? { type: "idle" } : current)),
+    [],
+  );
+  useEffect(() => {
+    if (dirty) hidePublished();
+  }, [dirty, hidePublished]);
   useUnsavedChanges(dirty);
   const shown = showErrors ? errors : {};
   const removed = collection.settings.fields.some(
@@ -538,15 +546,17 @@ export function CollectionSettingsScreen({ collection }: { collection: Collectio
       <div className="gfa-screen">
         <div className="gfa-screen-header">
           <h1>{t("collection.tab.settings")}</h1>
-          <Button variant="primary" disabled={status.type === "publishing" || !dirty} onClick={() => void onPublish()}>
-            {status.type === "publishing" ? t("publish.publishing") : t("publish.button")}
-          </Button>
+          <div className="gfa-header-actions">
+            <Button
+              variant="primary"
+              disabled={status.type === "publishing" || !dirty}
+              onClick={() => void onPublish()}
+            >
+              {status.type === "publishing" ? t("publish.publishing") : t("publish.button")}
+            </Button>
+            {status.type === "done" && <PublishedNotice onHide={hidePublished} />}
+          </div>
         </div>
-        {status.type === "done" && !dirty && (
-          <p className="gfa-notice gfa-notice-success" role="status">
-            {t("publish.done")}
-          </p>
-        )}
         {status.type === "invalid" && !valid && <ErrorMessage message={t("publish.invalid")} />}
         {status.type === "failed" && (
           <ErrorMessage

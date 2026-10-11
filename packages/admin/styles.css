@@ -20,6 +20,8 @@
   --gfa-success-bg: light-dark(#ecfdf5, #052e1c);
   --gfa-success-text: light-dark(#065f46, #6ee7b7);
   --gfa-success-border: light-dark(#a7f3d0, #065f46);
+  --gfa-published-bg: light-dark(#047857, #34d399);
+  --gfa-published-text: light-dark(#ffffff, #022c22);
   --gfa-error-bg: light-dark(#fef2f2, #3b0d0d);
   --gfa-error-text: light-dark(#991b1b, #fca5a5);
   --gfa-demo-bg: light-dark(#fef9c3, #422006);
@@ -164,9 +166,44 @@ body,
 }
 
 .gfa-header-actions {
+  position: relative;
   display: flex;
   flex-wrap: wrap;
+  align-items: center;
   gap: 8px;
+}
+
+/* "Published.", just under the Publish button, for a few seconds. */
+.gfa-published {
+  position: fixed;
+  z-index: 1000;
+  width: max-content;
+  max-width: 320px;
+  margin: 0;
+  padding: 8px 14px;
+  border-radius: var(--gfa-radius);
+  background: var(--gfa-published-bg);
+  color: var(--gfa-published-text);
+  font-weight: 600;
+  box-shadow: 0 6px 20px rgb(0 0 0 / 0.18);
+  animation: gfa-published-in 150ms ease-out;
+}
+
+.gfa-published::before {
+  content: "✓ ";
+}
+
+@keyframes gfa-published-in {
+  from {
+    opacity: 0;
+    transform: translateY(-4px);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .gfa-published {
+    animation: none;
+  }
 }
 
 .gfa-screen-header h1,

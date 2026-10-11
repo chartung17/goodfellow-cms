@@ -1,4 +1,4 @@
-import { ContentError, type FileVersion, type SiteContent } from "@goodfellow-cms/core";
+import { ContentError, type FileVersion, pageView, type SiteContent, todayIn } from "@goodfellow-cms/core";
 import { PageBody, type PreparedPage, preparePage } from "@goodfellow-cms/react";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useAdmin, useSiteContent } from "./admin-context.js";
@@ -192,7 +192,7 @@ function VersionDetail({
   onRestored: (date: string) => void;
 }) {
   const t = useStrings();
-  const { versions, readFile, listFiles, pageConfig, layoutConfig, templateConfig, publish } = useAdmin();
+  const { config, versions, readFile, listFiles, pageConfig, layoutConfig, templateConfig, publish } = useAdmin();
   const [loaded, setLoaded] = useState<Loaded>({ status: "loading" });
   const [confirming, setConfirming] = useState(false);
   const [restoring, setRestoring] = useState(false);
@@ -226,7 +226,10 @@ function VersionDetail({
       if (!then) return { status: "failed", message: "versions.unfit" };
       const data = subjectData(content, then);
       const missing = data ? unknownBlocks(data, then.kind === "page" ? pageConfig : layoutConfig) : [];
-      const page = previewPage(content, then);
+      const shown = previewPage(content, then);
+      // As builds show it, with its added pages' links on the block they're for.
+      const view = shown && pageView(shown, content, todayIn(content.settings.timeZone), config.blocks);
+      const page = shown && view ? { ...shown, view } : shown;
       const prepared = page && missing.length === 0 ? await preparePage(configs, content, page) : undefined;
       return { status: "ready", content, subject: then, prepared, missing };
     })().then(
@@ -236,7 +239,7 @@ function VersionDetail({
     return () => {
       cancelled = true;
     };
-  }, [versions, subject.file, version.revision, readFile, listFiles, configs, pageConfig, layoutConfig]);
+  }, [versions, subject.file, version.revision, readFile, listFiles, configs, pageConfig, layoutConfig, config.blocks]);
 
   const restore = useCallback(async () => {
     if (loaded.status !== "ready") return;

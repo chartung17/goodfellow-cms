@@ -104,6 +104,33 @@ function firstPages(value: unknown, blocks: Record<string, unknown>, context: Bl
   return undefined;
 }
 
+/** The block that adds pages to a page: the first in the order it's shown. Entries' pages and "Page not found" get none. */
+function blockWithPages(
+  page: Page,
+  content: SiteContent,
+  today: string,
+  blocks: Record<string, unknown>,
+): Found | undefined {
+  if (page.entry || page.path === "/404") return undefined;
+  const context = { content, page, today };
+  const data = page.content.data;
+  return firstPages(data.content, blocks, context) ?? firstPages(data.zones, blocks, context);
+}
+
+/**
+ * What a page itself shows, as `sitePages()` gives it: which block its added
+ * pages are for, if any. The editor uses it to show a page as the site will.
+ */
+export function pageView(
+  page: Page,
+  content: SiteContent,
+  today: string,
+  blocks: Record<string, unknown>,
+): PageView | undefined {
+  const found = blockWithPages(page, content, today, blocks);
+  return found && { block: found.id, path: page.path };
+}
+
 /**
  * Every page a build writes: the site's pages and its entries' pages (see
  * `allPages`), and the pages blocks add to the page they're on (see
@@ -119,9 +146,7 @@ export function sitePages(content: SiteContent, today: string, blocks: Record<st
       result.push(page);
       continue;
     }
-    const context = { content, page, today };
-    const data = page.content.data;
-    const found = firstPages(data.content, blocks, context) ?? firstPages(data.zones, blocks, context);
+    const found = blockWithPages(page, content, today, blocks);
     if (!found) {
       result.push(page);
       continue;

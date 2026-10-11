@@ -1,4 +1,4 @@
-import { type ReactNode, useEffect, useId, useRef } from "react";
+import { type ReactNode, useEffect, useId, useLayoutEffect, useRef, useState } from "react";
 import { useStrings } from "./strings.js";
 
 export function Button({
@@ -98,5 +98,34 @@ export function Dialog({ title, onClose, children }: { title: string; onClose: (
       </h2>
       {children}
     </dialog>
+  );
+}
+
+/** How long "Published." shows under the Publish button. */
+export const PUBLISHED_NOTICE_MS = 5000;
+
+/**
+ * "Published.", just under the Publish button, which goes after a few seconds.
+ * Put it in the `gfa-header-actions` the button is in; screens hide it sooner
+ * when anything changes. `onHide` must keep its identity, or the time restarts.
+ * It's placed on the screen, under its parent's right-hand edge, since editors'
+ * headers clip what hangs below them.
+ */
+export function PublishedNotice({ onHide }: { onHide: () => void }) {
+  const t = useStrings();
+  const ref = useRef<HTMLParagraphElement>(null);
+  const [place, setPlace] = useState<{ top: number; right: number }>();
+  useLayoutEffect(() => {
+    const anchor = ref.current?.parentElement?.getBoundingClientRect();
+    if (anchor) setPlace({ top: anchor.bottom + 8, right: document.documentElement.clientWidth - anchor.right });
+  }, []);
+  useEffect(() => {
+    const timer = window.setTimeout(onHide, PUBLISHED_NOTICE_MS);
+    return () => window.clearTimeout(timer);
+  }, [onHide]);
+  return (
+    <p ref={ref} className="gfa-published" role="status" style={place ?? { visibility: "hidden" }}>
+      {t("publish.done")}
+    </p>
   );
 }

@@ -30,6 +30,7 @@ import {
   listingFields,
   listingPages,
   PageLinks,
+  PagesNotice,
   resolveListingFields,
   selectedEntries,
 } from "./listing.js";
@@ -343,6 +344,7 @@ function CollectionListView({
           )}
         </div>
       )}
+      {isEditing && <PagesNotice listing={listing} props={props} />}
       <ChoiceLinks listing={listing} props={props} />
       {list}
       <PageLinks listing={listing} props={props} />
