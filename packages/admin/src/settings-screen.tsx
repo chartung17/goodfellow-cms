@@ -1,6 +1,8 @@
 import {
   DEFAULT_THEME_COLORS,
   type FileChange,
+  type FormSettings,
+  formTarget,
   HeadCodeError,
   type Menus,
   menusFileSchema,
@@ -68,6 +70,7 @@ function cleanSettings(draft: SiteSettings): unknown {
     socialImage: optional(draft.socialImage),
     logo: draft.logo?.src.trim() ? { src: draft.logo.src.trim(), alt: draft.logo.alt } : undefined,
     contact: cleanContact(draft.contact),
+    forms: cleanForms(draft.forms),
     theme: {
       colors,
       fonts: { heading: optional(draft.theme.fonts.heading), body: optional(draft.theme.fonts.body) },
@@ -79,6 +82,105 @@ function cleanSettings(draft: SiteSettings): unknown {
 function cleanContact(contact: SiteSettings["contact"]): SiteSettings["contact"] {
   const entries = Object.entries(contact ?? {}).flatMap(([key, value]) => (value?.trim() ? [[key, value.trim()]] : []));
   return entries.length > 0 ? Object.fromEntries(entries) : undefined;
+}
+
+/** Form settings without empty values, or `undefined` when they're all the defaults. */
+function cleanForms(forms: FormSettings | undefined): FormSettings | undefined {
+  if (!forms) return undefined;
+  const accessKey = forms.accessKey?.trim();
+  const address = forms.address?.trim();
+  const cleaned: FormSettings = {
+    service: forms.service,
+    ...(accessKey && { accessKey }),
+    ...(address && { address }),
+    ...(forms.captcha && { captcha: true }),
+  };
+  return Object.keys(cleaned).length === 1 && cleaned.service === "web3forms" ? undefined : cleaned;
+}
+
+/** Why forms couldn't send answers with these settings, when what's written can't be used. Empty ones are fine. */
+function formsProblem(t: ReturnType<typeof useStrings>, forms: FormSettings | undefined): string | undefined {
+  const target = formTarget(forms);
+  if (!("problem" in target)) return undefined;
+  if (target.problem === "bad-key") return t("forms.error.key");
+  if (target.problem === "bad-address")
+    return t(forms?.service === "formspree" ? "forms.error.formspree" : "forms.error.address");
+  return undefined;
+}
+
+const FORM_SERVICES: Array<FormSettings["service"]> = ["web3forms", "formspree", "other"];
+
+/** Where forms' answers go: the service, and its key or address. */
+function FormsSettings({
+  forms,
+  error,
+  onChange,
+}: {
+  forms: FormSettings | undefined;
+  error: string | undefined;
+  onChange: (forms: FormSettings) => void;
+}) {
+  const t = useStrings();
+  const current: FormSettings = forms ?? { service: "web3forms" };
+  const set = (change: Partial<FormSettings>) => onChange({ ...current, ...change });
+  return (
+    <>
+      <h2 className="gfa-section-title">{t("forms.title")}</h2>
+      <p className="gfa-hint">{t("forms.hint")}</p>
+      <Field label={t("forms.service")}>
+        {(props) => (
+          <select
+            {...props}
+            className="gfa-input"
+            value={current.service}
+            onChange={(event) => set({ service: event.target.value as FormSettings["service"] })}
+          >
+            {FORM_SERVICES.map((service) => (
+              <option key={service} value={service}>
+                {t(`forms.service.${service}`)}
+              </option>
+            ))}
+          </select>
+        )}
+      </Field>
+      {current.service === "web3forms" ? (
+        <>
+          <TextField
+            label={t("forms.accessKey")}
+            hint={t("forms.accessKeyHint")}
+            error={error}
+            spellCheck={false}
+            autoComplete="off"
+            value={current.accessKey ?? ""}
+            onChange={(accessKey) => set({ accessKey })}
+          />
+          <a className="gfa-hint" href="https://web3forms.com/" target="_blank" rel="noreferrer">
+            {t("forms.accessKeyLink")}
+          </a>
+          <label className="gfa-checkbox">
+            <input
+              type="checkbox"
+              checked={current.captcha === true}
+              onChange={(event) => set({ captcha: event.target.checked })}
+            />
+            {t("forms.captcha")}
+          </label>
+          <p className="gfa-hint">{t("forms.captchaHint")}</p>
+        </>
+      ) : (
+        <TextField
+          label={t(current.service === "formspree" ? "forms.formspree" : "forms.address")}
+          hint={t(current.service === "formspree" ? "forms.formspreeHint" : "forms.addressHint")}
+          error={error}
+          type="url"
+          placeholder={current.service === "formspree" ? "https://formspree.io/f/" : "https://"}
+          spellCheck={false}
+          value={current.address ?? ""}
+          onChange={(address) => set({ address })}
+        />
+      )}
+    </>
+  );
 }
 
 /** Validation problems keyed by field path, such as `theme.colors.primary`. */
@@ -125,10 +227,12 @@ function TimeZoneField({ value, onChange }: { value: string; onChange: (timeZone
 function GeneralTab({
   draft,
   errors,
+  formsError,
   onChange,
 }: {
   draft: SiteSettings;
   errors: Record<string, string>;
+  formsError: string | undefined;
   onChange: (draft: SiteSettings) => void;
 }) {
   const t = useStrings();
@@ -199,6 +303,8 @@ function GeneralTab({
         value={draft.contact?.email ?? ""}
         onChange={(email) => onChange({ ...draft, contact: { ...draft.contact, email } })}
       />
+
+      <FormsSettings forms={draft.forms} error={formsError} onChange={(forms) => onChange({ ...draft, forms })} />
     </div>
   );
 }
@@ -393,6 +499,7 @@ export function SettingsScreen({ tab }: { tab: SettingsTab }) {
 
   const validation = useMemo(() => validate(settings), [settings]);
   const headError = useMemo(() => headCodeProblem(t, code.head), [t, code.head]);
+  const formsError = useMemo(() => formsProblem(t, settings.forms), [t, settings.forms]);
   const changes = useMemo(() => {
     const result: FileChange[] = [];
     if (validation.settings && serializeContent(validation.settings) !== serializeContent(content.settings)) {
@@ -409,7 +516,7 @@ export function SettingsScreen({ tab }: { tab: SettingsTab }) {
 
   const onPublish = async () => {
     setShowErrors(true);
-    if (!validation.settings || !menusFileSchema.safeParse({ version: 1, menus }).success || headError) {
+    if (!validation.settings || !menusFileSchema.safeParse({ version: 1, menus }).success || headError || formsError) {
       setStatus({ type: "invalid" });
       return;
     }
@@ -470,7 +577,14 @@ export function SettingsScreen({ tab }: { tab: SettingsTab }) {
 
         <SettingsTabs tab={tab} />
 
-        {tab === "general" && <GeneralTab draft={settings} errors={errors} onChange={setSettings} />}
+        {tab === "general" && (
+          <GeneralTab
+            draft={settings}
+            errors={errors}
+            formsError={showErrors ? formsError : undefined}
+            onChange={setSettings}
+          />
+        )}
         {tab === "theme" && <ThemeTab draft={settings} errors={errors} onChange={setSettings} />}
         {tab === "menus" && <MenusEditor menus={menus} onChange={setMenus} />}
         {tab === "css" && <CssTab css={css} onChange={setCss} />}

@@ -230,6 +230,20 @@ export {
 } from "./editors.js";
 export { isExternalLink, type LinkTargetOptions, NEW_TAB, setLinkTargets } from "./external-links.js";
 export {
+  type FormDetails,
+  type FormProblem,
+  type FormService,
+  type FormSettings,
+  type FormTarget,
+  formRedirect,
+  formspreeAddress,
+  formTarget,
+  type GoogleFormProblem,
+  googleFormUrl,
+  type HiddenField,
+  WEB3FORMS_SCRIPT,
+} from "./forms.js";
+export {
   credentialStorage,
   type DeployState,
   type DeployStatus,
