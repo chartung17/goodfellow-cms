@@ -24,7 +24,7 @@
                     "props": {
                       "id": "SiteBrand-1",
                       "className": "",
-                      "show": "both"
+                      "show": "logo"
                     }
                   },
                   {

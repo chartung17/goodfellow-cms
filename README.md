@@ -1,4 +1,9 @@
-# Goodfellow
+<h1>
+  <picture>
+    <source media="(prefers-color-scheme: dark)" srcset="docs/public/media/logo-dark.svg">
+    <img src="docs/public/media/logo.svg" alt="Goodfellow" width="320">
+  </picture>
+</h1>
 
 A git-based website builder built on the [Puck](https://puckeditor.com) visual editor.
 

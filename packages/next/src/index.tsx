@@ -157,6 +157,20 @@ export function goodfellowPages(config: GoodfellowConfig, options: GoodfellowPag
       return page ? pageMetadata(content, applyPageEntry(configs, content, page), basePath()) : {};
     },
 
+    /** For `app/admin/layout.tsx`: the admin panel's title, kept out of search engines, with the site's icon. */
+    async adminMetadata(): Promise<Metadata> {
+      // Content with a problem still opens the admin panel, which explains it.
+      const favicon = await site().then(
+        (content) => content.settings.favicon,
+        () => undefined,
+      );
+      return {
+        title: "Site admin",
+        robots: { index: false },
+        ...(favicon && { icons: { icon: withBase(favicon, basePath()) } }),
+      };
+    },
+
     /**
      * For `app/(site)/layout.tsx`: the site's header and footer around every page, kept as
      * they are when moving between pages. Menus mark the current page in the browser.

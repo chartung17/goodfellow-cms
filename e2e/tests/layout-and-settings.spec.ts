@@ -243,3 +243,14 @@ test("shows the admin panel light or dark, following the computer unless an edit
   await page.emulateMedia({ colorScheme: "dark" });
   await expect.poll(background).toBe("rgb(11, 17, 32)");
 });
+
+test("shows the site's icon in the admin panel's tab, and a new one once it's published", async ({ page }) => {
+  await page.goto("/admin#/settings/general");
+  const icon = page.locator('head link[rel~="icon"]');
+  await expect(icon).toHaveAttribute("href", /\/media\/favicon\.svg$/);
+
+  await page.getByLabel("Browser tab icon").fill("/media/logo.svg");
+  await page.getByRole("button", { name: "Publish" }).click();
+  await expect(page.getByText("Published.", { exact: true })).toBeVisible();
+  await expect(icon).toHaveAttribute("href", /\/media\/logo\.svg$/);
+});

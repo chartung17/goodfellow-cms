@@ -24,6 +24,8 @@ test("signs in with a GitHub token created from a prefilled link", async ({ page
   await setup(page);
   await page.goto(`${GITHUB_SITE}/admin/`);
   await expect(page.getByRole("heading", { name: "Sign in to edit this site" })).toBeVisible();
+  // The site's icon is in the tab before anyone signs in.
+  await expect(page.locator('head link[rel~="icon"]')).toHaveAttribute("href", /\/media\/favicon\.svg$/);
 
   const link = new URL((await page.getByRole("link", { name: "Create a token on GitHub" }).getAttribute("href")) ?? "");
   expect(link.pathname).toBe("/settings/personal-access-tokens/new");

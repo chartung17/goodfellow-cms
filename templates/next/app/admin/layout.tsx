@@ -1,7 +1,7 @@
-import type { Metadata } from "next";
 import type { ReactNode } from "react";
+import { site } from "@/lib/site";
 
-export const metadata: Metadata = { title: "Site admin", robots: { index: false } };
+export const generateMetadata = site.adminMetadata;
 
 export default function AdminLayout({ children }: { children: ReactNode }) {
   return children;

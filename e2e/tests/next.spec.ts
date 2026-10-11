@@ -42,6 +42,7 @@ test("shows the site's own page for addresses that don't exist", async ({ page }
 
 test("publishes from the admin panel to the files on disk", async ({ page }) => {
   await page.goto(`${BASE}/admin/#/settings/general`);
+  await expect(page.locator('head link[rel~="icon"]').first()).toHaveAttribute("href", /\/media\/favicon\.svg/);
   await page.getByLabel("Site name").fill("Next site");
   await expect(page.frameLocator(".gfa-preview iframe").getByText("Next site").first()).toBeVisible();
   await page.getByRole("button", { name: "Publish" }).click();

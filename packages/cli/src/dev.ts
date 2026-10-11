@@ -190,7 +190,12 @@ function devPlugin(root: string, styles: () => StylesEntries): Plugin {
 
           res.setHeader("Content-Type", "text/html; charset=utf-8");
           if (url.pathname === "/admin" || url.pathname === "/admin/") {
-            const html = adminHtml({ scripts: [`/@id/__x00__${ADMIN_ENTRY}`] });
+            // Content with a problem still opens the admin panel, which explains it.
+            const icon = await loadSiteContent(fileSystemSource(root)).then(
+              (content) => content.settings.favicon,
+              () => undefined,
+            );
+            const html = adminHtml({ scripts: [`/@id/__x00__${ADMIN_ENTRY}`], ...(icon && { icon }) });
             res.end(await server.transformIndexHtml("/admin", html));
             return;
           }
