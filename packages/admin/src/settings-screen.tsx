@@ -6,6 +6,7 @@ import {
   HeadCodeError,
   type Menus,
   menusFileSchema,
+  pageView,
   parseHeadCode,
   type SiteCode,
   type SiteSettings,
@@ -13,10 +14,11 @@ import {
   siteSettingsSchema,
   THEME_COLORS,
   type ThemeColor,
+  todayIn,
 } from "@goodfellow-cms/core";
 import { PageBody, type SiteContextValue } from "@goodfellow-cms/react";
 import type { Data } from "@puckeditor/core";
-import { useCallback, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { useAdmin, useSiteContent } from "./admin-context.js";
 import { codeFileChanges, customCssFileChange, menusFileChange, siteSettingsFileChange, storedCss } from "./changes.js";
 import { CodeEditor } from "./code-editor.js";
@@ -25,9 +27,9 @@ import { useHistory } from "./history.js";
 import { MediaField } from "./media-library.js";
 import { MenusEditor } from "./menus-editor.js";
 import { PreviewFrame } from "./preview.js";
-import { useUnsavedChanges } from "./router.js";
+import { type SettingsSection, useUnsavedChanges } from "./router.js";
 import { type StringKey, useStrings } from "./strings.js";
-import { Button, ErrorMessage, Field, TextField } from "./ui.js";
+import { Button, ErrorMessage, Field, PublishedNotice, TextField } from "./ui.js";
 import { AppLink } from "./use-link.js";
 
 export type SettingsTab = "general" | "theme" | "menus" | "css" | "code";
@@ -125,7 +127,9 @@ function FormsSettings({
   const set = (change: Partial<FormSettings>) => onChange({ ...current, ...change });
   return (
     <>
-      <h2 className="gfa-section-title">{t("forms.title")}</h2>
+      <h2 id={sectionId("forms")} className="gfa-section-title" tabIndex={-1}>
+        {t("forms.title")}
+      </h2>
       <p className="gfa-hint">{t("forms.hint")}</p>
       <Field label={t("forms.service")}>
         {(props) => (
@@ -154,7 +158,7 @@ function FormsSettings({
             value={current.accessKey ?? ""}
             onChange={(accessKey) => set({ accessKey })}
           />
-          <a className="gfa-hint" href="https://web3forms.com/" target="_blank" rel="noreferrer">
+          <a className="gfa-hint" href="https://app.web3forms.com/onboarding/create" target="_blank" rel="noreferrer">
             {t("forms.accessKeyLink")}
           </a>
           <label className="gfa-checkbox">
@@ -278,7 +282,9 @@ function GeneralTab({
       <MediaField label={t("general.favicon")} {...text("favicon")} />
       <MediaField label={t("general.socialImage")} {...text("socialImage")} />
 
-      <h2 className="gfa-section-title">{t("general.contact")}</h2>
+      <h2 id={sectionId("contact")} className="gfa-section-title" tabIndex={-1}>
+        {t("general.contact")}
+      </h2>
       <p className="gfa-hint">{t("general.contactHint")}</p>
       <Field label={t("general.address")}>
         {(props) => (
@@ -474,9 +480,21 @@ export function SettingsTabs({ tab }: { tab: SettingsTab | "domain" | "editors" 
  * preview of the home page (without the code, which never runs in the admin
  * panel). Publishing saves every changed file in one go.
  */
-export function SettingsScreen({ tab }: { tab: SettingsTab }) {
+/** The id of a General tab section's heading, which links scroll to. */
+function sectionId(section: SettingsSection): string {
+  return `gfa-settings-${section}`;
+}
+
+export function SettingsScreen({ tab, section }: { tab: SettingsTab; section?: SettingsSection }) {
+  // A link to a section, such as from a block's note in the editor, scrolls down to it.
+  useEffect(() => {
+    if (tab !== "general" || !section) return;
+    const heading = document.getElementById(sectionId(section));
+    heading?.scrollIntoView({ block: "start" });
+    heading?.focus({ preventScroll: true });
+  }, [tab, section]);
   const t = useStrings();
-  const { pageConfig, layoutConfig, publish, reload } = useAdmin();
+  const { config, pageConfig, layoutConfig, publish, reload } = useAdmin();
   const { content } = useSiteContent();
   // One history for every tab, so undo takes back the last change wherever it was made.
   const history = useHistory<{ settings: SiteSettings; menus: Menus; css: string; code: SiteCode }>({
@@ -512,6 +530,14 @@ export function SettingsScreen({ tab }: { tab: SettingsTab }) {
   }, [validation, menus, css, code, content]);
 
   const dirty = changes.length > 0 || !validation.settings;
+  // "Published." goes after a few seconds, or as soon as anything changes.
+  const hidePublished = useCallback(
+    () => setStatus((current) => (current.type === "done" ? { type: "idle" } : current)),
+    [],
+  );
+  useEffect(() => {
+    if (dirty) hidePublished();
+  }, [dirty, hidePublished]);
   useUnsavedChanges(dirty);
 
   const onPublish = async () => {
@@ -528,12 +554,23 @@ export function SettingsScreen({ tab }: { tab: SettingsTab }) {
 
   // The preview shows unpublished changes as they're made.
   const previewSettings = validation.settings ?? content.settings;
+  const home = content.pages.find((page) => page.path === "/");
+  // The home page as builds show it, with its added pages' links on the block they're for.
+  const homeView = useMemo(
+    () => home && pageView(home, content, todayIn(content.settings.timeZone), config.blocks),
+    [home, content, config.blocks],
+  );
   const previewSite = useMemo<SiteContextValue>(
-    () => ({ settings: previewSettings, menus, path: "/", collections: content.collections }),
-    [previewSettings, menus, content.collections],
+    () => ({
+      settings: previewSettings,
+      menus,
+      path: "/",
+      collections: content.collections,
+      ...(homeView && { view: homeView }),
+    }),
+    [previewSettings, menus, content.collections, homeView],
   );
   const previewStyles = useMemo(() => ({ theme: previewSettings.theme, customCss: css }), [previewSettings, css]);
-  const home = content.pages.find((page) => page.path === "/");
   const errors = showErrors ? validation.errors : {};
 
   return (
@@ -555,13 +592,9 @@ export function SettingsScreen({ tab }: { tab: SettingsTab }) {
             >
               {status.type === "publishing" ? t("publish.publishing") : t("publish.button")}
             </Button>
+            {status.type === "done" && <PublishedNotice onHide={hidePublished} />}
           </div>
         </div>
-        {status.type === "done" && !dirty && (
-          <p className="gfa-notice gfa-notice-success" role="status">
-            {t("publish.done")}
-          </p>
-        )}
         {status.type === "invalid" && <ErrorMessage message={t("publish.invalid")} />}
         {status.type === "failed" && (
           <ErrorMessage

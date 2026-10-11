@@ -10,11 +10,13 @@
   },
   "theme": {
     "colors": {
+      "accent": "#f5ece2",
       "border": "#e7e5e4",
-      "muted": "#f4f4f0",
+      "muted": "#f5ece2",
       "mutedForeground": "#57534e",
-      "primary": "#14532d",
-      "primaryForeground": "#ffffff"
+      "primary": "#153823",
+      "primaryForeground": "#ffffff",
+      "secondary": "#f5ece2"
     },
     "fonts": {
       "body": "Inter",

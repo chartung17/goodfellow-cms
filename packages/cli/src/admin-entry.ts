@@ -73,6 +73,8 @@ export function adminHtml(options: {
   scripts: string[];
   stylesheets?: string[];
   settings?: BuiltAdminSettings;
+  /** The site's icon, for the tab before the admin panel has loaded the site. */
+  icon?: string;
 }): string {
   const links = (options.stylesheets ?? []).map((href) => `    <link rel="stylesheet" href="${escapeHtml(href)}" />`);
   const settings = options.settings
@@ -90,6 +92,7 @@ export function adminHtml(options: {
     '    <meta name="viewport" content="width=device-width, initial-scale=1" />',
     '    <meta name="robots" content="noindex" />',
     "    <title>Site admin</title>",
+    ...(options.icon ? [`    <link rel="icon" href="${escapeHtml(options.icon)}" />`] : []),
     ...links,
     ...settings,
     "  </head>",

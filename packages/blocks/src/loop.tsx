@@ -18,6 +18,7 @@ import {
   listingFields,
   listingPages,
   PageLinks,
+  PagesNotice,
   resolveListingFields,
 } from "./listing.js";
 import { type Gap, gapClasses, gapLabels, options, yesNo } from "./options.js";
@@ -90,6 +91,7 @@ function CollectionLoopView({
             ? `Shown once for each item in ${listing.collection.settings.name}. Use {title} and the other fields' names in braces for their values.`
             : "Choose a collection, then design what each of its items shows here."}
         </p>
+        {listing && <PagesNotice listing={listing} props={props} />}
         {/* The design, as wide as one item. */}
         <div className={cx("grid", columnClasses[columns], gapClasses[gap])}>
           <Design className="flex min-h-16 flex-col gap-3" />

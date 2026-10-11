@@ -33,6 +33,7 @@ import {
 } from "@goodfellow-cms/core";
 import { classNameField, cx, SiteLink, templateOnly, useSite } from "@goodfellow-cms/react";
 import type { ComponentConfig, Fields } from "@puckeditor/core";
+import { pagesNotice } from "./listing.js";
 import { options } from "./options.js";
 
 /** One time something happens, from a collection or another calendar, ready to show. */
@@ -314,11 +315,13 @@ function MonthView({
   items,
   props,
   today,
+  isEditing,
 }: {
   month: string;
   items: CalendarItem[];
   props: CalendarProps & { id?: string };
   today: string;
+  isEditing: boolean;
 }) {
   const { settings, path, view } = useSite();
   const language = settings.language;
@@ -329,14 +332,16 @@ function MonthView({
   const trailing = (7 - ((leading + dates.length) % 7)) % 7;
   const blank = (key: string) => <li key={key} aria-hidden="true" className="hidden bg-muted sm:block" />;
 
-  // Month pages are the calendar's page with the month after it; the page itself shows the current month.
-  const page = view && view.block === props.id ? view.path : path;
+  // Month pages are the calendar's page with the month after it; the page itself shows the current month. Only
+  // the block the page's other pages are for links to them (see `currentListing()`).
+  const linked = view !== undefined && view.block === props.id;
+  const page = linked ? view.path : path;
   const { before, after } = calendarMonths(props as unknown as Record<string, unknown>);
   const current = monthOf(today);
   const previous = addMonths(month, -1);
   const next = addMonths(month, 1);
   const hasPage = (candidate: string) =>
-    candidate >= addMonths(current, -before) && candidate <= addMonths(current, after);
+    linked && candidate >= addMonths(current, -before) && candidate <= addMonths(current, after);
   const linkTo = (candidate: string) => (candidate === current ? page : variantPath(page, candidate));
 
   const byDate = new Map<string, CalendarItem[]>();
@@ -350,11 +355,17 @@ function MonthView({
 
   return (
     <div className="flex flex-col gap-4">
-      <div className="flex items-center justify-between gap-4">
+      {isEditing && !linked && (
+        <p className="rounded-md border border-dashed border-border p-3 text-sm text-muted-foreground">
+          {pagesNotice(view, "month")}
+        </p>
+      )}
+      {/* Equal columns either side keep the month's name in the middle, with or without links beside it. */}
+      <div className="grid grid-cols-[1fr_auto_1fr] items-center gap-4">
         {hasPage(previous) ? (
           <SiteLink
             href={linkTo(previous)}
-            className="text-sm text-primary hover:underline"
+            className="justify-self-start text-sm text-primary hover:underline"
             aria-label={props.previousLabel}
           >
             ← {formatMonth(previous, language)}
@@ -362,9 +373,13 @@ function MonthView({
         ) : (
           <span />
         )}
-        <h2 className="font-heading text-2xl font-bold">{formatMonth(month, language)}</h2>
+        <h2 className="text-center font-heading text-2xl font-bold">{formatMonth(month, language)}</h2>
         {hasPage(next) ? (
-          <SiteLink href={linkTo(next)} className="text-sm text-primary hover:underline" aria-label={props.nextLabel}>
+          <SiteLink
+            href={linkTo(next)}
+            className="justify-self-end text-right text-sm text-primary hover:underline"
+            aria-label={props.nextLabel}
+          >
             {formatMonth(next, language)} →
           </SiteLink>
         ) : (
@@ -443,7 +458,7 @@ function CalendarView({ isEditing, ...props }: CalendarProps & { id?: string; is
         </p>
       )}
       {month ? (
-        <MonthView month={month} items={items} props={props} today={today} />
+        <MonthView month={month} items={items} props={props} today={today} isEditing={isEditing} />
       ) : items.length > 0 ? (
         <ListView items={items} props={props} />
       ) : (

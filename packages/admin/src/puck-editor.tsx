@@ -1,5 +1,21 @@
-import { type Collection, type FileChange, serializeContent } from "@goodfellow-cms/core";
-import { cx, mediaFieldKind, type SiteContextValue, SiteProvider, siteMetadata } from "@goodfellow-cms/react";
+import {
+  type Collection,
+  type FileChange,
+  type PageFile,
+  type PageView,
+  pageView,
+  serializeContent,
+  todayIn,
+} from "@goodfellow-cms/core";
+import {
+  type AdminLinkProps,
+  type AdminPlace,
+  cx,
+  mediaFieldKind,
+  type SiteContextValue,
+  SiteProvider,
+  siteMetadata,
+} from "@goodfellow-cms/react";
 import {
   type Config,
   type Data,
@@ -8,17 +24,18 @@ import {
   type Plugin,
   Puck,
   Render,
+  registerOverlayPortal,
   type UiState,
 } from "@puckeditor/core";
-import { type ReactNode, useCallback, useMemo, useRef, useState } from "react";
+import { type ReactNode, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useAdmin, useSiteContent } from "./admin-context.js";
 import { aiPlugin } from "./ai-panel.js";
 import { storedData } from "./changes.js";
 import { MediaChooser } from "./media-library.js";
 import { usePreviewStyles } from "./preview.js";
-import { useUnsavedChanges } from "./router.js";
+import { navigate, SETTINGS_SECTIONS, useUnsavedChanges } from "./router.js";
 import { useStrings } from "./strings.js";
-import { Button, ErrorMessage } from "./ui.js";
+import { Button, ErrorMessage, PublishedNotice } from "./ui.js";
 
 /** Pages and templates are shown between the header and footer; entries supply their own `config`. */
 export type EditorKind = "page" | "header" | "footer" | "template" | "entry";
@@ -114,6 +131,13 @@ function TextFieldWithMedia({
     </div>
   );
 }
+
+/** Where in the admin panel blocks' notes link to. */
+const ADMIN_PLACES: Record<AdminPlace, string> = {
+  settings: "#/settings/general",
+  "contact-settings": `#/settings/general?section=${SETTINGS_SECTIONS.contact}`,
+  "forms-settings": `#/settings/general?section=${SETTINGS_SECTIONS.forms}`,
+};
 
 export interface PuckEditorProps {
   kind: EditorKind;
@@ -225,9 +249,58 @@ export function PuckEditor({
     | { type: "failed"; reason: "conflict" | "error"; error: unknown }
   >({ type: "idle" });
 
+  // Puck works with current data; files saved by older versions of Puck are upgraded first.
+  const initialData = useMemo(() => migrate(data), [data]);
+
+  // Which block the page's added pages are for, as builds work it out, so the editor shows what the site will:
+  // only that block links to its other pages. It's worked out again as the page changes.
+  const viewOf = useCallback(
+    (next: Data): PageView | undefined =>
+      kind === "page" && path
+        ? pageView(
+            { path, file: "", content: { version: 1, data: storedData(next) } as PageFile },
+            content,
+            todayIn(content.settings.timeZone),
+            siteConfig.blocks,
+          )
+        : undefined,
+    [kind, path, content, siteConfig.blocks],
+  );
+  const [view, setView] = useState(() => viewOf(initialData));
+  const updateView = (next: Data) => {
+    const found = viewOf(next);
+    setView((current) => (current?.block === found?.block ? current : found));
+  };
+
+  // Blocks' notes link to where they're fixed. Their links are in the canvas, so they take clicks through
+  // Puck's overlay, and leave the editor the usual way, asking first about unpublished changes.
+  const confirmLeave = t("unsaved.confirm");
+  const adminLink = useCallback(
+    (place: AdminPlace): AdminLinkProps => {
+      const href = ADMIN_PLACES[place];
+      return {
+        href,
+        ref: (element) => registerOverlayPortal(element, { disableDrag: true }),
+        onClick: (event) => {
+          event.preventDefault();
+          navigate(href, () => window.confirm(confirmLeave));
+        },
+      };
+    },
+    [confirmLeave],
+  );
+
   const site = useMemo<SiteContextValue>(
-    () => ({ settings: content.settings, menus: content.menus, path, collections: content.collections, collection }),
-    [content, path, collection],
+    () => ({
+      settings: content.settings,
+      menus: content.menus,
+      path,
+      collections: content.collections,
+      collection,
+      ...(view && { view }),
+      adminLink,
+    }),
+    [content, path, collection, view, adminLink],
   );
   const config = useMemo(
     () =>
@@ -243,8 +316,6 @@ export function PuckEditor({
     [customConfig, kind, pageConfig, templateConfig, layoutConfig, content, site],
   );
 
-  // Puck works with current data; files saved by older versions of Puck are upgraded first.
-  const initialData = useMemo(() => migrate(data), [data]);
   const published = useRef(serializeContent(storedData(initialData)));
   const [dirty, setDirty] = useState(false);
   useUnsavedChanges(dirty);
@@ -266,6 +337,16 @@ export function PuckEditor({
       setStatus({ type: "failed", reason: result.reason, error: result.error });
     }
   };
+
+  // "Published." goes after a few seconds, or as soon as anything changes.
+  const hidePublished = useCallback(
+    () => setStatus((current) => (current.type === "done" ? { type: "idle" } : current)),
+    [],
+  );
+  useEffect(() => {
+    if (dirty) hidePublished();
+  }, [dirty, hidePublished]);
+  const justPublished = status.type === "done";
 
   const ownSideBar = useOwnRightSideBar(rightSideBar);
   const puckUi = useMemo(
@@ -290,27 +371,23 @@ export function PuckEditor({
         </Iframe>
       ),
       headerActions: ({ children }: { children: ReactNode }) => (
-        <>
+        <div className="gfa-header-actions">
           {actions}
           {children}
-        </>
+          {justPublished && <PublishedNotice onHide={hidePublished} />}
+        </div>
       ),
       fieldTypes: { text: TextFieldWithMedia },
     }),
-    [site, actions],
+    [site, actions, justPublished, hidePublished],
   );
 
   return (
     <div className={cx("gfa-editor", `gfa-editor-${kind}`, siteConfig.ai !== false && "gfa-editor-ai")}>
       {notice && <div className="gfa-editor-notice">{notice}</div>}
-      {status.type !== "idle" && (
+      {status.type !== "idle" && status.type !== "done" && (
         <div className="gfa-editor-status">
           {status.type === "publishing" && <p className="gfa-notice">{t("publish.publishing")}</p>}
-          {status.type === "done" && (
-            <p className="gfa-notice gfa-notice-success" role="status">
-              {t("publish.done")}
-            </p>
-          )}
           {status.type === "invalid" && (
             <ErrorMessage
               message={status.message}
@@ -346,7 +423,10 @@ export function PuckEditor({
             plugins={allPlugins}
             onAction={ownSideBar.onAction}
             overrides={overrides}
-            onChange={(next) => setDirty(serializeContent(storedData(next)) !== published.current)}
+            onChange={(next) => {
+              setDirty(serializeContent(storedData(next)) !== published.current);
+              updateView(next);
+            }}
             onPublish={onPublish}
           />
         </SiteProvider>

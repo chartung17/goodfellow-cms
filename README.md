@@ -1,4 +1,9 @@
-# Goodfellow
+<h1>
+  <picture>
+    <source media="(prefers-color-scheme: dark)" srcset="docs/public/media/logo-dark.svg">
+    <img src="docs/public/media/logo.svg" alt="Goodfellow" width="320">
+  </picture>
+</h1>
 
 A git-based website builder built on the [Puck](https://puckeditor.com) visual editor.
 
@@ -37,14 +42,14 @@ Editor's browser                       Git host (GitHub / GitLab)         Static
 12. **Documentation site** (done). A documentation site built with Goodfellow itself, in `docs/`, and the blocks it needs, which any site can use: code with syntax highlighting, search (with [Pagefind](https://pagefind.app), indexed only on sites that use a search block), navigation within a collection, previous and next links, and an "On this page" list. Collections can store their items as Markdown files, edited in the admin panel's formatted editor or as Markdown. The docs cover why Goodfellow exists and how it compares with alternatives such as WordPress and TinaCMS, guides for site owners and editors, reference docs for developers, and each host's rules for business sites on its free plan. Online at [goodfellow-cms.github.io/goodfellow-cms](https://goodfellow-cms.github.io/goodfellow-cms/) since step 13.
 13. **Going live** (done). Make the repository public, publish the packages to npm, and put the documentation site online with GitHub Pages. A demo site, made from the parish example in a repository of its own with the published packages, goes online with GitHub Pages too, and the docs link to it.
 14. **Site setup without a developer** (done). The documentation site's [Create a site](https://goodfellow-cms.github.io/goodfellow-cms/new-site/) page creates a site from any starter, with the same choices as `create-goodfellow`, in the person's own GitHub or GitLab account, straight from their browser, and puts it online with GitHub Pages, GitLab Pages or Vercel. It asks what the site is for and recommends a host whose free plan allows it, such as GitLab Pages for a business, and warns that GitHub Pages doesn't work with private repositories on GitHub's free plan. On GitHub, people sign in with a token the page links to (step 21's sign-in worker will replace it); on GitLab, with GitLab or a token. The page writes the repository into the site's config, so nobody has to edit it.
-15. **Custom domains** (done). Connect a domain from the admin panel's **Site settings → Domain**. Goodfellow connects it on GitHub Pages or GitLab Pages, lists the records to add at the domain's registrar, with guides for popular registrars in the docs, and checks until the domain works: the records, as the world sees them, the host's HTTPS certificate, and the site at its new address. Then it sends everyone to the secure address. Sites on Vercel connect their domain in Vercel, as the screen explains.
+15. **Custom domains** (done). Connect a domain from the admin panel's **Site Settings → Domain**. Goodfellow connects it on GitHub Pages or GitLab Pages, lists the records to add at the domain's registrar, with guides for popular registrars in the docs, and checks until the domain works: the records, as the world sees them, the host's HTTPS certificate, and the site at its new address. Then it sends everyone to the secure address. Sites on Vercel connect their domain in Vercel, as the screen explains.
 16. **Running a site without a developer.**
     - Invite and remove editors from the admin panel (done).
     - Version history, with a way to restore an earlier version of a page (done).
     - Automatic updates (done): a scheduled job updates Goodfellow, and blocks added from block registries, and publishes the update only if the site still builds. Block updates replace only files nobody has changed. Fixes install on their own; newer releases when an owner chooses them. Owners can turn automatic fixes off, or go back to the previous release, which is then skipped.
     - Plain-language explanations when a rebuild fails (done).
 17. **Calendars** (done). An Events collection and a Calendar block, worked out when the site builds, so visitors only get HTML.
-    - **Events** have a start and end date and time, an all-day option, a place, and repeats (daily, weekly, monthly or yearly, every so often, on chosen weekdays or the same weekday of the month, until a date, with dates to skip), so a weekly service is one entry. Collections get a date-and-time field for them, which any collection can be a calendar of, and Site settings a time zone. New collections can start as Events.
+    - **Events** have a start and end date and time, an all-day option, a place, and repeats (daily, weekly, monthly or yearly, every so often, on chosen weekdays or the same weekday of the month, until a date, with dates to skip), so a weekly service is one entry. Collections get a date-and-time field for them, which any collection can be a calendar of, and Site Settings a time zone. New collections can start as Events.
     - **The Calendar block** shows upcoming events as a list or a month at a time, with a page for each month. The nightly rebuilds keep "upcoming" current.
     - **Calendars kept elsewhere:** the block can also show a public calendar feed (an `.ics` address, such as Google Calendar's), read when the site builds, so editors who keep a Google Calendar go on doing so and the site catches up on its next build.
     - **Subscribing:** the build writes the events as an `.ics` file that visitors can subscribe to, and each event has "Add to calendar" links.
@@ -55,7 +60,7 @@ Editor's browser                       Git host (GitHub / GitLab)         Static
     - **Collection loop:** a block whose contents, designed in the editor with any blocks, repeat once for each item, with the item's fields filled in as in a collection's page design, for layouts the list's own styles don't cover.
     - Visitors don't sort or filter lists themselves: editors choose each list's order and filters, and the Search block finds the rest.
 19. **Forms** (done). A Form block whose questions (wording, kind of answer, whether it must be answered, choices and help text) are set in the editor.
-    - **No server:** it's a plain HTML form that posts to a form service and works without JavaScript; the service emails the answers and sends visitors back to a thank-you page the editor chooses. The service is chosen once in Site settings: [Web3Forms](https://web3forms.com) by default (250 answers a month free, and no account, just an email address), [Formspree](https://formspree.io) (whose free plan shows its own thank-you page), or any service that accepts a plain form post.
+    - **No server:** it's a plain HTML form that posts to a form service and works without JavaScript; the service emails the answers and sends visitors back to a thank-you page the editor chooses. The service is chosen once in Site Settings: [Web3Forms](https://web3forms.com) by default (250 answers a month free, and no account, just an email address), [Formspree](https://formspree.io) (whose free plan shows its own thank-you page), or any service that accepts a plain form post.
     - **Spam:** a hidden honeypot field on every form, plus the service's own captcha: Formspree's reCAPTCHA, or Web3Forms' hCaptcha, which a Site setting turns on, since it needs Web3Forms' script on pages with a form.
     - **Longer forms**, such as surveys and sign-up sheets, can use Google Forms: the Form block shows one from its embed code.
     - **The docs** explain that answers go to the chosen service, not to the site's repository.
@@ -77,7 +82,7 @@ Editor's browser                       Git host (GitHub / GitLab)         Static
     - **Tokens:** the hosted and deployed servers sign in through their own GitHub App, separate from step 21's. They keep editors' refresh tokens only encrypted, readable only while Claude is calling, and call GitHub with tokens limited to one repository that last an hour. GitLab's tokens reach every project the editor can and last two hours, which the docs explain.
     - **Rate limits** per editor, per site and overall, with a plain-language message that Claude passes on when one is reached.
     - **Screenshots** of the live site, and of unpublished changes through a preview page in each site's build, taken with Cloudflare's Browser Rendering.
-23. **Light and dark sites.** A site can have a light and a dark mode, with every theme color set for each in Site settings. Pages follow the visitor's light or dark setting, and blocks follow the theme in both, as the admin panel's own light and dark modes do.
+23. **Light and dark sites.** A site can have a light and a dark mode, with every theme color set for each in Site Settings. Pages follow the visitor's light or dark setting, and blocks follow the theme in both, as the admin panel's own light and dark modes do.
 
 Planned for later: review workflows (pull/merge requests from the admin panel), per-user permissions, import/export, plugins and themes, and Bitbucket support.
 

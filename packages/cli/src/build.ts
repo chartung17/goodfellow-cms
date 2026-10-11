@@ -11,6 +11,7 @@ import {
   pageOutputFile,
   sitePages,
   todayIn,
+  withBase,
 } from "@goodfellow-cms/core";
 import { fileSystemSource } from "@goodfellow-cms/core/node";
 import { writeSearchIndex } from "@goodfellow-cms/core/search-index";
@@ -163,6 +164,7 @@ async function buildSite(options: BuildOptions): Promise<BuildResult> {
         scripts: [`${base}${admin.file}`],
         stylesheets: cssFiles(manifest, "admin").map((file) => `${base}${file}`),
         settings: { previewStylesheets: cssFiles(manifest, "preview").map((file) => `${base}${file}`), siteUrl: base },
+        ...(content.settings.favicon && { icon: withBase(content.settings.favicon, base) }),
       });
       await mkdir(join(outDir, "admin"), { recursive: true });
       await writeFile(join(outDir, "admin/index.html"), html);

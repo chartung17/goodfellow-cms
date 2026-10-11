@@ -21,7 +21,7 @@ Every site has these blocks. Sites can also have [blocks from block registries](
 | Video | A video from the media library, YouTube, Vimeo or another site's player |
 | Form | A form whose answers a form service emails to you, or a Google form (see [Forms](/docs/forms)) |
 | Code | Code with syntax highlighting, an optional title and a copy button |
-| Contact details | The address, phone number and email address from Site settings |
+| Contact details | The address, phone number and email address from Site Settings |
 | Menu | One of the site's menus, with dropdowns for submenus |
 | Site name and logo | The site's logo and name, linking home |
 | Search | A search box for the whole site, with results as you type |

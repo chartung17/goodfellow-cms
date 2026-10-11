@@ -77,7 +77,7 @@ const content: SiteContent = {
   customCss: "",
 };
 
-const calendar = (props: Partial<CalendarProps>) => ({
+const calendar = (props: Partial<CalendarProps & { id: string }>) => ({
   type: "Calendar",
   props: { id: "c", ...blocks.Calendar.defaultProps, collection: "events", ...props },
 });
@@ -87,7 +87,8 @@ function render(data: unknown[], path = "/calendar", month?: string) {
     path,
     file: "content/pages/calendar.json",
     content: { version: 1, data: { root: { props: {} }, content: data } },
-    ...(month && { view: { block: "c", path: "/calendar", month } }),
+    // The block the page's added pages are for, as sitePages() gives it.
+    view: { block: "c", path: "/calendar", ...(month && { month }) },
   } as Page;
   return renderPage(content, page).then((html) => html.slice(html.indexOf("<main"), html.indexOf("</main>")));
 }
@@ -146,6 +147,22 @@ describe("Calendar", () => {
     const grid = html.slice(html.indexOf("<ol"), html.indexOf('<time dateTime="2026-10-01"'));
     expect(grid.match(/aria-hidden="true"/g)).toHaveLength(4);
     expect(html).toMatch(/ring-primary[^>]*><time dateTime="2026-10-10"/);
+  });
+
+  it("keeps the month's name in the middle, with or without links beside it", async () => {
+    const html = await render([calendar({ view: "month", monthsBefore: 0, monthsAfter: 1 })]);
+    expect(html).toContain(
+      '<div class="grid grid-cols-[1fr_auto_1fr] items-center gap-4"><span></span><h2 class="text-center',
+    );
+  });
+
+  it("links only the first calendar on a page to its months, as only it has them", async () => {
+    const html = await render([
+      calendar({ view: "month", monthsBefore: 1, monthsAfter: 1 }),
+      calendar({ id: "second", view: "month", monthsBefore: 1, monthsAfter: 1 }),
+    ]);
+    expect(html.match(/href="\/calendar\/2026-09"/g)).toHaveLength(1);
+    expect(html.match(/October 2026/g)).toHaveLength(2);
   });
 
   it("shows a month page's own month, and stops linking past the last month", async () => {

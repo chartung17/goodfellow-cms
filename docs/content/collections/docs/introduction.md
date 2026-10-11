@@ -25,7 +25,7 @@ Because the admin panel talks to GitHub or GitLab directly, nothing else needs t
 - **A header and footer** built the same way, with menus kept separately so links survive a redesign.
 - **Collections** of similar pages, such as news, events or these docs, which share one design. Their items can be stored as Markdown, and shown anywhere as lists, with tags, pages of their own and designs made in the editor. See [Showing collections](/docs/showing-collections).
 - **Calendars** of events, including ones that repeat, as a list or a month at a time, which visitors can add to their own calendars or subscribe to. See [Calendars and events](/docs/calendars).
-- **Site settings** for the name, logo, colors, fonts, contact details and custom CSS.
+- **Site Settings** for the name, logo, colors, fonts, contact details and custom CSS.
 - **A media library** for images and files.
 - **An AI assistant** that writes into the page, with each editor's own AI service or a free one.
 - **More blocks** from block registries, such as an FAQ or a pricing table, added without a developer.

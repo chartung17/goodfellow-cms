@@ -177,6 +177,7 @@ export {
   MAX_BLOCK_PAGES,
   type PageVariant,
   type PageView,
+  pageView,
   sitePages,
   variantPath,
   withPages,

@@ -93,3 +93,17 @@ test("chooses where forms' answers go in Site settings", async ({ page }) => {
     address: "https://formspree.io/f/xyzabcde",
   });
 });
+
+test("links a form's note in the editor to Site Settings' Forms", async ({ page: browser }) => {
+  writeSiteFile(
+    "content/pages/contact-us.json",
+    page("Contact us", [{ type: "Form", props: { id: "Form-contact", source: "fields", title: "Contact form" } }]),
+  );
+  await browser.goto(`/admin#/pages/edit?path=${encodeURIComponent("/contact-us")}`);
+  const note = browser.frameLocator("iframe#preview-frame").getByRole("link", { name: /add Web3Forms' access key/ });
+  await note.click();
+
+  await expect(browser).toHaveURL(/#\/settings\/general\?section=forms$/);
+  await expect(browser.getByRole("heading", { name: "Forms" })).toBeFocused();
+  await expect(browser.getByRole("heading", { name: "Forms" })).toBeInViewport();
+});

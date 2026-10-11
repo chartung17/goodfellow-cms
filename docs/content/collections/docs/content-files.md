@@ -10,13 +10,13 @@ Everything the admin panel edits is a file in `content/` or `public/media/`, in 
 
 | File | What it holds |
 |---|---|
-| `content/site.json` | Site settings: name, address, logo, icons, contact details, theme |
+| `content/site.json` | Site Settings: name, address, logo, icons, contact details, theme |
 | `content/menus.json` | Navigation menus, by name |
 | `content/layout/header.json`, `footer.json` | The header and footer, as Puck data |
 | `content/pages/about.json` | The page at `/about`, as Puck data; `index.json` is a folder's own page |
 | `content/collections/<id>/_collection.json` | A collection's settings, fields and page design |
 | `content/collections/<id>/<slug>.json` or `.md` | One item: its field values |
-| `content/styles/custom.css` | The custom CSS from Site settings |
+| `content/styles/custom.css` | The custom CSS from Site Settings |
 | `public/media/` | Uploaded images and files, served at `/media/` |
 
 Every JSON file has a `version`, and is written with two-space indentation, keys in a fixed order and a trailing newline, so changes read well in a diff. If you edit one by hand, run the build, which reports any file that doesn't fit, with what's wrong.

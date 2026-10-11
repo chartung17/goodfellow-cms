@@ -34,7 +34,7 @@
               "props": {
                 "id": "Flex-13",
                 "align": "center",
-                "className": "mt-8",
+                "className": "mt-8 grid max-w-2xl grid-cols-2 gap-3 sm:grid-cols-4",
                 "direction": "row",
                 "gap": "md",
                 "items": [
@@ -42,7 +42,7 @@
                     "type": "Button",
                     "props": {
                       "id": "Button-11",
-                      "className": "",
+                      "className": "w-full px-0",
                       "href": "/docs/introduction",
                       "label": "Get started",
                       "newTab": false,
@@ -54,7 +54,7 @@
                     "type": "Button",
                     "props": {
                       "id": "Button-create",
-                      "className": "",
+                      "className": "w-full px-0",
                       "href": "/new-site",
                       "label": "Create a site",
                       "newTab": false,
@@ -66,7 +66,7 @@
                     "type": "Button",
                     "props": {
                       "id": "Button-12",
-                      "className": "",
+                      "className": "w-full px-0",
                       "href": "/docs/why-goodfellow",
                       "label": "Why Goodfellow?",
                       "newTab": false,
@@ -78,7 +78,7 @@
                     "type": "Button",
                     "props": {
                       "id": "Button-demo",
-                      "className": "",
+                      "className": "w-full px-0",
                       "href": "https://goodfellow-cms.github.io/goodfellow-demo/admin/",
                       "label": "Try the demo",
                       "newTab": false,
@@ -350,7 +350,7 @@
               "props": {
                 "id": "Flex-39",
                 "align": "center",
-                "className": "mt-6",
+                "className": "mx-auto mt-6 grid grid-cols-2 gap-3 sm:max-w-82.5",
                 "direction": "row",
                 "gap": "md",
                 "items": [
@@ -358,7 +358,7 @@
                     "type": "Button",
                     "props": {
                       "id": "Button-37",
-                      "className": "",
+                      "className": "w-full px-0",
                       "href": "/docs/create-a-site",
                       "label": "Create a site",
                       "newTab": false,
@@ -370,7 +370,7 @@
                     "type": "Button",
                     "props": {
                       "id": "Button-38",
-                      "className": "",
+                      "className": "w-full px-0",
                       "href": "/docs/why-goodfellow#how-goodfellow-compares",
                       "label": "Compare",
                       "newTab": false,

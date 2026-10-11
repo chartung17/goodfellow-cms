@@ -12,8 +12,8 @@ export const defaultStrings = {
   "nav.collections": "Collections",
   "nav.media": "Media",
   "nav.blocks": "Blocks",
-  "nav.layout": "Header & footer",
-  "nav.settings": "Site settings",
+  "nav.layout": "Header & Footer",
+  "nav.settings": "Site Settings",
 
   loading: "Loading…",
 
@@ -190,7 +190,7 @@ export const defaultStrings = {
     "Each item has a date and time, which can repeat, a place and a summary. Calendar blocks show them, and visitors can add them to their own calendars.",
   "newCollection.eventsName": "Events",
   "newCollection.eventsEntryName": "Event",
-  "newCollection.timeZone": "The site's time zone will be set to {zone}. You can change it in Site settings.",
+  "newCollection.timeZone": "The site's time zone will be set to {zone}. You can change it in Site Settings.",
   "newCollection.name": "Name",
   "newCollection.nameHint": "What the whole collection is called, such as Videos or Events.",
   "newCollection.nameTaken": "Another collection already has a name like this. Choose another.",
@@ -481,7 +481,7 @@ export const defaultStrings = {
   "ai.error.answer": "The answer couldn't be used. Try again, or try a different model or service.",
   "ai.error.service": "{service} reported a problem. Try again in a moment.",
 
-  "settings.title": "Site settings",
+  "settings.title": "Site Settings",
   "appearance.choice": "Colors of the admin panel",
   "appearance.system": "Match my computer",
   "appearance.light": "Light",

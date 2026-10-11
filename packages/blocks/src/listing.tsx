@@ -22,7 +22,7 @@ import {
   todayIn,
   variantPath,
 } from "@goodfellow-cms/core";
-import { cx, type SiteContextValue, SiteLink } from "@goodfellow-cms/react";
+import { cx, type SiteContextValue, SiteLink, useSite } from "@goodfellow-cms/react";
 import type { Fields } from "@puckeditor/core";
 import { options, yesNo } from "./options.js";
 
@@ -230,9 +230,10 @@ export function currentListing(
   const collection = site.collections.find((candidate) => candidate.id === props.collection);
   if (!collection) return undefined;
   const view = site.view;
-  // Only the block the page's other pages are for shows them; editors' previews show its first page.
+  // Only the block the page's other pages are for links to them; the others show their first page. The editor
+  // gives the page the same view as builds (`pageView()`), so it shows the same.
   const owned = view !== undefined && view.block === props.id;
-  const linked = owned || view === undefined;
+  const linked = owned;
   const choice = owned ? view.choice : undefined;
   const all = selectedEntries(collection, props, todayIn(site.settings.timeZone), choice);
   const size = pageSize(props.limit);
@@ -248,6 +249,38 @@ export function currentListing(
     path: owned ? view.path : site.path,
     linked,
   };
+}
+
+/**
+ * Why a block that would have pages of its own doesn't, for the editor to say:
+ * another block higher on the page has them, or it's somewhere that never
+ * does, such as an item's page or the header.
+ */
+export function pagesNotice(view: SiteContextValue["view"], shows: "page" | "month"): string {
+  const rest =
+    shows === "month"
+      ? "only this month, with no links to the others"
+      : "only its first page, with no links to the rest";
+  return view
+    ? `A block higher on this page already has pages of its own, and a page can have only one, so this one shows ${rest}. Move it to a page of its own to give it pages.`
+    : `Items' pages, "Page not found" and the header and footer don't get pages of their own, so this shows ${rest}.`;
+}
+
+/** Whether a list would have pages of its own: later pages, or a page for each choice. */
+export function wantsPages(listing: Listing, stored: Partial<ListingProps>): boolean {
+  const props = { ...listingDefaults, ...stored };
+  return listing.pages > 1 || (!!props.choicePages && choicePageList(listing.collection, props.choicePages).length > 0);
+}
+
+/** In the editor, why a list that would have pages of its own doesn't. */
+export function PagesNotice({ listing, props }: { listing: Listing; props: Partial<ListingProps> }) {
+  const { view } = useSite();
+  if (listing.linked || !wantsPages(listing, props)) return null;
+  return (
+    <p className="rounded-md border border-dashed border-border p-3 text-sm text-muted-foreground">
+      {pagesNotice(view, "page")}
+    </p>
+  );
 }
 
 /** Links to a list's pages for each choice, with "All" first. */

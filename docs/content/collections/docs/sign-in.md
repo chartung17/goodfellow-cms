@@ -6,11 +6,11 @@ section: owners
 order: 2
 ---
 
-Editors sign in at `/admin` on the live site with their own GitHub or GitLab account. There's no separate list of users: anyone who can change the site's repository can edit the site, and the site's owners invite and remove them under **Site settings → Editors**.
+Editors sign in at `/admin` on the live site with their own GitHub or GitLab account. There's no separate list of users: anyone who can change the site's repository can edit the site, and the site's owners invite and remove them under **Site Settings → Editors**.
 
 ## Inviting and removing editors
 
-**Site settings → Editors** lists everyone who can edit the site, and the invitations they haven't accepted yet. There are two roles:
+**Site Settings → Editors** lists everyone who can edit the site, and the invitations they haven't accepted yet. There are two roles:
 
 - **Editors** change and publish everything in the admin panel.
 - **Owners** can also invite and remove editors, change their roles, and connect a domain.

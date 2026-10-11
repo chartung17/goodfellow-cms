@@ -243,3 +243,38 @@ test("shows the admin panel light or dark, following the computer unless an edit
   await page.emulateMedia({ colorScheme: "dark" });
   await expect.poll(background).toBe("rgb(11, 17, 32)");
 });
+
+test("shows the site's icon in the admin panel's tab, and a new one once it's published", async ({ page }) => {
+  await page.goto("/admin#/settings/general");
+  const icon = page.locator('head link[rel~="icon"]');
+  await expect(icon).toHaveAttribute("href", /\/media\/favicon\.svg$/);
+
+  await page.getByLabel("Browser tab icon").fill("/media/logo.svg");
+  await page.getByRole("button", { name: "Publish" }).click();
+  await expect(page.getByText("Published.", { exact: true })).toBeVisible();
+  await expect(icon).toHaveAttribute("href", /\/media\/logo\.svg$/);
+});
+
+test("says Published under the Publish button, until something changes or a few seconds pass", async ({ page }) => {
+  await page.goto("/admin#/settings/general");
+  const publishButton = page.getByRole("button", { name: "Publish" });
+  const published = page.getByRole("status").filter({ hasText: "Published." });
+
+  await page.getByLabel("Site name").fill("St. Joseph Parish");
+  await publishButton.click();
+  await expect(published).toBeVisible();
+  // Just under the button, at its right-hand edge.
+  const button = await publishButton.boundingBox();
+  const notice = await published.boundingBox();
+  expect(notice && button && Math.abs(notice.x + notice.width - (button.x + button.width))).toBeLessThan(2);
+  expect(notice && button && notice.y - (button.y + button.height)).toBeLessThan(16);
+
+  // Any change hides it.
+  await page.getByLabel("Site name").fill("St. Joseph's Parish");
+  await expect(published).toBeHidden();
+
+  // Otherwise it goes on its own.
+  await publishButton.click();
+  await expect(published).toBeVisible();
+  await expect(published).toBeHidden({ timeout: 8_000 });
+});

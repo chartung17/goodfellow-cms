@@ -10,8 +10,8 @@ A new site is at its host's address, such as `https://your-name.github.io/your-s
 
 ## Connect a domain
 
-1. In the admin panel, open **Site settings → Domain**. Type the domain, such as `example.org` or `www.example.org`, and choose **Connect domain**.
-2. Goodfellow connects the domain on GitHub Pages or GitLab Pages, makes it the site's address in Site settings and publishes that, and lists the records to add at your registrar.
+1. In the admin panel, open **Site Settings → Domain**. Type the domain, such as `example.org` or `www.example.org`, and choose **Connect domain**.
+2. Goodfellow connects the domain on GitHub Pages or GitLab Pages, makes it the site's address in Site Settings and publishes that, and lists the records to add at your registrar.
 3. At your registrar, add each record, as below. Delete any other A, AAAA or CNAME records with the same names, such as the page some registrars show on new domains.
 4. The Domain screen checks every 30 seconds whether:
    1. the records are in place, as the rest of the world sees them;
@@ -55,7 +55,7 @@ Never delete MX records, which deliver the domain's email.
 
 ## Sites on Vercel
 
-A site published with Vercel connects its domain in Vercel: open the site's project, go to **Settings → Domains** and add the domain, and Vercel shows the records to add at your registrar. Once the site opens at its new address, put the address in **Site settings → General → Site address** and publish.
+A site published with Vercel connects its domain in Vercel: open the site's project, go to **Settings → Domains** and add the domain, and Vercel shows the records to add at your registrar. Once the site opens at its new address, put the address in **Site Settings → General → Site address** and publish.
 
 ## If it doesn't work
 

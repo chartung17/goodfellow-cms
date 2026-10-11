@@ -27,6 +27,7 @@ import { createContext, type ReactNode, useCallback, useContext, useEffect, useM
 import { mediaUrl } from "./media.js";
 import { createMediaPreviews, type MediaPreviews } from "./media-previews.js";
 import { REGISTRY_VERSION } from "./registry-version.js";
+import { showSiteIcon } from "./site-icon.js";
 
 /** How previews load the site's styles. Provided by the dev server or build that serves the admin panel. */
 export interface PreviewOptions {
@@ -145,6 +146,8 @@ export function AdminProvider({
     () => ({ [GOODFELLOW_REGISTRY]: registry ?? goodfellowRegistryUrl(REGISTRY_VERSION), ...config.registries }),
     [registry, config.registries],
   );
+  const favicon = state.status === "ready" ? state.content.settings.favicon : undefined;
+  useEffect(() => (favicon ? showSiteIcon(document, favicon, mediaPreviews) : undefined), [favicon, mediaPreviews]);
   const readFile = useCallback((path: string) => store.read(path), [store]);
   const listFiles = useCallback((dir: string) => store.list(dir), [store]);
   const demo = isDemoStore(store) ? store : undefined;

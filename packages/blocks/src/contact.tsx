@@ -15,7 +15,7 @@ function phoneHref(phone: string): string {
   return `tel:${phone.replace(/(?!^\+)[^\d]/g, "")}`;
 }
 
-/** The site's contact details (from Site settings), so they're kept in one place however often they're shown. */
+/** The site's contact details (from Site Settings), so they're kept in one place however often they're shown. */
 function ContactDetailsView({
   address,
   phone,
@@ -24,7 +24,7 @@ function ContactDetailsView({
   className,
   isEditing,
 }: ContactDetailsProps & { isEditing: boolean }) {
-  const { settings } = useSite();
+  const { settings, adminLink } = useSite();
   const contact = settings.contact ?? {};
   const items = [
     address && contact.address && (
@@ -47,7 +47,13 @@ function ContactDetailsView({
   if (items.length === 0) {
     return isEditing ? (
       <p className={cx("rounded-md border border-dashed border-border p-4 text-muted-foreground", className)}>
-        Add contact details in Site settings.
+        {adminLink ? (
+          <a {...adminLink("contact-settings")} className="underline underline-offset-2 hover:text-foreground">
+            Add contact details in Site Settings.
+          </a>
+        ) : (
+          "Add contact details in Site Settings."
+        )}
       </p>
     ) : null;
   }

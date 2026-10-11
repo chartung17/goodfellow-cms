@@ -7,7 +7,7 @@ import {
   googleFormUrl,
   WEB3FORMS_SCRIPT,
 } from "@goodfellow-cms/core";
-import { classNameField, cx, useSite } from "@goodfellow-cms/react";
+import { type AdminPlace, classNameField, cx, useSite } from "@goodfellow-cms/react";
 import type { ComponentConfig, Fields } from "@puckeditor/core";
 import type { ReactNode } from "react";
 import { options, yesNo } from "./options.js";
@@ -91,12 +91,12 @@ const RESERVED = new Set([
 const GOOGLE_SANDBOX = "allow-scripts allow-same-origin allow-forms allow-popups allow-popups-to-escape-sandbox";
 
 const targetProblems: Record<FormProblem, string> = {
-  "no-key": "Answers can't be sent yet: add Web3Forms' access key in Site settings, under Forms.",
+  "no-key": "Answers can't be sent yet: add Web3Forms' access key in Site Settings, under Forms.",
   "bad-key":
-    "The Web3Forms access key in Site settings isn't one. Copy it from the email Web3Forms sent: it looks like 0b5c4f7e-1a2b-4c3d-8e9f-0123456789ab.",
-  "no-address": "Answers can't be sent yet: add the form's address in Site settings, under Forms.",
+    "The Web3Forms access key in Site Settings isn't one. Copy it from the email Web3Forms sent: it looks like 0b5c4f7e-1a2b-4c3d-8e9f-0123456789ab.",
+  "no-address": "Answers can't be sent yet: add the form's address in Site Settings, under Forms.",
   "bad-address":
-    "The form address in Site settings can't be used. Copy it from the form service: it starts with https://.",
+    "The form address in Site Settings can't be used. Copy it from the form service: it starts with https://.",
 };
 
 const googleProblems: Record<GoogleFormProblem, string> = {
@@ -275,22 +275,50 @@ function Question({ field, name, id }: { field: FormField; name: string; id: str
   );
 }
 
+/** A note for the editor, linked to where in the admin panel it's fixed. */
+interface FormNotice {
+  text: string;
+  place?: AdminPlace;
+}
+
+function hostOf(url: string | undefined): string | undefined {
+  try {
+    return url ? new URL(url).hostname : undefined;
+  } catch {
+    return undefined;
+  }
+}
+
 /** Where visitors go after sending, or why they'll see the service's own page instead. */
-function thankYouNotice(target: FormTarget, thankYou: string, siteUrl: string | undefined): string | undefined {
+function thankYouNotice(target: FormTarget, thankYou: string, siteUrl: string | undefined): FormNotice | undefined {
   if (!thankYou.trim()) return undefined;
   if (!target.redirects) {
-    return "Formspree sends visitors to a thank-you page of your own only on its paid plans, where it's set in Formspree's settings for the form. Until then, visitors see Formspree's own.";
+    return {
+      text: "Formspree sends visitors to a thank-you page of your own only on its paid plans, where it's set in Formspree's settings for the form. Until then, visitors see Formspree's own.",
+    };
   }
-  if (!formRedirect(siteUrl, thankYou)) {
+  const redirect = formRedirect(siteUrl, thankYou);
+  if (!redirect) {
     return thankYou.trim().startsWith("/")
-      ? "Visitors will see the form service's own thank-you page until the Site address is set in Site settings."
-      : "The thank-you page must be one of the site's pages, such as /thank-you, or a full address starting with https://.";
+      ? {
+          text: "Visitors will see the form service's own thank-you page until the Site address is set in Site Settings.",
+          place: "settings",
+        }
+      : {
+          text: "The thank-you page must be one of the site's pages, such as /thank-you, or a full address starting with https://.",
+        };
+  }
+  // Web3Forms' free plan sends visitors back only to the site the form is on.
+  if (target.service === "web3forms" && hostOf(redirect) !== hostOf(siteUrl)) {
+    return {
+      text: "Web3Forms sends visitors to a page on another site only on its paid plans. Until then, visitors see Web3Forms' own thank-you page.",
+    };
   }
   return undefined;
 }
 
 function FormView({ isEditing, id, ...stored }: FormProps & { isEditing: boolean; id: string }) {
-  const { settings } = useSite();
+  const { settings, adminLink } = useSite();
   // Stored props can leave settings out, such as an AI assistant's answer.
   const given = Object.fromEntries(Object.entries(stored).filter(([, value]) => value !== undefined));
   const props = { ...Form.defaultProps, ...given, fields: stored.fields ?? [] } as FormProps;
@@ -323,13 +351,30 @@ function FormView({ isEditing, id, ...stored }: FormProps & { isEditing: boolean
   const onSite = typeof document === "undefined";
   const names = answerNames(props.fields);
   const notices = [
-    "problem" in target ? targetProblems[target.problem] : thankYouNotice(target, props.thankYou, settings.url),
-    props.fields.length === 0 ? "Add the form's questions." : undefined,
-  ].filter(Boolean);
+    "problem" in target
+      ? { text: targetProblems[target.problem], place: "forms-settings" as const }
+      : thankYouNotice(target, props.thankYou, settings.url),
+    props.fields.length === 0 ? { text: "Add the form's questions." } : undefined,
+  ].filter((notice): notice is FormNotice => notice !== undefined);
 
   return (
     <div className={cx("w-full max-w-xl space-y-4", className)}>
-      {isEditing && notices.map((notice) => <Notice key={notice}>{notice}</Notice>)}
+      {isEditing &&
+        notices.map((notice) => {
+          // In the editor, a note links to where it's fixed.
+          const link = notice.place && adminLink?.(notice.place);
+          return (
+            <Notice key={notice.text}>
+              {link ? (
+                <a {...link} className="underline underline-offset-2 hover:text-foreground">
+                  {notice.text}
+                </a>
+              ) : (
+                notice.text
+              )}
+            </Notice>
+          );
+        })}
       <form
         className="space-y-5"
         {...(onSite && "action" in target
@@ -395,7 +440,10 @@ const formFields: Fields<FormProps> = {
     getItemSummary: (item) => item.label || "Question",
   },
   submitLabel: { type: "text", label: "Button label" },
-  thankYou: { type: "text", label: "Page visitors see after sending, such as /thank-you" },
+  thankYou: {
+    type: "text",
+    label: "Page visitors see after sending, such as /thank-you (without one, they see the form service's own)",
+  },
   google: {
     type: "textarea",
     label: "The Google form's embed code (in Google Forms: Send, then the <> tab)",
@@ -405,7 +453,7 @@ const formFields: Fields<FormProps> = {
 };
 
 /**
- * A form. Its answers go to the form service chosen in Site settings, by a
+ * A form. Its answers go to the form service chosen in Site Settings, by a
  * plain form post, so it works without JavaScript; or a Google form.
  */
 export const Form: ComponentConfig<FormProps> = {

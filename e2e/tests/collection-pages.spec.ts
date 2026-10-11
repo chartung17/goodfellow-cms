@@ -137,3 +137,24 @@ test("shows blocks designed in the editor once for each item", async ({ page, re
   await expect(canvas.getByText("Shown once for each item in News.")).toBeVisible();
   await expect(canvas.getByText("Story: Open house")).toHaveCount(0);
 });
+
+test("shows only the first list on a page with pages of its own, in the editor as on the site", async ({
+  page,
+  request,
+}) => {
+  const list = (id: string) => ({
+    type: "CollectionList",
+    props: { id, collection: "news", layout: "list", order: "default", show: "all", limit: 1, paginate: true },
+  });
+  writeSiteFile(
+    "content/pages/news.json",
+    `${JSON.stringify({ version: 1, data: { root: { props: { title: "News" } }, content: [list("CollectionList-first"), list("CollectionList-second")] } }, null, 2)}\n`,
+  );
+  const html = await (await request.get("/news")).text();
+  expect(html.match(/aria-label="Pages"/g)).toHaveLength(1);
+
+  await page.goto(`/admin#/pages/edit?path=${encodeURIComponent("/news")}`);
+  const canvas = page.frameLocator("iframe#preview-frame");
+  await expect(canvas.getByText("A block higher on this page already has pages of its own")).toBeVisible();
+  await expect(canvas.getByRole("navigation", { name: "Pages" })).toHaveCount(1);
+});
