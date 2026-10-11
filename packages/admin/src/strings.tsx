@@ -706,6 +706,30 @@ export const defaultStrings = {
   "general.address": "Address",
   "general.phone": "Phone",
   "general.email": "Email",
+  "forms.title": "Forms",
+  "forms.hint":
+    "Where answers to the site's forms go. The form service emails them to you: they're never kept with the site's pages.",
+  "forms.service": "Form service",
+  "forms.service.web3forms": "Web3Forms: free for 250 answers a month, with no account",
+  "forms.service.formspree": "Formspree",
+  "forms.service.other": "Another service",
+  "forms.accessKey": "Web3Forms access key",
+  "forms.accessKeyHint":
+    "On Web3Forms' site, enter the email address answers should go to. Web3Forms emails you a key: paste it here.",
+  "forms.accessKeyLink": "Get an access key from Web3Forms",
+  "forms.captcha": "Ask visitors to show they aren't robots (hCaptcha)",
+  "forms.captchaHint":
+    "Adds Web3Forms' hCaptcha and its script to pages with a form. To turn away answers without it, also turn hCaptcha on for the form in a Web3Forms account.",
+  "forms.formspree": "Formspree form address",
+  "forms.formspreeHint":
+    "Make a form in Formspree and copy its address, such as https://formspree.io/f/xyzabcde. On Formspree's free plan, visitors see Formspree's own thank-you page.",
+  "forms.address": "Address forms send answers to",
+  "forms.addressHint":
+    "The service's address for forms, starting with https://. Forms send the thank-you page's address as _next, the subject as _subject, and a hidden _gotcha field that only robots fill in, as Formspree, FormSubmit and Formcarry expect.",
+  "forms.error.key":
+    "This isn't a Web3Forms access key. Copy it from Web3Forms' email: it looks like 0b5c4f7e-1a2b-4c3d-8e9f-0123456789ab.",
+  "forms.error.formspree": "This isn't a Formspree form's address. It looks like https://formspree.io/f/xyzabcde.",
+  "forms.error.address": "The address must be a full address starting with https://.",
 
   "theme.colors": "Colors",
   "theme.fonts": "Fonts",

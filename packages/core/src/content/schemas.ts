@@ -75,6 +75,18 @@ export const siteSettingsSchema = z.object({
       email: z.string().optional(),
     })
     .optional(),
+  /** Where forms' answers go (see `formTarget()`). Web3Forms unless another service is chosen. */
+  forms: z
+    .object({
+      service: z.enum(["web3forms", "formspree", "other"]).default("web3forms"),
+      /** Web3Forms' access key, which sends answers to the email address it was made for. */
+      accessKey: z.string().optional(),
+      /** Formspree's form address or ID, or another service's address forms post to. */
+      address: z.string().optional(),
+      /** Whether Web3Forms forms show hCaptcha, which loads Web3Forms' script on pages with a form. */
+      captcha: z.boolean().optional(),
+    })
+    .optional(),
   theme: themeSchema.default({ colors: {}, fonts: {} }),
 });
 
